@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Calendar, 
   MapPin, 
@@ -19,13 +19,22 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function DashboardPage() {
   const [selectedEmployee, setSelectedEmployee] = useState<string>("all");
+  const [currentMonth, setCurrentMonth] = useState<number>(0);
+  const [currentYear, setCurrentYear] = useState<number>(0);
   const { t } = useLanguage();
+
+  // Initialize date on client side only
+  useEffect(() => {
+    const now = new Date();
+    setCurrentMonth(now.getMonth());
+    setCurrentYear(now.getFullYear());
+  }, []);
 
   // Helper to check if date is in current month
   const isCurrentMonth = (dateString: string) => {
+    if (currentMonth === 0 && currentYear === 0) return false; // Not initialized yet
     const date = new Date(dateString);
-    const now = new Date();
-    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+    return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
   };
 
   // --- METRIC CALCULATIONS ---

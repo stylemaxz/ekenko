@@ -8,6 +8,8 @@ export type ContactPerson = {
 };
 
 // --- Level 2: Branch / Location ---
+export type CustomerStatus = 'active' | 'closed' | 'inactive';
+
 export type Location = {
     id: string;
     name: string; // e.g. "Siam Paragon Branch"
@@ -19,6 +21,9 @@ export type Location = {
     lat: number;
     lng: number;
     contacts: ContactPerson[]; // People at this branch
+    customerStatus?: CustomerStatus; // Status for sales tracking
+    statusNote?: string; // Note when status changes
+    createdBy?: string; // Employee ID who created this location
 };
 
 // --- Level 1: Company / Account ---
@@ -44,6 +49,48 @@ export type Employee = {
     portfolioSize: number; // Total target 'Locations' assigned to this rep
     username?: string;
     password?: string;
+};
+
+export type LeaveType = 'sick' | 'personal' | 'vacation' | 'other';
+export type LeaveStatus = 'pending' | 'approved' | 'rejected';
+
+export type LeaveRequest = {
+    id: string;
+    employeeId: string;
+    type: LeaveType;
+    startDate: string;
+    endDate: string;
+    days: number;
+    reason: string;
+    status: LeaveStatus;
+    reviewNote?: string;
+    reviewedBy?: string;
+    reviewedAt?: string;
+    createdAt: string;
+};
+
+// Activity Log
+export type ActivityType =
+    | 'customer_created'
+    | 'customer_status_changed'
+    | 'check_in'
+    | 'leave_requested'
+    | 'leave_approved'
+    | 'leave_rejected'
+    | 'task_created'
+    | 'task_completed'
+    | 'employee_created'
+    | 'clock_in'
+    | 'clock_out';
+
+export type ActivityLog = {
+    id: string;
+    type: ActivityType;
+    employeeId: string;
+    employeeName: string;
+    description: string;
+    metadata?: Record<string, any>;
+    timestamp: string;
 };
 
 export type Visit = {
@@ -126,6 +173,7 @@ export const mockEmployees: Employee[] = [
     { id: '1', name: 'Somchai Salesman', email: 'somchai@example.com', phone: '081-111-1111', role: 'sales', portfolioSize: 50, username: 'somchai', password: 'password123', avatar: 'https://i.pravatar.cc/150?u=somchai' },
     { id: '2', name: 'Somsri Seller', email: 'somsri@example.com', phone: '082-222-2222', role: 'sales', portfolioSize: 45, username: 'somsri', password: 'password123', avatar: 'https://i.pravatar.cc/150?u=somsri' },
     { id: '3', name: 'Danai Driver', email: 'danai@example.com', phone: '083-333-3333', role: 'sales', portfolioSize: 60, username: 'danai', password: 'password123', avatar: 'https://i.pravatar.cc/150?u=danai' },
+    { id: '4', name: 'Admin Manager', email: 'admin@example.com', phone: '080-000-0000', role: 'manager', portfolioSize: 0, username: 'admin', password: 'admin123', avatar: 'https://i.pravatar.cc/150?u=admin' },
 ];
 
 export const mockCompanies: Company[] = [
@@ -302,5 +350,139 @@ export const mockVisits: Visit[] = [
         notes: 'Follow up call, no answer.',
         images: [],
         metOwner: false
+    }
+];
+
+// --- Mock Leave Requests ---
+export const mockLeaveRequests: LeaveRequest[] = [
+    {
+        id: 'lr1',
+        employeeId: '1',
+        type: 'sick',
+        startDate: '2024-01-15',
+        endDate: '2024-01-16',
+        days: 2,
+        reason: 'Flu symptoms, need rest',
+        status: 'approved',
+        createdAt: '2024-01-10T09:00:00Z',
+        reviewedBy: '4',
+        reviewedAt: '2024-01-10T14:30:00Z',
+        reviewNote: 'Approved. Get well soon!'
+    },
+    {
+        id: 'lr2',
+        employeeId: '2',
+        type: 'vacation',
+        startDate: '2024-02-01',
+        endDate: '2024-02-05',
+        days: 5,
+        reason: 'Family trip to Phuket',
+        status: 'pending',
+        createdAt: '2024-01-20T10:15:00Z'
+    },
+    {
+        id: 'lr3',
+        employeeId: '3',
+        type: 'personal',
+        startDate: '2024-01-25',
+        endDate: '2024-01-25',
+        days: 1,
+        reason: 'Personal matter',
+        status: 'rejected',
+        createdAt: '2024-01-22T08:00:00Z',
+        reviewedBy: '4',
+        reviewedAt: '2024-01-22T16:00:00Z',
+        reviewNote: 'We have important client meeting that day. Please reschedule.'
+    },
+    {
+        id: 'lr4',
+        employeeId: '1',
+        type: 'vacation',
+        startDate: '2024-03-10',
+        endDate: '2024-03-12',
+        days: 3,
+        reason: 'Songkran holiday extension',
+        status: 'pending',
+        createdAt: new Date().toISOString()
+    }
+];
+
+// --- Mock Activity Logs ---
+export const mockActivityLogs: ActivityLog[] = [
+    {
+        id: 'act1',
+        type: 'clock_in',
+        employeeId: '1',
+        employeeName: 'Somchai Prasert',
+        description: 'เข้างาน',
+        timestamp: new Date(Date.now() - 3600000).toISOString()
+    },
+    {
+        id: 'act2',
+        type: 'customer_created',
+        employeeId: '1',
+        employeeName: 'Somchai Prasert',
+        description: 'สร้างลูกค้าใหม่: Amazon Cafe - Siam Branch',
+        metadata: { companyName: 'Amazon Cafe', branchName: 'Siam Branch' },
+        timestamp: new Date(Date.now() - 7200000).toISOString()
+    },
+    {
+        id: 'act3',
+        type: 'check_in',
+        employeeId: '2',
+        employeeName: 'Nida Somjai',
+        description: 'เช็คอินที่: Starbucks - Central World',
+        metadata: { locationName: 'Starbucks - Central World' },
+        timestamp: new Date(Date.now() - 10800000).toISOString()
+    },
+    {
+        id: 'act4',
+        type: 'customer_status_changed',
+        employeeId: '1',
+        employeeName: 'Somchai Prasert',
+        description: 'เปลี่ยนสถานะลูกค้า: Amazon Cafe → ปิดการขาย',
+        metadata: {
+            companyName: 'Amazon Cafe',
+            oldStatus: 'active',
+            newStatus: 'closed',
+            note: 'ปิดดีลแล้ว ซื้อสินค้า 100,000 บาท'
+        },
+        timestamp: new Date(Date.now() - 14400000).toISOString()
+    },
+    {
+        id: 'act5',
+        type: 'leave_requested',
+        employeeId: '2',
+        employeeName: 'Nida Somjai',
+        description: 'ขอลาพักร้อน 5 วัน',
+        metadata: { leaveType: 'vacation', days: 5 },
+        timestamp: new Date(Date.now() - 18000000).toISOString()
+    },
+    {
+        id: 'act6',
+        type: 'leave_approved',
+        employeeId: '4',
+        employeeName: 'Manager Name',
+        description: 'อนุมัติการลาของ Nida Somjai',
+        metadata: { targetEmployee: 'Nida Somjai', leaveType: 'vacation' },
+        timestamp: new Date(Date.now() - 21600000).toISOString()
+    },
+    {
+        id: 'act7',
+        type: 'task_created',
+        employeeId: '4',
+        employeeName: 'Manager Name',
+        description: 'สร้างงาน: เยี่ยมลูกค้า Amazon Cafe',
+        metadata: { taskTitle: 'เยี่ยมลูกค้า Amazon Cafe', assignedTo: 'Somchai Prasert' },
+        timestamp: new Date(Date.now() - 25200000).toISOString()
+    },
+    {
+        id: 'act8',
+        type: 'clock_out',
+        employeeId: '3',
+        employeeName: 'Pong Wichai',
+        description: 'ออกงาน (ทำงาน 8 ชม. 30 นาที)',
+        metadata: { hoursWorked: 8.5 },
+        timestamp: new Date(Date.now() - 28800000).toISOString()
     }
 ];

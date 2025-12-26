@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Modal } from "@/components/ui/Modal";
 import { mockVisits, mockCompanies, mockEmployees, Visit, VisitObjectives, VisitObjective } from "@/utils/mockData";
-import Image from "next/image";
 import { 
   format, 
   startOfMonth, 
@@ -400,11 +399,10 @@ export default function CalendarPage() {
                         {selectedVisit.images && selectedVisit.images.length > 0 ? (
                             selectedVisit.images.map((img: string, idx: number) => (
                                 <div key={idx} className="relative w-32 h-32 rounded-lg overflow-hidden border border-slate-200 shrink-0 shadow-sm">
-                                    <Image 
+                                    <img 
                                         src={img} 
                                         alt={`Visit ${idx + 1}`} 
-                                        fill 
-                                        className="object-cover"
+                                        className="w-full h-full object-cover"
                                     />
                                 </div>
                             ))

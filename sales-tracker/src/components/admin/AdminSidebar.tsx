@@ -13,7 +13,9 @@ import {
   Calendar,
   Building2,
   Briefcase,
-  FileText
+  FileText,
+  FileCheck,
+  Activity
 } from "lucide-react";
 import clsx from "clsx";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -29,6 +31,8 @@ export default function AdminSidebar() {
     { href: "/admin/employees", label: t('employees'), icon: Users },
     { label: t('customers'), href: '/admin/customers', icon: Building2 },
     { label: t('tasks'), href: '/admin/tasks', icon: Briefcase },
+    { label: t('leave_management'), href: '/admin/leave', icon: FileCheck },
+    { label: language === 'th' ? 'บันทึกกิจกรรม' : 'Activity Logs', href: '/admin/activity-logs', icon: Activity },
     { label: t('reports'), href: '/admin/reports', icon: FileText },
   ];
 
@@ -71,18 +75,18 @@ export default function AdminSidebar() {
         })}
 
         <div className="mt-auto pt-4 border-t border-slate-200">
-           <Link
-              href="/admin/settings"
-              className={clsx(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium",
-                pathname.startsWith("/admin/settings")
-                   ? "bg-slate-100 text-slate-900"
-                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              )}
-            >
-              <Settings size={18} className="text-slate-400" />
-              {t('settings')}
-            </Link>
+          <Link
+            href="/admin/settings"
+            className={clsx(
+              "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium",
+              pathname.startsWith("/admin/settings")
+                ? "bg-slate-100 text-slate-900"
+                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+            )}
+          >
+            <Settings size={18} className="text-slate-400" />
+            {t('settings')}
+          </Link>
           <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-red-600 hover:bg-red-50 mt-1">
             <LogOut size={18} className="text-red-400" />
             {t('logout')}

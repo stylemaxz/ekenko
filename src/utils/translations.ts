@@ -141,6 +141,10 @@ export const translations = {
         save_success: "Saved Successfully",
         delete_success: "Deleted Successfully",
         fill_required: "Please fill in all required fields",
+        company_logo: "Company Logo",
+        upload_logo: "Upload Logo",
+        logo_instruction: "Upload a square image (1:1) for best results.",
+        supported_files: "Supported: JPG, PNG",
 
         // Reports Page
         reports_title: "Reports & Analytics",
@@ -399,6 +403,10 @@ export const translations = {
         save_success: "บันทึกสำเร็จ",
         delete_success: "ลบสำเร็จ",
         fill_required: "กรุณากรอกข้อมูลให้ครบถ้วน",
+        company_logo: "โลโก้บริษัท",
+        upload_logo: "อัปโหลดโลโก้",
+        logo_instruction: "อัปโหลดรูปสัดส่วน 1:1 เพื่อผลลัพธ์ที่ดีที่สุด",
+        supported_files: "รองรับไฟล์: JPG, PNG",
 
         // Reports Page
         reports_title: "รายงานและสถิติ",

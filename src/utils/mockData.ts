@@ -35,6 +35,7 @@ export type Company = {
     id: string;
     name: string; // e.g. "Amazon Cafe HQ"
     taxId?: string;
+    logo?: string; // New field for company logo
     grade: CompanyGrade;
     status: CompanyStatus;
     locations: Location[]; // Branches belonging to this company

@@ -11,7 +11,10 @@ import {
   User, 
   Edit,
   UserPlus,
-  Check
+  Check,
+  Upload,
+  Image as ImageIcon,
+  X
 } from "lucide-react";
 import { mockCompanies, Company, Location, ContactPerson, mockEmployees } from "@/utils/mockData";
 import { clsx } from "clsx";
@@ -166,6 +169,17 @@ export default function CustomersPage() {
       }
   };
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0] && editingCompany) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setEditingCompany({ ...editingCompany, logo: reader.result as string });
+        };
+        reader.readAsDataURL(file);
+    }
+  };
+
 
   return (
     <div className="p-6">
@@ -210,10 +224,14 @@ export default function CustomersPage() {
                  <div className="flex justify-between items-start mb-4 pr-16">
                      <div className="flex items-start gap-3">
                          <div className={clsx(
-                             "w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm",
+                             "w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm overflow-hidden",
                              company.status === 'existing' ? "bg-indigo-100 text-indigo-600" : "bg-teal-100 text-teal-600"
                          )}>
-                             {company.name.substring(0, 1)}
+                             {company.logo ? (
+                                 <img src={company.logo} alt={company.name} className="w-full h-full object-cover" />
+                             ) : (
+                                 company.name.substring(0, 1)
+                             )}
                          </div>
                          <div>
                              <h3 className="font-bold text-slate-900">{company.name}</h3>
@@ -314,6 +332,46 @@ export default function CustomersPage() {
       >
           {editingCompany && (
              <div className="space-y-8">
+                  {/* Logo Upload */}
+                  <div className="flex items-center gap-6 border-b border-slate-100 pb-6">
+                    <div className={clsx(
+                        "w-24 h-24 rounded-2xl flex items-center justify-center border-2 border-dashed border-slate-300 bg-slate-50 overflow-hidden relative group cursor-pointer hover:border-indigo-400 transition-colors",
+                         !editingCompany.logo && "p-4"
+                    )}>
+                        <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                            onChange={handleLogoUpload}
+                        />
+                        {editingCompany.logo ? (
+                            <>
+                                <img src={editingCompany.logo} alt="Logo" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Edit className="text-white" size={20} />
+                                </div>
+                            </>
+                        ) : (
+                            <div className="text-center">
+                                <ImageIcon className="mx-auto text-slate-400 mb-1" size={24} />
+                                <div className="text-[10px] text-slate-400 font-medium">{t('upload_logo')}</div>
+                            </div>
+                        )}
+                        {editingCompany.logo && (
+                            <button 
+                                onClick={(e) => { e.preventDefault(); setEditingCompany({...editingCompany, logo: undefined}); }}
+                                className="absolute top-1 right-1 bg-white/80 p-0.5 rounded-full text-slate-600 hover:text-red-500 z-20"
+                            >
+                                <X size={12} />
+                            </button>
+                        )}
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-slate-800 text-lg">{t('company_logo')}</h3>
+                        <p className="text-sm text-slate-500">{t('logo_instruction')}</p>
+                        <p className="text-xs text-slate-400 mt-1">{t('supported_files')}</p>
+                    </div>
+                  </div>
                  {/* Section 1: Company Info */}
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                      <div>

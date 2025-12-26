@@ -24,6 +24,7 @@ export type Location = {
     customerStatus?: CustomerStatus; // Status for sales tracking
     statusNote?: string; // Note when status changes
     createdBy?: string; // Employee ID who created this location
+    assignedTo?: string[]; // Array of Employee IDs assigned to this location
 };
 
 // --- Level 1: Company / Account ---
@@ -194,6 +195,7 @@ export const mockCompanies: Company[] = [
                 googleMapLink: 'https://maps.app.goo.gl/example1',
                 lat: 13.7563,
                 lng: 100.5018,
+                assignedTo: ['1', '2'], // Assigned to Somchai and Somsri
                 contacts: [
                     { id: 'ct1', name: 'Manager John', role: 'Branch Manager', phone: '081-234-5678', lineId: 'john711' }
                 ]
@@ -208,6 +210,7 @@ export const mockCompanies: Company[] = [
                 googleMapLink: 'https://maps.app.goo.gl/example2',
                 lat: 13.7291,
                 lng: 100.5358,
+                assignedTo: ['3'], // Assigned to Danai
                 contacts: [
                     { id: 'ct2', name: 'Asst. Jane', role: 'Asst. Manager', phone: '089-876-5432' }
                 ]

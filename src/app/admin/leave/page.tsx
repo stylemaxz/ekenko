@@ -39,10 +39,46 @@ export default function AdminLeaveManagementPage() {
     rejected: leaveRequests.filter(r => r.status === "rejected").length,
   };
 
-  const handleReview = (request: LeaveRequest, action: 'approve' | 'reject') => {
+  const handleViewDetails = (request: LeaveRequest) => {
     setSelectedRequest(request);
-    setReviewNote("");
+    setReviewNote(request.reviewNote || "");
     setReviewModalOpen(true);
+  };
+
+  const handleApprove = (request: LeaveRequest) => {
+    const updatedRequest: LeaveRequest = {
+      ...request,
+      status: 'approved',
+      reviewedBy: '4', // Mock manager ID
+      reviewedAt: new Date().toISOString(),
+    };
+
+    setLeaveRequests(prev => 
+      prev.map(req => req.id === request.id ? updatedRequest : req)
+    );
+
+    showToast(
+      language === 'th' ? 'อนุมัติการลาเรียบร้อย' : 'Leave approved successfully', 
+      'success'
+    );
+  };
+
+  const handleReject = (request: LeaveRequest) => {
+    const updatedRequest: LeaveRequest = {
+      ...request,
+      status: 'rejected',
+      reviewedBy: '4', // Mock manager ID
+      reviewedAt: new Date().toISOString(),
+    };
+
+    setLeaveRequests(prev => 
+      prev.map(req => req.id === request.id ? updatedRequest : req)
+    );
+
+    showToast(
+      language === 'th' ? 'ไม่อนุมัติการลาเรียบร้อย' : 'Leave rejected successfully', 
+      'success'
+    );
   };
 
   const handleSubmitReview = (action: 'approve' | 'reject') => {
@@ -197,20 +233,23 @@ export default function AdminLeaveManagementPage() {
 
               {/* Actions */}
               <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                <div className="text-xs text-slate-400">
-                  {format(new Date(request.createdAt), "d MMM yyyy HH:mm", { locale })}
-                </div>
+                <button
+                  onClick={() => handleViewDetails(request)}
+                  className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                >
+                  {language === 'th' ? 'ดูรายละเอียด' : 'View Details'}
+                </button>
                 
                 {request.status === 'pending' && (
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleReview(request, 'reject')}
+                      onClick={() => handleReject(request)}
                       className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
                     >
                       {t('reject')}
                     </button>
                     <button
-                      onClick={() => handleReview(request, 'approve')}
+                      onClick={() => handleApprove(request)}
                       className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
                     >
                       {t('approve')}

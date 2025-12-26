@@ -9,9 +9,11 @@ import {
   Trash2, 
   Save, 
   User, 
-  Edit
+  Edit,
+  UserPlus,
+  Check
 } from "lucide-react";
-import { mockCompanies, Company, Location, ContactPerson } from "@/utils/mockData";
+import { mockCompanies, Company, Location, ContactPerson, mockEmployees } from "@/utils/mockData";
 import { clsx } from "clsx";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -481,35 +483,76 @@ export default function CustomersPage() {
                                               placeholder="https://maps.app.goo.gl/..."
                                           />
                                       </div>
-                                 </div>
-                                 
-                                 
-                                 {/* Simple Contact for Branch */}
-                                 <div className="bg-white p-3 rounded-lg border border-slate-100">
-                                     <div className="text-xs font-bold text-indigo-600 mb-2">{t('contact_person')}</div>
-                                     <div className="grid grid-cols-3 gap-2">
-                                          <input 
-                                              value={loc.contacts[0]?.name || ''}
-                                              onChange={(e) => updateContact(idx, 'name', e.target.value)}
-                                              className="input h-8 text-xs"
-                                              placeholder="Name"
-                                          />
-                                          <input 
-                                              value={loc.contacts[0]?.role || ''}
-                                              onChange={(e) => updateContact(idx, 'role', e.target.value)}
-                                              className="input h-8 text-xs"
-                                              placeholder="Role"
-                                          />
-                                          <input 
-                                              value={loc.contacts[0]?.phone || ''}
-                                              onChange={(e) => updateContact(idx, 'phone', e.target.value)}
-                                              className="input h-8 text-xs"
-                                              placeholder="Phone"
-                                          />
-                                     </div>
-                                 </div>
-                             </div>
-                         ))}
+
+                                      {/* Assigned Sales Representatives */}
+                                      <div>
+                                          <label className="text-xs font-semibold text-slate-500 uppercase mb-2 block flex items-center gap-2">
+                                              <UserPlus size={14} className="text-teal-600" />
+                                              {language === 'th' ? 'พนักงานดูแล' : 'Assigned Sales'}
+                                          </label>
+                                          <div className="flex flex-wrap gap-2">
+                                              {mockEmployees.filter(e => e.role === 'sales').map(emp => {
+                                                  const isAssigned = (loc.assignedTo || []).includes(emp.id);
+                                                  return (
+                                                      <button
+                                                          key={emp.id}
+                                                          onClick={() => {
+                                                              if (editingCompany) {
+                                                                  const newLocs = [...editingCompany.locations];
+                                                                  const currentAssigned = newLocs[idx].assignedTo || [];
+                                                                  
+                                                                  if (isAssigned) {
+                                                                      // Remove
+                                                                      newLocs[idx].assignedTo = currentAssigned.filter(id => id !== emp.id);
+                                                                  } else {
+                                                                      // Add
+                                                                      newLocs[idx].assignedTo = [...currentAssigned, emp.id];
+                                                                  }
+                                                                  setEditingCompany({ ...editingCompany, locations: newLocs });
+                                                              }
+                                                          }}
+                                                          className={clsx(
+                                                              "px-3 py-1.5 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5",
+                                                              isAssigned 
+                                                                  ? "bg-teal-50 border-teal-200 text-teal-700 shadow-sm" 
+                                                                  : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                                                          )}
+                                                      >
+                                                          {isAssigned && <Check size={12} className="text-teal-600" />}
+                                                          {emp.name}
+                                                      </button>
+                                                  );
+                                              })}
+                                          </div>
+                                      </div>
+                                  
+                                      {/* Simple Contact for Branch */}
+                                      <div className="bg-white p-3 rounded-lg border border-slate-100">
+                                          <div className="text-xs font-bold text-indigo-600 mb-2">{t('contact_person')}</div>
+                                          <div className="grid grid-cols-3 gap-2">
+                                              <input 
+                                                  value={loc.contacts[0]?.name || ''}
+                                                  onChange={(e) => updateContact(idx, 'name', e.target.value)}
+                                                  className="input h-8 text-xs"
+                                                  placeholder="Name"
+                                              />
+                                              <input 
+                                                  value={loc.contacts[0]?.role || ''}
+                                                  onChange={(e) => updateContact(idx, 'role', e.target.value)}
+                                                  className="input h-8 text-xs"
+                                                  placeholder="Role"
+                                              />
+                                              <input 
+                                                  value={loc.contacts[0]?.phone || ''}
+                                                  onChange={(e) => updateContact(idx, 'phone', e.target.value)}
+                                                  className="input h-8 text-xs"
+                                                  placeholder="Phone"
+                                              />
+                                          </div>
+                                      </div>
+                                  </div> {/* End space-y-4 */}
+                              </div> 
+                          ))}
                          {editingCompany.locations.length === 0 && (
                              <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-sm">
                                  No branches added yet.

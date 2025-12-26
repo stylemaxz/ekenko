@@ -373,7 +373,7 @@ export const translations = {
         // Customer Management
         company_info: "ข้อมูลบริษัท",
         tax_id: "เลขผู้เสียภาษี",
-        grade: "เกดรลูกค้า",
+        grade: "เกรดลูกค้า",
         branches: "สาขา / Locations",
         add_branch: "เพิ่มสาขา",
         branch_name: "ชื่อสาขา",

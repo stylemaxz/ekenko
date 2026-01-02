@@ -34,7 +34,13 @@ export default function DashboardPage() {
     const now = new Date();
     setCurrentMonth(now.getMonth());
     setCurrentYear(now.getFullYear());
-    setLastUpdated(now.toLocaleTimeString());
+    setLastUpdated(now.toLocaleString('th-TH', { 
+      year: 'numeric',
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit', 
+      minute: '2-digit' 
+    }));
     
     // Default range: Beginning of month to End of month
     const start = new Date(now.getFullYear(), now.getMonth(), 1);

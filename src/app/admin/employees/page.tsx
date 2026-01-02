@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Plus, Search, Trash2, Edit, User, Mail, Phone, Save, X } from "lucide-react";
-import { mockEmployees, Employee } from "@/utils/mockData";
+import { Employee } from "@/utils/mockData";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/contexts/ToastContext";
@@ -13,7 +13,8 @@ export default function EmployeesPage() {
   const { t } = useLanguage();
   const { showToast } = useToast();
   
-  const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   
   // Modal States
@@ -23,6 +24,25 @@ export default function EmployeesPage() {
   // Delete Dialog States
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<string | null>(null);
+
+  // Fetch employees from API
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  const fetchEmployees = async () => {
+    try {
+      const res = await fetch('/api/employees');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setEmployees(data);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      showToast('Failed to load employees', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredEmployees = employees.filter(
     (emp) =>
@@ -57,15 +77,27 @@ export default function EmployeesPage() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (employeeToDelete) {
-        setEmployees(prev => prev.filter(e => e.id !== employeeToDelete));
-        showToast(t('delete_success'), 'success');
-        setEmployeeToDelete(null);
+        try {
+            const res = await fetch(`/api/employees/${employeeToDelete}`, {
+                method: 'DELETE',
+            });
+            
+            if (!res.ok) throw new Error('Delete failed');
+            
+            showToast(t('delete_success'), 'success');
+            setEmployeeToDelete(null);
+            setIsDeleteDialogOpen(false);
+            fetchEmployees(); // Refresh list
+        } catch (error) {
+            console.error(error);
+            showToast('Failed to delete employee', 'error');
+        }
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
       // Basic validation
       if (!currentEmployee.name || !currentEmployee.email || !currentEmployee.username) {
           showToast(t('fill_required'), 'error');
@@ -79,26 +111,40 @@ export default function EmployeesPage() {
          return;
       }
 
-      if (employees.some(e => e.id === currentEmployee.id)) {
-          // Update
-          setEmployees(prev => prev.map(e => {
-              if (e.id === currentEmployee.id) {
-                  const updated = { ...currentEmployee } as Employee;
-                  // Keep old password if blank
-                  if (!updated.password) {
-                      updated.password = e.password;
-                  }
-                  return updated;
+      try {
+          if (isNew) {
+              // Create
+              const res = await fetch('/api/employees', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(currentEmployee),
+              });
+              
+              if (!res.ok) {
+                  const error = await res.json();
+                  throw new Error(error.error || 'Failed to create');
               }
-              return e;
-          }));
-      } else {
-          // Create
-          setEmployees(prev => [...prev, currentEmployee as Employee]);
+          } else {
+              // Update
+              const res = await fetch(`/api/employees/${currentEmployee.id}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(currentEmployee),
+              });
+              
+              if (!res.ok) {
+                  const error = await res.json();
+                  throw new Error(error.error || 'Failed to update');
+              }
+          }
+          
+          setIsModalOpen(false);
+          showToast(t('save_success'), 'success');
+          fetchEmployees(); // Refresh list
+      } catch (error: any) {
+          console.error(error);
+          showToast(error.message || 'Failed to save', 'error');
       }
-      
-      setIsModalOpen(false);
-      showToast(t('save_success'), 'success');
   };
 
   return (
@@ -229,13 +275,40 @@ export default function EmployeesPage() {
               {/* Profile Image & Basic Info */}
               <div className="flex gap-6 items-start">
                    <div className="shrink-0 flex flex-col items-center gap-2">
-                       <div 
-                           onClick={() => {
-                               // Mock Image Upload
-                               const mockUrl = `https://i.pravatar.cc/150?u=${Date.now()}`;
-                               setCurrentEmployee({...currentEmployee, avatar: mockUrl});
-                               showToast("Image uploaded successfully (Mock)", "success");
+                       <input 
+                           type="file"
+                           accept="image/*"
+                           id="avatar-upload"
+                           className="hidden"
+                           onChange={async (e) => {
+                               if (e.target.files && e.target.files[0]) {
+                                   const file = e.target.files[0];
+                                   showToast('Uploading avatar...', 'info');
+                                   
+                                   try {
+                                       const formData = new FormData();
+                                       formData.append('file', file);
+                                       formData.append('folder', 'avatars');
+
+                                       const res = await fetch('/api/upload', {
+                                           method: 'POST',
+                                           body: formData,
+                                       });
+
+                                       if (!res.ok) throw new Error('Upload failed');
+
+                                       const data = await res.json();
+                                       setCurrentEmployee({...currentEmployee, avatar: data.url});
+                                       showToast('Avatar uploaded successfully', 'success');
+                                   } catch (error) {
+                                       console.error(error);
+                                       showToast('Failed to upload avatar', 'error');
+                                   }
+                               }
                            }}
+                       />
+                       <label 
+                           htmlFor="avatar-upload"
                            className="w-24 h-24 rounded-full bg-slate-100 border border-slate-200 overflow-hidden relative group cursor-pointer hover:border-indigo-400 transition-colors"
                         >
                            {currentEmployee.avatar ? (
@@ -255,8 +328,8 @@ export default function EmployeesPage() {
                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                <Plus className="text-white opacity-80" size={24} />
                            </div>
-                       </div>
-                       <span className="text-xs text-indigo-600 font-medium cursor-pointer">Click to Upload</span>
+                       </label>
+                       <label htmlFor="avatar-upload" className="text-xs text-indigo-600 font-medium cursor-pointer hover:underline">Click to Upload</label>
                    </div>
 
                    <div className="flex-1 space-y-4">

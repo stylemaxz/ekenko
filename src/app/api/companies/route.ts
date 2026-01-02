@@ -1,23 +1,36 @@
 
 import { NextResponse } from 'next/server';
 import { companyService } from '@/services/companyService';
+import { getSession } from '@/lib/auth';
 
 export async function GET() {
     try {
+        const session = await getSession();
+        if (!session) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const companies = await companyService.getAllCompanies();
         return NextResponse.json(companies);
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error('Error fetching companies:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
-        // In a real app, validate body using Zod here
-        const newCompany = await companyService.createCompany(body);
-        return NextResponse.json(newCompany, { status: 201 });
+        const session = await getSession();
+        if (!session || session.role !== 'manager') {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const data = await request.json();
+        const company = await companyService.createCompany(data);
+
+        return NextResponse.json(company, { status: 201 });
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        console.error('Error creating company:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

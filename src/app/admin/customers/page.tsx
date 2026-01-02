@@ -175,27 +175,78 @@ export default function CustomersPage() {
       setIsDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
       if (companyToDelete) {
-          setCompanies(prev => prev.filter(c => c.id !== companyToDelete));
-          showToast(t('delete_success'), 'success');
-          setCompanyToDelete(null);
+          try {
+              const res = await fetch(`/api/companies/${companyToDelete}`, {
+                  method: 'DELETE',
+              });
+              
+              if (!res.ok) throw new Error('Delete failed');
+              
+              showToast(t('delete_success'), 'success');
+              setCompanyToDelete(null);
+              setIsDeleteDialogOpen(false);
+              
+              // Refresh companies list
+              const refreshRes = await fetch('/api/companies');
+              if (refreshRes.ok) {
+                  const data = await refreshRes.json();
+                  setCompanies(data);
+              }
+          } catch (error) {
+              console.error(error);
+              showToast('Failed to delete company', 'error');
+          }
       }
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!editingCompany) return;
 
-      if (companies.some(c => c.id === editingCompany.id)) {
-          // Update
-          setCompanies(prev => prev.map(c => c.id === editingCompany.id ? editingCompany : c));
-      } else {
-          // Create
-          setCompanies(prev => [...prev, { ...editingCompany, id: `c_${Date.now()}` }]);
+      try {
+          const isExisting = companies.some(c => c.id === editingCompany.id);
+          
+          if (isExisting) {
+              // Update
+              const res = await fetch(`/api/companies/${editingCompany.id}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(editingCompany),
+              });
+              
+              if (!res.ok) {
+                  const error = await res.json();
+                  throw new Error(error.error || 'Failed to update');
+              }
+          } else {
+              // Create
+              const res = await fetch('/api/companies', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(editingCompany),
+              });
+              
+              if (!res.ok) {
+                  const error = await res.json();
+                  throw new Error(error.error || 'Failed to create');
+              }
+          }
+          
+          setIsModalOpen(false);
+          showToast(t('save_success'), 'success');
+          
+          // Refresh companies list
+          const res = await fetch('/api/companies');
+          if (res.ok) {
+              const data = await res.json();
+              setCompanies(data);
+          }
+      } catch (error: any) {
+          console.error(error);
+          showToast(error.message || 'Failed to save', 'error');
       }
-      setIsModalOpen(false);
-      showToast(t('save_success'), 'success');
   };
 
   // --- Helpers to update editingCompany state ---

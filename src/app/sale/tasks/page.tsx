@@ -9,7 +9,8 @@ import {
   Calendar as CalendarIcon,
   MapPin,
   Building2,
-  ChevronRight
+  ChevronRight,
+  AlertCircle
 } from "lucide-react";
 import { mockTasks, mockCompanies, mockEmployees, Task } from "@/utils/mockData";
 import { clsx } from "clsx";
@@ -31,7 +32,16 @@ export default function SaleTasksPage() {
 
   const filteredTasks = myTasks.filter(task => {
     if (statusFilter === "all") return true;
+    if (statusFilter === "all") return true;
     return task.status === statusFilter;
+  }).sort((a,b) => {
+    // 1. Sort by Priority
+    const priorityWeight = { high: 3, medium: 2, low: 1 };
+    const pDiff = (priorityWeight[b.priority || 'medium'] || 2) - (priorityWeight[a.priority || 'medium'] || 2);
+    if (pDiff !== 0) return pDiff;
+
+    // 2. Sort by Due Date (Ascending - urgent first)
+    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
   });
 
   const statusCounts = {
@@ -107,20 +117,36 @@ export default function SaleTasksPage() {
             const company = mockCompanies.find(c => c.id === task.customerId);
             const location = company?.locations.find(l => l.id === task.locationId);
             const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'completed';
+            const priorityColors = {
+              high: "bg-red-50 text-red-600 border-red-200",
+              medium: "bg-amber-50 text-amber-600 border-amber-200",
+              low: "bg-blue-50 text-blue-600 border-blue-200"
+            };
 
             return (
               <div
                 key={task.id}
-                className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm active:scale-[0.99] transition-transform"
+                className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm active:scale-[0.99] transition-transform relative overflow-hidden"
               >
+                {/* Priority Stripe for High Priority */}
+                {task.priority === 'high' && <div className="absolute top-0 left-0 bottom-0 w-1 bg-red-500"></div>}
+
                 {/* Header */}
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-3 pl-2">
                   <div className="flex items-start gap-3 flex-1">
                     <div className="mt-0.5">
                       {getStatusIcon(isOverdue ? 'overdue' : task.status)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-slate-900 mb-1">{task.title}</h3>
+                       <div className="flex items-center gap-2 mb-1">
+                          <span className={clsx(
+                              "text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider",
+                              priorityColors[task.priority || 'medium']
+                          )}>
+                              {task.priority === 'high' ? 'HIGH' : task.priority === 'medium' ? 'MED' : 'LOW'}
+                          </span>
+                          <h3 className="font-bold text-slate-900 truncate">{task.title}</h3>
+                       </div>
                       {task.description && (
                         <p className="text-sm text-slate-600 line-clamp-2">{task.description}</p>
                       )}

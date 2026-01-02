@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Plus, Search, Trash2, Edit, User, Mail, Phone, Save, X } from "lucide-react";
 import { mockEmployees, Employee } from "@/utils/mockData";
@@ -147,7 +148,14 @@ export default function EmployeesPage() {
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       {emp.avatar ? (
-                          <img src={emp.avatar} alt={emp.name} className="w-10 h-10 rounded-full object-cover border border-slate-200" />
+                          <Image 
+                            src={emp.avatar} 
+                            alt={emp.name} 
+                            width={40}
+                            height={40}
+                            className="w-10 h-10 rounded-full object-cover border border-slate-200" 
+                            unoptimized
+                          />
                       ) : (
                           <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shadow-sm">
                             {emp.name.charAt(0)}
@@ -231,14 +239,20 @@ export default function EmployeesPage() {
                            className="w-24 h-24 rounded-full bg-slate-100 border border-slate-200 overflow-hidden relative group cursor-pointer hover:border-indigo-400 transition-colors"
                         >
                            {currentEmployee.avatar ? (
-                               <img src={currentEmployee.avatar} alt="Profile" className="w-full h-full object-cover" />
+                               <Image 
+                                   src={currentEmployee.avatar} 
+                                   alt="Profile" 
+                                   fill
+                                   className="object-cover"
+                                   unoptimized
+                               />
                            ) : (
                                <div className="w-full h-full flex items-center justify-center text-slate-300">
                                    <User size={40} />
                                </div>
                            )}
                            {/* Upload Overlay */}
-                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                <Plus className="text-white opacity-80" size={24} />
                            </div>
                        </div>

@@ -2,7 +2,8 @@
 
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
-import { LogOut, ChevronRight, Globe } from "lucide-react";
+import Image from "next/image";
+import { LogOut, ChevronRight, Globe, User } from "lucide-react";
 
 export default function SaleProfilePage() {
   const { t, setLanguage, language } = useLanguage();
@@ -25,9 +26,15 @@ export default function SaleProfilePage() {
   return (
     <div className="pb-24 pt-8 px-4 bg-slate-50 min-h-screen">
        <div className="flex flex-col items-center mb-8">
-           <div className="w-24 h-24 rounded-full bg-slate-200 border-4 border-white shadow-md mb-4 overflow-hidden">
+           <div className="w-24 h-24 rounded-full bg-slate-200 border-4 border-white shadow-md mb-4 overflow-hidden relative">
                {/* Placeholder Avatar */}
-               <img src="https://i.pravatar.cc/150?u=1" alt="Profile" className="w-full h-full object-cover" />
+               <Image 
+                  src="https://i.pravatar.cc/150?u=1" 
+                  alt="Profile" 
+                  fill
+                  className="object-cover"
+                  unoptimized // External mock image
+               />
            </div>
            <h2 className="text-xl font-bold text-slate-900">Somchai Salesman</h2>
            <p className="text-slate-500">Sales Representative</p>

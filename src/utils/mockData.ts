@@ -10,9 +10,16 @@ export type ContactPerson = {
 // --- Level 2: Branch / Location ---
 export type CustomerStatus = 'active' | 'closed' | 'inactive';
 
+export type LocationStatus = CompanyStatus;
+
+export type CustomerType = 'individual' | 'juristic';
+export type VatType = 'ex-vat' | 'in-vat' | 'non-vat';
+
 export type Location = {
     id: string;
-    name: string; // e.g. "Siam Paragon Branch"
+    code?: string; // Store Code
+    status?: LocationStatus; // Branch specific status
+    name: string; // e.g. "Siam Paragon Branch" (Internal/Display Name)
     address: string;
     postalCode?: string;
     district?: string;
@@ -21,15 +28,26 @@ export type Location = {
     lat: number;
     lng: number;
     contacts: ContactPerson[]; // People at this branch
-    customerStatus?: CustomerStatus; // Status for sales tracking
-    statusNote?: string; // Note when status changes
-    createdBy?: string; // Employee ID who created this location
     assignedTo?: string[]; // Array of Employee IDs assigned to this location
+
+    // --- Active Customer Additional Fields ---
+    officialName?: string; // ชื่อร้านค้า (เป็นทางการ)
+    customerType?: CustomerType; // ประเภทลูกค้า
+    ownerName?: string; // ชื่อเจ้าของร้าน หรือกรรมการ
+    ownerPhone?: string; // เบอร์โทรเจ้าของร้าน หรือกรรมการ
+    documents?: string[]; // Attached documents (max 6)
+    shippingAddress?: string; // ที่อยู่จัดส่ง
+    receiverName?: string;
+    receiverPhone?: string;
+    creditTerm?: number; // 0, 5, 15, 30, 45, 60, 90
+    vatType?: VatType;
+    promotionNotes?: string; // โปรโมชั่นการขาย และราคา
+    notes?: string; // Note (General)
 };
 
 // --- Level 1: Company / Account ---
 export type CompanyGrade = 'A' | 'B' | 'C';
-export type CompanyStatus = 'existing' | 'lead' | 'inactive';
+export type CompanyStatus = 'existing' | 'lead' | 'inactive' | 'closed' | 'terminate';
 
 export type Company = {
     id: string;
@@ -131,6 +149,7 @@ export type Task = {
     customerId?: string; // Company ID
     locationId?: string; // Location ID
     dueDate: string; // ISO Date String
+    priority: 'low' | 'medium' | 'high';
     status: TaskStatus;
     createdAt: string;
 };
@@ -145,6 +164,7 @@ export const mockTasks: Task[] = [
         customerId: 'c1', // Big Shop 7-11
         locationId: 'l1', // Main Branch
         dueDate: new Date(new Date().setDate(new Date().getDate() + 1)).toISOString(), // Tomorrow
+        priority: 'medium',
         status: 'pending',
         createdAt: new Date().toISOString()
     },
@@ -155,6 +175,7 @@ export const mockTasks: Task[] = [
         assigneeId: '2', // Somsri
         customerId: 'c3',
         dueDate: new Date().toISOString(), // Today
+        priority: 'low',
         status: 'in_progress',
         createdAt: new Date().toISOString()
     },
@@ -166,6 +187,7 @@ export const mockTasks: Task[] = [
         customerId: 'c2',
         locationId: 'l3',
         dueDate: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(), // Yesterday
+        priority: 'high',
         status: 'overdue',
         createdAt: new Date().toISOString()
     }

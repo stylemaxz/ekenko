@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { 
   Search, 
@@ -14,7 +15,9 @@ import {
   Check,
   Upload,
   Image as ImageIcon,
-  X
+  X,
+  FileText,
+  CheckCircle2
 } from "lucide-react";
 import { mockCompanies, Company, Location, ContactPerson, mockEmployees } from "@/utils/mockData";
 import { clsx } from "clsx";
@@ -106,6 +109,8 @@ export default function CustomersPage() {
     if (editingCompany) {
         const newBranch: Location = {
             id: `loc_${Date.now()}`,
+            code: "",
+            status: "lead",
             name: "",
             address: "",
             postalCode: "",
@@ -113,7 +118,8 @@ export default function CustomersPage() {
             province: "",
             lat: 13.75,
             lng: 100.50,
-            contacts: []
+            contacts: [],
+            documents: []
         };
         setEditingCompany({
             ...editingCompany,
@@ -153,19 +159,36 @@ export default function CustomersPage() {
       }
   };
 
-  // Minimal contact management for now: just 1 contact per branch for editing simplicity in this sprint
-  const updateContact = (locIndex: number, field: keyof ContactPerson, value: any) => {
+  const addContact = (locIndex: number) => {
+      if (editingCompany) {
+          const newLocs = [...editingCompany.locations];
+          newLocs[locIndex].contacts.push({
+              id: `ct_${Date.now()}`,
+              name: "",
+              role: "",
+              phone: ""
+          });
+          setEditingCompany({ ...editingCompany, locations: newLocs });
+      }
+  };
+
+  const removeContact = (locIndex: number, contactIndex: number) => {
+      if (editingCompany) {
+          const newLocs = [...editingCompany.locations];
+          newLocs[locIndex].contacts = newLocs[locIndex].contacts.filter((_, i) => i !== contactIndex);
+          setEditingCompany({ ...editingCompany, locations: newLocs });
+      }
+  };
+
+  const updateContact = (locIndex: number, contactIndex: number, field: keyof ContactPerson, value: any) => {
       if (editingCompany) {
             const newLocs = [...editingCompany.locations];
             const currentContacts = newLocs[locIndex].contacts;
             
-            if (currentContacts.length === 0) {
-                // Create potentially empty contact if typing
-                currentContacts.push({ id: `ct_${Date.now()}`, name: "", role: "", phone: "" });
+            if (currentContacts[contactIndex]) {
+                currentContacts[contactIndex] = { ...currentContacts[contactIndex], [field]: value };
+                setEditingCompany({ ...editingCompany, locations: newLocs });
             }
-            
-            currentContacts[0] = { ...currentContacts[0], [field]: value };
-            setEditingCompany({ ...editingCompany, locations: newLocs });
       }
   };
 
@@ -224,11 +247,18 @@ export default function CustomersPage() {
                  <div className="flex justify-between items-start mb-4 pr-16">
                      <div className="flex items-start gap-3">
                          <div className={clsx(
-                             "w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm overflow-hidden",
+                             "w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm overflow-hidden relative",
                              company.status === 'existing' ? "bg-indigo-100 text-indigo-600" : "bg-teal-100 text-teal-600"
                          )}>
                              {company.logo ? (
-                                 <img src={company.logo} alt={company.name} className="w-full h-full object-cover" />
+                                 <Image 
+                                    src={company.logo} 
+                                    alt={company.name} 
+                                    width={48} 
+                                    height={48} 
+                                    className="w-full h-full object-cover" 
+                                    unoptimized
+                                 />
                              ) : (
                                  company.name.substring(0, 1)
                              )}
@@ -246,9 +276,12 @@ export default function CustomersPage() {
                                  </span>
                                  <span className={clsx(
                                      "text-[10px] px-1.5 py-0.5 rounded border font-bold uppercase",
-                                     company.status === 'existing' ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                     company.status === 'existing' ? "bg-green-50 text-green-700 border-green-200" :
+                                     company.status === 'lead' ? "bg-blue-50 text-blue-700 border-blue-200" :
+                                     (company.status === 'closed' || company.status === 'inactive' || company.status === 'terminate') ? "bg-red-50 text-red-700 border-red-200" :
+                                     "bg-slate-50 text-slate-600 border-slate-200"
                                      )}>
-                                     {company.status === 'existing' ? t('status_existing') : t('status_new')}
+                                     {t(`status_${company.status}` as any)}
                                  </span>
                              </div>
                          </div>
@@ -346,8 +379,14 @@ export default function CustomersPage() {
                         />
                         {editingCompany.logo ? (
                             <>
-                                <img src={editingCompany.logo} alt="Logo" className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Image
+                                    src={editingCompany.logo} 
+                                    alt="Logo" 
+                                    fill
+                                    className="object-cover" 
+                                    unoptimized
+                                />
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
                                     <Edit className="text-white" size={20} />
                                 </div>
                             </>
@@ -360,7 +399,7 @@ export default function CustomersPage() {
                         {editingCompany.logo && (
                             <button 
                                 onClick={(e) => { e.preventDefault(); setEditingCompany({...editingCompany, logo: undefined}); }}
-                                className="absolute top-1 right-1 bg-white/80 p-0.5 rounded-full text-slate-600 hover:text-red-500 z-20"
+                                className="absolute top-1 right-1 bg-white/80 p-0.5 rounded-full text-slate-600 hover:text-red-500 z-30"
                             >
                                 <X size={12} />
                             </button>
@@ -413,9 +452,11 @@ export default function CustomersPage() {
                             onChange={(e) => updateField('status', e.target.value)}
                             className="input w-full"
                          >
+                             <option value="lead">{t('status_lead')}</option>
                              <option value="existing">{t('status_existing')}</option>
-                             <option value="lead">{t('status_new')}</option>
-                             <option value="inactive">Inactive</option>
+                             <option value="closed">{t('status_closed')}</option>
+                             <option value="inactive">{t('status_inactive')}</option>
+                             <option value="terminate">{t('status_terminate')}</option>
                          </select>
                      </div>
                  </div>
@@ -441,15 +482,238 @@ export default function CustomersPage() {
                                  </button>
                                  
                                   <div className="space-y-4 mb-4">
+                                      <div className="grid grid-cols-2 gap-4">
+                                          <div>
+                                              <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">{t('store_code')}</label>
+                                              <input 
+                                                  value={loc.code || ''}
+                                                  onChange={(e) => updateBranch(idx, 'code', e.target.value)}
+                                                  className="input w-full bg-white h-9 text-sm"
+                                                  placeholder="e.g. S001"
+                                              />
+                                          </div>
+                                          <div>
+                                              <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">{t('status')}</label>
+                                              <select 
+                                                  value={loc.status || 'lead'}
+                                                  onChange={(e) => updateBranch(idx, 'status', e.target.value)}
+                                                  className={clsx(
+                                                      "input w-full bg-white h-9 text-xs font-medium",
+                                                      loc.status === 'existing' ? "text-green-600 border-green-200 bg-green-50" :
+                                                      loc.status === 'lead' ? "text-blue-600 border-blue-200 bg-blue-50" :
+                                                      "text-slate-600"
+                                                  )}
+                                              >
+                                                  <option value="lead">{t('status_lead')}</option>
+                                                  <option value="existing">{t('status_existing')}</option>
+                                                  <option value="closed">{t('status_closed')}</option>
+                                                  <option value="inactive">{t('status_inactive')}</option>
+                                                  <option value="terminate">{t('status_terminate')}</option>
+                                              </select>
+                                          </div>
+                                      </div>
+
                                       <div>
                                           <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">{t('branch_name')}</label>
                                           <input 
                                               value={loc.name}
                                               onChange={(e) => updateBranch(idx, 'name', e.target.value)}
                                               className="input w-full bg-white h-9 text-sm"
-                                              placeholder="Branch Name"
+                                              placeholder="Branch Name (Internal)"
                                           />
                                       </div>
+
+                                      {/* --- DETAILED FIELDS FOR ACTIVE CUSTOMERS --- */}
+                                      {loc.status === 'existing' && (
+                                          <div className="p-4 bg-green-50/50 rounded-lg border border-green-100 space-y-4">
+                                              <div className="text-xs font-bold text-green-700 uppercase tracking-wider mb-2 border-b border-green-200 pb-2 flex items-center gap-2">
+                                                  <CheckCircle2 size={14} />
+                                                  Active Customer Details
+                                              </div>
+                                              
+                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                  <div>
+                                                      <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('official_name')}</label>
+                                                      <input 
+                                                          value={loc.officialName || ''}
+                                                          onChange={(e) => updateBranch(idx, 'officialName', e.target.value)}
+                                                          className="input w-full bg-white h-8 text-xs"
+                                                          placeholder="Official Registered Name"
+                                                      />
+                                                  </div>
+                                                  <div>
+                                                      <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('customer_type')}</label>
+                                                      <div className="flex gap-4 pt-1">
+                                                          <label className="flex items-center gap-2 cursor-pointer">
+                                                              <input 
+                                                                  type="radio" 
+                                                                  name={`ctype_${idx}`}
+                                                                  checked={loc.customerType === 'individual'} 
+                                                                  onChange={() => updateBranch(idx, 'customerType', 'individual')}
+                                                                  className="text-green-600 focus:ring-green-500"
+                                                              />
+                                                              <span className="text-xs text-slate-700">{t('cust_individual')}</span>
+                                                          </label>
+                                                          <label className="flex items-center gap-2 cursor-pointer">
+                                                              <input 
+                                                                  type="radio" 
+                                                                  name={`ctype_${idx}`}
+                                                                  checked={loc.customerType === 'juristic'}
+                                                                  onChange={() => updateBranch(idx, 'customerType', 'juristic')}
+                                                                  className="text-green-600 focus:ring-green-500"
+                                                              />
+                                                              <span className="text-xs text-slate-700">{t('cust_juristic')}</span>
+                                                          </label>
+                                                      </div>
+                                                  </div>
+                                              </div>
+
+                                              <div className="grid grid-cols-2 gap-4">
+                                                  <div>
+                                                      <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('owner_name')}</label>
+                                                      <input 
+                                                          value={loc.ownerName || ''}
+                                                          onChange={(e) => updateBranch(idx, 'ownerName', e.target.value)}
+                                                          className="input w-full bg-white h-8 text-xs"
+                                                      />
+                                                  </div>
+                                                  <div>
+                                                      <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('owner_phone')}</label>
+                                                      <input 
+                                                          value={loc.ownerPhone || ''}
+                                                          onChange={(e) => updateBranch(idx, 'ownerPhone', e.target.value)}
+                                                          className="input w-full bg-white h-8 text-xs"
+                                                      />
+                                                  </div>
+                                              </div>
+
+                                              {/* Documents Upload */}
+                                              <div>
+                                                  <label className="text-[10px] font-semibold text-slate-500 uppercase mb-2 block">{t('documents_upload')} (Max 6)</label>
+                                                  <div className="flex flex-wrap gap-2">
+                                                      {(loc.documents || []).map((doc, docIdx) => (
+                                                          <div key={docIdx} className="relative w-16 h-16 bg-white border border-slate-200 rounded flex items-center justify-center group overflow-hidden">
+                                                              {doc.startsWith('data:image') ? (
+                                                                  <Image src={doc} alt="Doc" fill className="object-cover" unoptimized />
+                                                              ) : (
+                                                                  <div className="text-center p-1">
+                                                                      <FileText size={20} className="mx-auto text-slate-400" />
+                                                                      <span className="text-[8px] text-slate-400 block truncate w-14">File {docIdx+1}</span>
+                                                                  </div>
+                                                              )}
+                                                              <button 
+                                                                  onClick={() => {
+                                                                      const newDocs = (loc.documents || []).filter((_, i) => i !== docIdx);
+                                                                      updateBranch(idx, 'documents', newDocs);
+                                                                  }}
+                                                                  className="absolute top-0 right-0 p-0.5 bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                                              >
+                                                                  <X size={10} />
+                                                              </button>
+                                                          </div>
+                                                      ))}
+                                                      
+                                                      {(loc.documents?.length || 0) < 6 && (
+                                                          <label className="w-16 h-16 border-2 border-dashed border-green-200 rounded flex flex-col items-center justify-center text-green-400 hover:text-green-600 hover:border-green-400 hover:bg-green-50 cursor-pointer transition-all">
+                                                              <Plus size={16} />
+                                                              <span className="text-[8px] font-bold">ADD</span>
+                                                              <input 
+                                                                  type="file" 
+                                                                  accept="image/*,application/pdf"
+                                                                  className="hidden"
+                                                                  onChange={(e) => {
+                                                                      if (e.target.files && e.target.files[0]) {
+                                                                          const file = e.target.files[0];
+                                                                          // Mock upload - convert to dataURL
+                                                                          const reader = new FileReader();
+                                                                          reader.onloadend = () => {
+                                                                              const newDocs = [...(loc.documents || []), reader.result as string];
+                                                                              updateBranch(idx, 'documents', newDocs);
+                                                                          };
+                                                                          reader.readAsDataURL(file);
+                                                                      }
+                                                                  }}
+                                                              />
+                                                          </label>
+                                                      )}
+                                                  </div>
+                                              </div>
+
+                                              {/* Shipping Info */}
+                                              <div>
+                                                  <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('shipping_address')}</label>
+                                                  <input 
+                                                      value={loc.shippingAddress || ''}
+                                                      onChange={(e) => updateBranch(idx, 'shippingAddress', e.target.value)}
+                                                      className="input w-full bg-white h-8 text-xs"
+                                                  />
+                                              </div>
+                                              <div className="grid grid-cols-2 gap-4">
+                                                  <div>
+                                                      <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('receiver_name')}</label>
+                                                      <input 
+                                                          value={loc.receiverName || ''}
+                                                          onChange={(e) => updateBranch(idx, 'receiverName', e.target.value)}
+                                                          className="input w-full bg-white h-8 text-xs"
+                                                      />
+                                                  </div>
+                                                  <div>
+                                                      <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('receiver_phone')}</label>
+                                                      <input 
+                                                          value={loc.receiverPhone || ''}
+                                                          onChange={(e) => updateBranch(idx, 'receiverPhone', e.target.value)}
+                                                          className="input w-full bg-white h-8 text-xs"
+                                                      />
+                                                  </div>
+                                              </div>
+
+                                              {/* Financials */}
+                                              <div className="grid grid-cols-2 gap-4">
+                                                  <div>
+                                                      <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('credit_term')}</label>
+                                                      <select 
+                                                          value={loc.creditTerm || 0} 
+                                                          onChange={(e) => updateBranch(idx, 'creditTerm', parseInt(e.target.value))}
+                                                          className="input w-full bg-white h-8 text-xs"
+                                                      >
+                                                          {[0, 5, 15, 30, 45, 60, 90].map(d => (
+                                                              <option key={d} value={d}>{d} {t('days')}</option>
+                                                          ))}
+                                                      </select>
+                                                  </div>
+                                                  <div>
+                                                      <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('vat_type')}</label>
+                                                      <select 
+                                                          value={loc.vatType || 'in-vat'} 
+                                                          onChange={(e) => updateBranch(idx, 'vatType', e.target.value)}
+                                                          className="input w-full bg-white h-8 text-xs"
+                                                      >
+                                                          <option value="ex-vat">{t('vat_ex')}</option>
+                                                          <option value="in-vat">{t('vat_in')}</option>
+                                                          <option value="non-vat">{t('vat_non')}</option>
+                                                      </select>
+                                                  </div>
+                                              </div>
+
+                                              {/* Notes */}
+                                              <div>
+                                                  <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('promotion_notes')}</label>
+                                                  <textarea 
+                                                      value={loc.promotionNotes || ''}
+                                                      onChange={(e) => updateBranch(idx, 'promotionNotes', e.target.value)}
+                                                      className="input w-full bg-white text-xs min-h-[60px]"
+                                                  />
+                                              </div>
+                                              <div>
+                                                  <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('general_note')}</label>
+                                                  <textarea 
+                                                      value={loc.notes || ''}
+                                                      onChange={(e) => updateBranch(idx, 'notes', e.target.value)}
+                                                      className="input w-full bg-white text-xs min-h-[60px]"
+                                                  />
+                                              </div>
+                                          </div>
+                                      )}
                                       
                                       <div>
                                           <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">{t('address')}</label>
@@ -584,28 +848,62 @@ export default function CustomersPage() {
                                           </div>
                                       </div>
                                   
-                                      {/* Simple Contact for Branch */}
+                                      {/* Contact Persons Management */}
                                       <div className="bg-white p-3 rounded-lg border border-slate-100">
-                                          <div className="text-xs font-bold text-indigo-600 mb-2">{t('contact_person')}</div>
-                                          <div className="grid grid-cols-3 gap-2">
-                                              <input 
-                                                  value={loc.contacts[0]?.name || ''}
-                                                  onChange={(e) => updateContact(idx, 'name', e.target.value)}
-                                                  className="input h-8 text-xs"
-                                                  placeholder="Name"
-                                              />
-                                              <input 
-                                                  value={loc.contacts[0]?.role || ''}
-                                                  onChange={(e) => updateContact(idx, 'role', e.target.value)}
-                                                  className="input h-8 text-xs"
-                                                  placeholder="Role"
-                                              />
-                                              <input 
-                                                  value={loc.contacts[0]?.phone || ''}
-                                                  onChange={(e) => updateContact(idx, 'phone', e.target.value)}
-                                                  className="input h-8 text-xs"
-                                                  placeholder="Phone"
-                                              />
+                                          <div className="flex items-center justify-between mb-2">
+                                              <div className="text-xs font-bold text-indigo-600">{t('contact_person')} ({loc.contacts.length})</div>
+                                              <button 
+                                                  onClick={() => addContact(idx)}
+                                                  className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded hover:bg-indigo-100 font-bold flex items-center gap-1 transition-colors"
+                                              >
+                                                  <Plus size={12} /> {t('add_branch').replace('Branch', '').replace('สาขา', '')} {/* Quick reuse or just + */}
+                                              </button>
+                                          </div>
+                                          
+                                          {loc.contacts.length === 0 && (
+                                              <div className="text-center text-xs text-slate-400 py-2 italic bg-slate-50 rounded border border-dashed border-slate-200">
+                                                  No contacts added
+                                              </div>
+                                          )}
+
+                                          <div className="space-y-2">
+                                              {loc.contacts.map((contact, contactIdx) => (
+                                                  <div key={contact.id || contactIdx} className="grid grid-cols-12 gap-2 items-center group/contact">
+                                                      <div className="col-span-4">
+                                                          <input 
+                                                              value={contact.name}
+                                                              onChange={(e) => updateContact(idx, contactIdx, 'name', e.target.value)}
+                                                              className="input h-8 text-xs bg-slate-50 focus:bg-white"
+                                                              placeholder="Name"
+                                                          />
+                                                      </div>
+                                                      <div className="col-span-3">
+                                                          <input 
+                                                              value={contact.role}
+                                                              onChange={(e) => updateContact(idx, contactIdx, 'role', e.target.value)}
+                                                              className="input h-8 text-xs bg-slate-50 focus:bg-white"
+                                                              placeholder="Role"
+                                                          />
+                                                      </div>
+                                                      <div className="col-span-4">
+                                                          <input 
+                                                              value={contact.phone}
+                                                              onChange={(e) => updateContact(idx, contactIdx, 'phone', e.target.value)}
+                                                              className="input h-8 text-xs bg-slate-50 focus:bg-white"
+                                                              placeholder="Phone"
+                                                          />
+                                                      </div>
+                                                      <div className="col-span-1 flex justify-end">
+                                                          <button 
+                                                              onClick={() => removeContact(idx, contactIdx)}
+                                                              className="text-slate-300 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors"
+                                                              title="Remove Contact"
+                                                          >
+                                                              <Trash2 size={14} />
+                                                          </button>
+                                                      </div>
+                                                  </div>
+                                              ))}
                                           </div>
                                       </div>
                                   </div> {/* End space-y-4 */}

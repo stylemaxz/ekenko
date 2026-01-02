@@ -40,7 +40,7 @@ export default function SaleLeaveRequestsPage() {
   // Filter for current user
   const myRequests = leaveRequests
     .filter(req => req.employeeId === currentUserId)
-    .sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const handleRequestLeave = () => {
     setNewRequest({
@@ -52,6 +52,10 @@ export default function SaleLeaveRequestsPage() {
     setIsModalOpen(true);
   };
 
+  const calculateDays = (start: string, end: string) => {
+    return differenceInDays(new Date(end), new Date(start)) + 1;
+  };
+
   const handleSubmitRequest = () => {
     if (!newRequest.startDate || !newRequest.endDate || !newRequest.reason) {
       showToast(t('fill_required'), 'error');
@@ -61,12 +65,13 @@ export default function SaleLeaveRequestsPage() {
     const newLeaveRequest: LeaveRequest = {
       id: `lr_${Date.now()}`,
       employeeId: currentUserId,
-      leaveType: newRequest.leaveType,
+      type: newRequest.leaveType, 
       startDate: newRequest.startDate,
       endDate: newRequest.endDate,
+      days: calculateDays(newRequest.startDate, newRequest.endDate),
       reason: newRequest.reason,
       status: 'pending',
-      requestedAt: new Date().toISOString()
+      createdAt: new Date().toISOString()
     };
 
     setLeaveRequests(prev => [newLeaveRequest, ...prev]);
@@ -94,10 +99,6 @@ export default function SaleLeaveRequestsPage() {
       default:
         return "bg-amber-100 text-amber-700 border-amber-200";
     }
-  };
-
-  const calculateDays = (start: string, end: string) => {
-    return differenceInDays(new Date(end), new Date(start)) + 1;
   };
 
   return (
@@ -139,7 +140,7 @@ export default function SaleLeaveRequestsPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-bold text-slate-900">
-                          {t(`leave_${request.leaveType}` as any)}
+                          {t(`leave_${request.type}` as any)}
                         </h3>
                         <span className={clsx(
                           "text-xs px-2 py-0.5 rounded-full border font-bold uppercase",
@@ -184,9 +185,9 @@ export default function SaleLeaveRequestsPage() {
                   </div>
                 )}
 
-                {/* Requested At */}
+                {/* Created At */}
                 <div className="mt-3 pt-3 border-t border-slate-50 text-xs text-slate-400">
-                  {language === 'th' ? 'ขอเมื่อ' : 'Requested'}: {format(new Date(request.requestedAt), "d MMM yyyy HH:mm", { locale })}
+                  {language === 'th' ? 'ขอเมื่อ' : 'Requested'}: {format(new Date(request.createdAt), "d MMM yyyy HH:mm", { locale })}
                 </div>
               </div>
             );

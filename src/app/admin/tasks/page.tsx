@@ -40,6 +40,7 @@ export default function TasksPage() {
       customerId: "",
       locationId: "", 
       dueDate: new Date().toISOString().split('T')[0],
+      priority: 'medium',
       status: 'pending'
   });
 
@@ -57,7 +58,16 @@ export default function TasksPage() {
       }
       
       return true;
-  }).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      return true;
+  }).sort((a,b) => {
+      // Sort by Priority (High > Medium > Low)
+      const priorityWeight = { high: 3, medium: 2, low: 1 };
+      const diff = (priorityWeight[b.priority!] || 2) - (priorityWeight[a.priority!] || 2);
+      if (diff !== 0) return diff;
+      
+      // Then by Date
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   // --- Create Task Logic ---
   const handleSave = () => {
@@ -75,6 +85,7 @@ export default function TasksPage() {
           customerId: newTask.customerId,
           locationId: newTask.locationId,
           dueDate: new Date(newTask.dueDate!).toISOString(),
+          priority: newTask.priority || 'medium',
           status: 'pending',
           createdAt: new Date().toISOString()
       };
@@ -92,6 +103,7 @@ export default function TasksPage() {
           customerId: "",
           locationId: "",
           dueDate: new Date().toISOString().split('T')[0],
+          priority: 'medium',
           status: 'pending'
       });
   };
@@ -193,10 +205,21 @@ export default function TasksPage() {
                                   {/* Objectives Display */}
                                   {task.objectives && task.objectives.length > 0 && (
                                      <div className="flex flex-wrap gap-2 mt-2">
+                                          {/* Priority Badge */}
+                                          <span className={clsx(
+                                              "inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
+                                              task.priority === 'high' ? "bg-red-100 text-red-700 border border-red-200" :
+                                              task.priority === 'medium' ? "bg-amber-100 text-amber-700 border border-amber-200" :
+                                              "bg-blue-50 text-blue-700 border border-blue-200"
+                                          )}>
+                                              <AlertCircle size={10} />
+                                              {task.priority === 'high' ? t('priority_high') : task.priority === 'medium' ? t('priority_medium') : t('priority_low')}
+                                          </span>
+
                                          {task.objectives.map(obj => (
                                              <span key={obj} className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
                                                  <Target size={10} />
-                                                 {t(`obj_${obj}`)}
+                                                 {t(`obj_${obj}` as any)}
                                              </span>
                                          ))}
                                      </div>
@@ -324,6 +347,21 @@ export default function TasksPage() {
                               ))}
                           </select>
                       </div>
+                      <div>
+                          <label className="label">{t('priority')}</label>
+                          <select 
+                              className="input w-full"
+                              value={newTask.priority}
+                              onChange={e => setNewTask({...newTask, priority: e.target.value as any})}
+                          >
+                              <option value="low">{t('priority_low')}</option>
+                              <option value="medium">{t('priority_medium')}</option>
+                              <option value="high">{t('priority_high')}</option>
+                          </select>
+                      </div>
+                  </div>
+                  
+                  <div>
                       <div>
                           <label className="label">{t('due_date')}</label>
                           <input 

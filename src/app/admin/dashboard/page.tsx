@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { 
   Calendar, 
   MapPin, 
@@ -21,6 +22,7 @@ export default function DashboardPage() {
   const [selectedEmployee, setSelectedEmployee] = useState<string>("all");
   const [currentMonth, setCurrentMonth] = useState<number>(0);
   const [currentYear, setCurrentYear] = useState<number>(0);
+  const [lastUpdated, setLastUpdated] = useState<string>("");
   const { t } = useLanguage();
 
   // Initialize date on client side only
@@ -28,6 +30,7 @@ export default function DashboardPage() {
     const now = new Date();
     setCurrentMonth(now.getMonth());
     setCurrentYear(now.getFullYear());
+    setLastUpdated(now.toLocaleTimeString());
   }, []);
 
   // Helper to check if date is in current month
@@ -133,7 +136,7 @@ export default function DashboardPage() {
         
         <div className="flex items-center gap-3">
              <div className="text-sm font-medium text-slate-600 bg-white px-3 py-1.5 rounded-md border border-slate-200 shadow-sm">
-                {t('last_updated')}: {new Date().toLocaleTimeString()}
+                {t('last_updated')}: {lastUpdated}
              </div>
         </div>
       </div>
@@ -266,15 +269,15 @@ export default function DashboardPage() {
                             <div className="flex justify-between items-start mb-3">
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
-                                        {visit.companyStatus === 'lead' ? (
-                                            <span className="badge bg-amber-100 text-amber-700 border border-amber-200">
-                                                {t('status_new')}
-                                            </span>
-                                        ) : (
-                                            <span className="badge bg-blue-50 text-blue-600 border border-blue-100">
-                                                {t('status_existing')}
-                                            </span>
-                                        )}
+                                        <span className={clsx(
+                                            "badge border",
+                                            visit.companyStatus === 'lead' ? "bg-blue-50 text-blue-600 border-blue-100" :
+                                            visit.companyStatus === 'existing' ? "bg-green-50 text-green-600 border-green-100" :
+                                            (visit.companyStatus === 'closed' || visit.companyStatus === 'inactive' || visit.companyStatus === 'terminate') ? "bg-red-50 text-red-600 border-red-100" :
+                                            "bg-slate-50 text-slate-500 border-slate-200"
+                                        )}>
+                                            {t(`status_${visit.companyStatus}` as any)}
+                                        </span>
                                         <span className="text-xs text-slate-400">
                                             {new Date(visit.checkInTime).toLocaleDateString()}
                                         </span>
@@ -306,11 +309,13 @@ export default function DashboardPage() {
                             {visit.images && visit.images.length > 0 && (
                                 <div className="mt-3 flex gap-2">
                                     {visit.images.map((img, idx) => (
-                                        <div key={idx} className="w-20 h-20 rounded-lg overflow-hidden border border-slate-200 cursor-pointer hover:border-indigo-400 transition-colors">
-                                            <img 
+                                        <div key={idx} className="w-20 h-20 rounded-lg overflow-hidden border border-slate-200 cursor-pointer hover:border-indigo-400 transition-colors relative">
+                                            <Image
                                                 src={img} 
                                                 alt={`Proof ${idx + 1}`} 
-                                                className="w-full h-full object-cover" 
+                                                className="object-cover"
+                                                fill
+                                                unoptimized
                                             />
                                         </div>
                                     ))}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Modal } from "@/components/ui/Modal";
 import { mockVisits, mockCompanies, mockEmployees, Visit, VisitObjectives, VisitObjective } from "@/utils/mockData";
@@ -399,10 +400,12 @@ export default function CalendarPage() {
                         {selectedVisit.images && selectedVisit.images.length > 0 ? (
                             selectedVisit.images.map((img: string, idx: number) => (
                                 <div key={idx} className="relative w-32 h-32 rounded-lg overflow-hidden border border-slate-200 shrink-0 shadow-sm">
-                                    <img 
+                                    <Image 
                                         src={img} 
                                         alt={`Visit ${idx + 1}`} 
-                                        className="w-full h-full object-cover"
+                                        fill
+                                        className="object-cover"
+                                        unoptimized
                                     />
                                 </div>
                             ))

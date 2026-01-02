@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Search, MapPin, Plus, User, X, Save, Building2, Edit, AlertCircle } from "lucide-react";
-import { mockCompanies, Company, Location, CustomerStatus } from "@/utils/mockData";
+import { Search, MapPin, Plus, User, X, Save, Building2, Edit, AlertCircle, CheckCircle2, FileText, Image as ImageIcon } from "lucide-react";
+import Image from "next/image";
+import { mockCompanies, Company, Location, LocationStatus } from "@/utils/mockData";
 import { clsx } from "clsx";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
@@ -36,8 +37,21 @@ export default function SaleCustomersPage() {
     company: Company;
     location: Location;
   } | null>(null);
-  const [editStatus, setEditStatus] = useState<CustomerStatus>("active");
+  const [editStatus, setEditStatus] = useState<LocationStatus>("lead");
   const [editNote, setEditNote] = useState("");
+  
+  // Existing Customer Details State
+  const [editOfficialName, setEditOfficialName] = useState("");
+  const [editCustomerType, setEditCustomerType] = useState<"individual" | "juristic">("individual");
+  const [editOwnerName, setEditOwnerName] = useState("");
+  const [editOwnerPhone, setEditOwnerPhone] = useState("");
+  const [editDocuments, setEditDocuments] = useState<string[]>([]);
+  const [editShippingAddress, setEditShippingAddress] = useState("");
+  const [editReceiverName, setEditReceiverName] = useState("");
+  const [editReceiverPhone, setEditReceiverPhone] = useState("");
+  const [editCreditTerm, setEditCreditTerm] = useState(0);
+  const [editVatType, setEditVatType] = useState<"ex-vat" | "in-vat" | "non-vat">("in-vat");
+  const [editPromotionNotes, setEditPromotionNotes] = useState("");
   
   // Dropdown visibility state
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(true);
@@ -95,7 +109,7 @@ export default function SaleCustomersPage() {
               role: "",
               phone: newCustomer.contactPhone
           }] : [],
-          customerStatus: "active", // Default status: กำลังติดตาม
+          status: "lead", // Default status
           createdBy: currentUserId, // Track who created this
       };
 
@@ -115,8 +129,22 @@ export default function SaleCustomersPage() {
 
   const handleEditCustomer = (company: Company, location: Location) => {
     setEditingLocation({ company, location });
-    setEditStatus(location.customerStatus || "active");
+    setEditStatus(location.status || "lead");
     setEditNote(location.statusNote || "");
+    
+    // Load existing customer details
+    setEditOfficialName(location.officialName || "");
+    setEditCustomerType(location.customerType || "individual");
+    setEditOwnerName(location.ownerName || "");
+    setEditOwnerPhone(location.ownerPhone || "");
+    setEditDocuments(location.documents || []);
+    setEditShippingAddress(location.shippingAddress || "");
+    setEditReceiverName(location.receiverName || "");
+    setEditReceiverPhone(location.receiverPhone || "");
+    setEditCreditTerm(location.creditTerm || 0);
+    setEditVatType(location.vatType || "in-vat");
+    setEditPromotionNotes(location.promotionNotes || "");
+    
     setIsEditModalOpen(true);
   };
 
@@ -138,8 +166,22 @@ export default function SaleCustomersPage() {
             if (loc.id === editingLocation.location.id) {
               return {
                 ...loc,
-                customerStatus: editStatus,
-                statusNote: editNote.trim() || loc.statusNote
+                status: editStatus,
+                statusNote: editNote.trim() || loc.statusNote,
+                // Update detailed fields if status is existing
+                ...(editStatus === 'existing' ? {
+                    officialName: editOfficialName,
+                    customerType: editCustomerType,
+                    ownerName: editOwnerName,
+                    ownerPhone: editOwnerPhone,
+                    documents: editDocuments,
+                    shippingAddress: editShippingAddress,
+                    receiverName: editReceiverName,
+                    receiverPhone: editReceiverPhone,
+                    creditTerm: editCreditTerm,
+                    vatType: editVatType,
+                    promotionNotes: editPromotionNotes
+                } : {})
               };
             }
             return loc;
@@ -156,30 +198,25 @@ export default function SaleCustomersPage() {
     );
   };
 
-  const getStatusColor = (status?: CustomerStatus) => {
+  const getStatusColor = (status?: LocationStatus) => {
     switch (status) {
-      case 'active':
+      case 'existing':
         return 'bg-green-100 text-green-700 border-green-200';
-      case 'closed':
+      case 'lead':
         return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'closed':
+        return 'bg-red-50 text-red-700 border-red-200';
       case 'inactive':
         return 'bg-slate-100 text-slate-700 border-slate-200';
+      case 'terminate':
+        return 'bg-gray-100 text-gray-700 border-gray-200';
       default:
-        return 'bg-green-100 text-green-700 border-green-200';
+        return 'bg-blue-100 text-blue-700 border-blue-200';
     }
   };
 
-  const getStatusLabel = (status?: CustomerStatus) => {
-    switch (status) {
-      case 'active':
-        return t('status_active');
-      case 'closed':
-        return t('status_closed');
-      case 'inactive':
-        return t('status_inactive');
-      default:
-        return t('status_active');
-    }
+  const getStatusLabel = (status?: LocationStatus) => {
+    return t(`status_${status || 'lead'}` as any);
   };
 
   return (
@@ -188,7 +225,7 @@ export default function SaleCustomersPage() {
           <h1 className="text-2xl font-bold text-slate-900">{t('customers')}</h1>
           <button 
             onClick={handleAddCustomer}
-            className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-200 active:scale-95 transition-transform"
+            className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-lg shadow-black/20 active:scale-95 transition-transform"
           >
               <Plus size={24} />
           </button>
@@ -200,7 +237,7 @@ export default function SaleCustomersPage() {
           <input 
               type="text" 
               placeholder={t('search_customers')}
-              className="w-full bg-white pl-10 pr-4 py-3 rounded-xl border border-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              className="w-full bg-white pl-10 pr-4 py-3 rounded-xl border border-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -224,7 +261,7 @@ export default function SaleCustomersPage() {
                                   "text-[10px] px-1.5 py-0.5 rounded border font-bold uppercase",
                                   company.status === 'existing' ? "bg-indigo-50 text-indigo-700 border-indigo-100" : "bg-teal-50 text-teal-700 border-teal-100"
                               )}>
-                                  {company.status === 'existing' ? t('status_existing') : t('status_new')}
+                                  {company.status === 'existing' ? t('status_existing') : t('status_lead')}
                               </span>
                           </div>
                       </div>
@@ -242,15 +279,15 @@ export default function SaleCustomersPage() {
                                    <div className="ml-6 mt-1">
                                        <span className={clsx(
                                            "text-[10px] px-2 py-0.5 rounded border font-bold inline-block",
-                                           getStatusColor(loc.customerStatus)
+                                           getStatusColor(loc.status)
                                        )}>
-                                           {getStatusLabel(loc.customerStatus)}
+                                           {getStatusLabel(loc.status)}
                                        </span>
                                    </div>
                                </div>
                                <button
                                    onClick={() => handleEditCustomer(company, loc)}
-                                   className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors shrink-0"
+                                   className="p-2 text-primary hover:bg-red-50 rounded-lg transition-colors shrink-0"
                                >
                                    <Edit size={16} />
                                </button>
@@ -296,7 +333,7 @@ export default function SaleCustomersPage() {
           {/* Company Name with Autocomplete */}
           <div>
             <label className="label flex items-center gap-2">
-              <Building2 size={16} className="text-indigo-600" />
+              <Building2 size={16} className="text-primary" />
               {t('company_info')} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
@@ -342,9 +379,9 @@ export default function SaleCustomersPage() {
                               {company.locations.length} {t('language') === 'th' ? 'สาขา' : 'branches'} • 
                               <span className={clsx(
                                 "ml-1",
-                                company.status === 'existing' ? "text-indigo-600" : "text-teal-600"
+                                company.status === 'existing' ? "text-blue-600" : "text-teal-600"
                               )}>
-                                {company.status === 'existing' ? t('status_existing') : t('status_new')}
+                                {company.status === 'existing' ? t('status_existing') : t('status_lead')}
                               </span>
                             </div>
                           </button>
@@ -361,7 +398,7 @@ export default function SaleCustomersPage() {
           {/* Branch Name with Autocomplete */}
           <div>
             <label className="label flex items-center gap-2">
-              <MapPin size={16} className="text-indigo-600" />
+              <MapPin size={16} className="text-primary" />
               {t('branch_name')} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
@@ -433,7 +470,7 @@ export default function SaleCustomersPage() {
                             className="p-3 border-b border-slate-50 last:border-0"
                           >
                             <div className="font-medium text-slate-900">{item.location.name}</div>
-                            <div className="text-xs text-indigo-600 font-medium mt-0.5">{item.company.name}</div>
+                            <div className="text-xs text-blue-600 font-medium mt-0.5">{item.company.name}</div>
                             <div className="text-xs text-slate-500 mt-1 truncate">{item.location.address}</div>
                           </div>
                         ))}
@@ -498,6 +535,7 @@ export default function SaleCustomersPage() {
         onClose={() => setIsEditModalOpen(false)}
         title={t('edit_customer')}
         subtitle={editingLocation?.location.name}
+        width="max-w-2xl"
         footer={
           <>
             <button 
@@ -521,13 +559,13 @@ export default function SaleCustomersPage() {
           <div>
             <label className="label">{t('customer_status')}</label>
             <div className="space-y-2">
-              {(['active', 'closed', 'inactive'] as CustomerStatus[]).map(status => (
+              {(['lead', 'existing', 'closed', 'inactive', 'terminate'] as LocationStatus[]).map(status => (
                 <label
                   key={status}
                   className={clsx(
                     "flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
                     editStatus === status
-                      ? "border-indigo-500 bg-indigo-50"
+                      ? "border-primary bg-red-50"
                       : "border-slate-200 hover:border-slate-300"
                   )}
                 >
@@ -536,13 +574,13 @@ export default function SaleCustomersPage() {
                     name="status"
                     value={status}
                     checked={editStatus === status}
-                    onChange={(e) => setEditStatus(e.target.value as CustomerStatus)}
+                    onChange={(e) => setEditStatus(e.target.value as LocationStatus)}
                     className="hidden"
                   />
                   <div className={clsx(
                     "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
                     editStatus === status
-                      ? "border-indigo-600 bg-indigo-600"
+                      ? "border-primary bg-primary"
                       : "border-slate-300"
                   )}>
                     {editStatus === status && <div className="w-2 h-2 rounded-full bg-white" />}
@@ -582,6 +620,185 @@ export default function SaleCustomersPage() {
                 {language === 'th' ? 'หมายเหตุก่อนหน้า:' : 'Previous note:'}
               </p>
               <p className="text-sm text-slate-700">{editingLocation.location.statusNote}</p>
+            </div>
+          )}
+          {/* Existing Customer Details Form */}
+          {editStatus === 'existing' && (
+            <div className="p-4 bg-green-50/50 rounded-lg border border-green-100 space-y-4">
+               <div className="text-xs font-bold text-green-700 uppercase tracking-wider mb-2 border-b border-green-200 pb-2 flex items-center gap-2">
+                   <CheckCircle2 size={14} />
+                   Active Customer Details
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div>
+                       <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('official_name')}</label>
+                       <input 
+                           value={editOfficialName}
+                           onChange={(e) => setEditOfficialName(e.target.value)}
+                           className="input w-full bg-white h-8 text-xs"
+                           placeholder="Official Registered Name"
+                       />
+                   </div>
+                   <div>
+                       <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('customer_type')}</label>
+                       <div className="flex gap-4 pt-1">
+                           <label className="flex items-center gap-2 cursor-pointer">
+                               <input 
+                                   type="radio" 
+                                   name="edit_ctype"
+                                   checked={editCustomerType === 'individual'} 
+                                   onChange={() => setEditCustomerType('individual')}
+                                   className="text-green-600 focus:ring-green-500"
+                               />
+                               <span className="text-xs text-slate-700">{t('cust_individual')}</span>
+                           </label>
+                           <label className="flex items-center gap-2 cursor-pointer">
+                               <input 
+                                   type="radio" 
+                                   name="edit_ctype"
+                                   checked={editCustomerType === 'juristic'}
+                                   onChange={() => setEditCustomerType('juristic')}
+                                   className="text-green-600 focus:ring-green-500"
+                               />
+                               <span className="text-xs text-slate-700">{t('cust_juristic')}</span>
+                           </label>
+                       </div>
+                   </div>
+               </div>
+
+               <div className="grid grid-cols-2 gap-4">
+                   <div>
+                       <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('owner_name')}</label>
+                       <input 
+                           value={editOwnerName}
+                           onChange={(e) => setEditOwnerName(e.target.value)}
+                           className="input w-full bg-white h-8 text-xs"
+                       />
+                   </div>
+                   <div>
+                       <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('owner_phone')}</label>
+                       <input 
+                           value={editOwnerPhone}
+                           onChange={(e) => setEditOwnerPhone(e.target.value)}
+                           className="input w-full bg-white h-8 text-xs"
+                       />
+                   </div>
+               </div>
+
+               {/* Documents Upload */}
+               <div>
+                   <label className="text-[10px] font-semibold text-slate-500 uppercase mb-2 block">{t('documents_upload')} (Max 6)</label>
+                   <div className="flex flex-wrap gap-2">
+                       {editDocuments.map((doc, docIdx) => (
+                           <div key={docIdx} className="relative w-16 h-16 bg-white border border-slate-200 rounded flex items-center justify-center group overflow-hidden">
+                               {doc.startsWith('data:image') ? (
+                                   <Image src={doc} alt="Doc" fill className="object-cover" unoptimized />
+                               ) : (
+                                   <div className="text-center p-1">
+                                       <FileText size={20} className="mx-auto text-slate-400" />
+                                       <span className="text-[8px] text-slate-400 block truncate w-14">File {docIdx+1}</span>
+                                   </div>
+                               )}
+                               <button 
+                                   onClick={() => setEditDocuments(prev => prev.filter((_, i) => i !== docIdx))}
+                                   className="absolute top-0 right-0 p-0.5 bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                               >
+                                   <X size={10} />
+                               </button>
+                           </div>
+                       ))}
+                       
+                       {editDocuments.length < 6 && (
+                           <label className="w-16 h-16 border-2 border-dashed border-green-200 rounded flex flex-col items-center justify-center text-green-400 hover:text-green-600 hover:border-green-400 hover:bg-green-50 cursor-pointer transition-all">
+                               <Plus size={16} />
+                               <span className="text-[8px] font-bold">ADD</span>
+                               <input 
+                                   type="file" 
+                                   accept="image/*,application/pdf"
+                                   className="hidden"
+                                   onChange={(e) => {
+                                       if (e.target.files && e.target.files[0]) {
+                                           const file = e.target.files[0];
+                                           const reader = new FileReader();
+                                           reader.onloadend = () => {
+                                               setEditDocuments(prev => [...prev, reader.result as string]);
+                                           };
+                                           reader.readAsDataURL(file);
+                                       }
+                                   }}
+                               />
+                           </label>
+                       )}
+                   </div>
+               </div>
+
+               {/* Shipping Info */}
+               <div>
+                   <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('shipping_address')}</label>
+                   <input 
+                       value={editShippingAddress}
+                       onChange={(e) => setEditShippingAddress(e.target.value)}
+                       className="input w-full bg-white h-8 text-xs"
+                   />
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                   <div>
+                       <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('receiver_name')}</label>
+                       <input 
+                           value={editReceiverName}
+                           onChange={(e) => setEditReceiverName(e.target.value)}
+                           className="input w-full bg-white h-8 text-xs"
+                       />
+                   </div>
+                   <div>
+                       <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('receiver_phone')}</label>
+                       <input 
+                           value={editReceiverPhone}
+                           onChange={(e) => setEditReceiverPhone(e.target.value)}
+                           className="input w-full bg-white h-8 text-xs"
+                       />
+                   </div>
+               </div>
+
+               {/* Financials */}
+               <div className="grid grid-cols-2 gap-4">
+                   <div>
+                       <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('credit_term')}</label>
+                       <select 
+                           value={editCreditTerm} 
+                           onChange={(e) => setEditCreditTerm(parseInt(e.target.value))}
+                           className="input w-full bg-white h-8 text-xs"
+                       >
+                           {[0, 5, 15, 30, 45, 60, 90].map(d => (
+                               <option key={d} value={d}>{d} {t('days')}</option>
+                           ))}
+                       </select>
+                   </div>
+                   <div>
+                       <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('vat_type')}</label>
+                       <select 
+                           value={editVatType} 
+                           onChange={(e) => setEditVatType(e.target.value as any)}
+                           className="input w-full bg-white h-8 text-xs"
+                       >
+                           <option value="ex-vat">{t('vat_ex')}</option>
+                           <option value="in-vat">{t('vat_in')}</option>
+                           <option value="non-vat">{t('vat_non')}</option>
+                       </select>
+                   </div>
+               </div>
+               
+               {/* Promotion Notes */}
+               <div>
+                   <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('promotion_notes')}</label>
+                   <textarea
+                       value={editPromotionNotes}
+                       onChange={(e) => setEditPromotionNotes(e.target.value)}
+                       className="input w-full bg-white h-20 text-xs resize-none"
+                       placeholder="Promotion / Price details..."
+                   />
+               </div>
             </div>
           )}
         </div>

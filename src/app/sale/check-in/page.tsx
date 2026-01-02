@@ -260,7 +260,7 @@ export default function CheckInPage() {
               </div>
 
               {/* Status Bar */}
-              <div className="bg-indigo-600 text-white p-4 rounded-xl shadow-lg shadow-indigo-200 mb-6 flex items-center justify-between">
+              <div className="bg-primary text-white p-4 rounded-xl shadow-lg shadow-black/20 mb-6 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                           {isLocating ? (
@@ -301,7 +301,7 @@ export default function CheckInPage() {
                   <input 
                       type="text" 
                       placeholder="Search nearby customer..."
-                      className="w-full bg-white pl-10 pr-4 py-3 rounded-xl border border-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                      className="w-full bg-white pl-10 pr-4 py-3 rounded-xl border border-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -316,7 +316,7 @@ export default function CheckInPage() {
                               onClick={() => handleLocationSelect(item)}
                               className="w-full text-left bg-white p-4 rounded-xl border border-slate-100 shadow-sm active:scale-[0.98] transition-transform flex items-start gap-3"
                           >
-                              <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0 mt-1">
+                              <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-primary shrink-0 mt-1">
                                   <MapPin size={20} />
                               </div>
                               <div className="min-w-0">
@@ -339,7 +339,7 @@ export default function CheckInPage() {
                           
                           <button 
                               onClick={handleCreateNewLocation}
-                              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700"
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold shadow-sm hover:bg-primary-hover"
                           >
                               Create New Location
                           </button>
@@ -367,7 +367,7 @@ export default function CheckInPage() {
               {/* Image Upload Section */}
               <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                   <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-                      <Camera size={16} className="text-indigo-600" />
+                      <Camera size={16} className="text-primary" />
                       {t('confirmation_images')} <span className="text-red-500">*</span>
                   </h3>
                   
@@ -375,7 +375,7 @@ export default function CheckInPage() {
                        {/* Add Button */}
                        <button 
                           onClick={() => handleImageUpload('visit')}
-                          className="w-20 h-20 rounded-lg border-2 border-dashed border-indigo-200 bg-indigo-50 flex flex-col items-center justify-center text-indigo-500 hover:bg-indigo-100 shrink-0"
+                          className="w-20 h-20 rounded-lg border-2 border-dashed border-red-200 bg-red-50 flex flex-col items-center justify-center text-primary-hover hover:bg-red-100 shrink-0"
                        >
                            <Camera size={24} />
                            <span className="text-[10px] font-bold mt-1">Add Photo</span>
@@ -415,11 +415,11 @@ export default function CheckInPage() {
                           return (
                               <label key={obj} className={clsx(
                                   "flex items-center gap-3 p-3 rounded-lg border transition-colors",
-                                  isDisabled ? "bg-slate-100 border-slate-200 opacity-60 cursor-not-allowed" : "bg-slate-50 border-slate-100 cursor-pointer active:bg-indigo-50"
+                                  isDisabled ? "bg-slate-100 border-slate-200 opacity-60 cursor-not-allowed" : "bg-slate-50 border-slate-100 cursor-pointer active:bg-red-50"
                               )}>
                                   <div className={clsx(
                                       "w-5 h-5 rounded border flex items-center justify-center transition-colors",
-                                      objectives.includes(obj) ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-slate-300"
+                                      objectives.includes(obj) ? "bg-primary border-primary text-white" : "bg-white border-slate-300"
                                   )}>
                                       {objectives.includes(obj) && <Check size={14} />}
                                   </div>
@@ -444,7 +444,7 @@ export default function CheckInPage() {
               {objectives.includes('check_assets') && (
                   <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                       <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-                          <Camera size={16} className="text-indigo-600" />
+                          <Camera size={16} className="text-primary" />
                           {t('asset_photos')} 
                           <span className="text-red-500">*</span>
                       </h3>
@@ -487,10 +487,10 @@ export default function CheckInPage() {
                       <span className="text-red-500">*</span>
                   </h3>
                   <div className="flex gap-4">
-                      <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50 cursor-pointer flex-1 active:bg-indigo-50 transition-colors">
+                      <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50 cursor-pointer flex-1 active:bg-red-50 transition-colors">
                           <div className={clsx(
                               "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
-                              metOwner ? "border-indigo-600 bg-indigo-600" : "border-slate-300 bg-white"
+                              metOwner ? "border-primary bg-primary" : "border-slate-300 bg-white"
                           )}>
                               {metOwner && <div className="w-2 h-2 rounded-full bg-white"></div>}
                           </div>
@@ -505,10 +505,10 @@ export default function CheckInPage() {
                           </span>
                       </label>
 
-                      <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50 cursor-pointer flex-1 active:bg-indigo-50 transition-colors">
+                      <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50 cursor-pointer flex-1 active:bg-red-50 transition-colors">
                           <div className={clsx(
                               "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
-                              !metOwner ? "border-indigo-600 bg-indigo-600" : "border-slate-300 bg-white"
+                              !metOwner ? "border-primary bg-primary" : "border-slate-300 bg-white"
                           )}>
                               {!metOwner && <div className="w-2 h-2 rounded-full bg-white"></div>}
                           </div>
@@ -529,7 +529,7 @@ export default function CheckInPage() {
               <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                   <h3 className="text-sm font-bold text-slate-800 mb-2">{t('notes_label')}</h3>
                   <textarea 
-                      className="w-full h-24 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                      className="w-full h-24 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                       placeholder="Enter visit details..."
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
@@ -542,7 +542,7 @@ export default function CheckInPage() {
               <button 
                   onClick={handleSubmit}
                   disabled={images.length === 0}
-                  className="w-full py-3.5 rounded-xl bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:shadow-none"
+                  className="w-full py-3.5 rounded-xl bg-primary text-white font-bold shadow-lg shadow-black/20 disabled:opacity-50 disabled:shadow-none"
               >
                   {t('save')}
               </button>

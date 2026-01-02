@@ -135,7 +135,7 @@ export default function SaleDashboardPage() {
     {
       icon: MapPin,
       label: t("check_in"),
-      color: "bg-indigo-600",
+      color: "bg-primary",
       onClick: () => router.push("/sale/check-in"),
     },
     {
@@ -189,8 +189,8 @@ export default function SaleDashboardPage() {
               {/* Elapsed Time Display */}
               {isClockedIn && (
                 <div className="mt-2 flex items-center gap-2">
-                  <Clock size={14} className="text-indigo-400" />
-                  <span className="text-sm font-medium text-indigo-300">
+                  <Clock size={14} className="text-red-400" />
+                  <span className="text-sm font-medium text-red-300">
                     {String(elapsedTime.hours).padStart(2, '0')}:{String(elapsedTime.minutes).padStart(2, '0')}
                   </span>
                   <span className="text-xs text-slate-400">
@@ -203,8 +203,8 @@ export default function SaleDashboardPage() {
               onClick={handleClockInOut}
               className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all active:scale-95 ${
                 isClockedIn
-                  ? "bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-900/20"
-                  : "bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-900/20"
+                  ? "bg-slate-500 hover:bg-slate-600 text-white shadow-lg shadow-slate-900/20"
+                  : "bg-primary hover:bg-primary-hover text-white shadow-lg shadow-black/20"
               }`}
             >
               {isClockedIn ? t("clock_out") : t("clock_in")}
@@ -215,7 +215,7 @@ export default function SaleDashboardPage() {
 
         {/* WFH Toggle (Moved from CheckIn Page) */}
         {!isClockedIn && (
-           <div className="mt-4 flex items-center justify-between p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl">
+           <div className="mt-4 flex items-center justify-between p-3 bg-red-50/50 border border-red-100 rounded-xl">
               <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isWorkFromHome ? 'bg-teal-100 text-teal-600' : 'bg-slate-200 text-slate-400'}`}>
                       <Home size={16} />
@@ -259,7 +259,7 @@ export default function SaleDashboardPage() {
             <h2 className="font-bold text-slate-900 text-lg">
               {t("recent_activity_feed")}
             </h2>
-            <button className="text-indigo-600 text-xs font-bold">
+            <button className="text-primary text-xs font-bold">
               View All
             </button>
           </div>
@@ -279,7 +279,7 @@ export default function SaleDashboardPage() {
                     key={visit.id}
                     className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-start gap-4"
                   >
-                    <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-primary shrink-0">
                       <MapPin size={18} />
                     </div>
                     <div className="flex-1 min-w-0">

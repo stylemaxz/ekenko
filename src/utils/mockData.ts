@@ -29,6 +29,9 @@ export type Location = {
     lat: number;
     lng: number;
     contacts: ContactPerson[]; // People at this branch
+    createdBy?: string;
+    customerStatus?: CustomerStatus;
+    statusNote?: string;
     assignedTo?: string[]; // Array of Employee IDs assigned to this location
 
     // --- Active Customer Additional Fields ---
@@ -222,7 +225,9 @@ export const mockCompanies: Company[] = [
                 assignedTo: ['1', '2'], // Assigned to Somchai and Somsri
                 contacts: [
                     { id: 'ct1', name: 'Manager John', role: 'Branch Manager', phone: '081-234-5678', lineId: 'john711' }
-                ]
+                ],
+                createdBy: "1",
+                customerStatus: "active"
             },
             {
                 id: 'l2',
@@ -237,7 +242,9 @@ export const mockCompanies: Company[] = [
                 assignedTo: ['3'], // Assigned to Danai
                 contacts: [
                     { id: 'ct2', name: 'Asst. Jane', role: 'Asst. Manager', phone: '089-876-5432' }
-                ]
+                ],
+                createdBy: "1",
+                customerStatus: "active"
             },
         ]
     },
@@ -259,7 +266,9 @@ export const mockCompanies: Company[] = [
                 lng: 100.5552,
                 contacts: [
                     { id: 'ct3', name: 'Auntie Dang', role: 'Owner', phone: '089-999-9999' }
-                ]
+                ],
+                createdBy: "1",
+                customerStatus: "active"
             }
         ]
     },
@@ -281,7 +290,9 @@ export const mockCompanies: Company[] = [
                 lng: 100.5139,
                 contacts: [
                     { id: 'ct4', name: 'K. Somkiat', role: 'Purchasing Director', phone: '02-999-8888', lineId: 'somkiat.tech' }
-                ]
+                ],
+                createdBy: "1",
+                customerStatus: "active"
             }
         ]
     },
@@ -302,7 +313,9 @@ export const mockCompanies: Company[] = [
                 lng: 100.5651,
                 contacts: [
                     { id: 'ct5', name: 'Barista Joe', role: 'General Manager', phone: '088-777-6666' }
-                ]
+                ],
+                createdBy: "1",
+                customerStatus: "active"
             }
         ]
     }

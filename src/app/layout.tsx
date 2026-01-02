@@ -21,7 +21,6 @@ const sarabun = Sarabun({
 export const metadata: Metadata = {
   title: "Sales Force Tracker",
   description: "Efficiently track sales visits and performance",
-  description: "Efficiently track sales visits and performance",
 };
 
 export default function RootLayout({

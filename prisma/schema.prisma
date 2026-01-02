@@ -1,0 +1,242 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums based on your mock data
+enum Role {
+  sales
+  manager
+}
+
+enum CompanyGrade {
+  A
+  B
+  C
+}
+
+enum CompanyStatus {
+  existing
+  lead
+  inactive
+  closed
+  terminate
+}
+
+enum LocationStatus {
+  existing
+  lead
+  inactive
+  closed
+  terminate
+}
+
+enum CustomerType {
+  individual
+  juristic
+}
+
+enum VatType {
+  ex_vat   @map("ex-vat")
+  in_vat   @map("in-vat")
+  non_vat  @map("non-vat")
+}
+
+enum LeaveType {
+  sick
+  personal
+  vacation
+  other
+}
+
+enum LeaveStatus {
+  pending
+  approved
+  rejected
+}
+
+enum TaskStatus {
+  pending
+  in_progress
+  completed
+  overdue
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+}
+
+// Models
+
+model Employee {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  phone         String
+  role          Role
+  avatar        String?
+  portfolioSize Int       @default(0)
+  username      String?   @unique
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  visits        Visit[]
+  tasks         Task[]
+  leaveRequests LeaveRequest[]
+  activityLogs  ActivityLog[]
+
+  // For assignments (Using array for simplicity since Postgres supports it, 
+  // but could be m-n relation table if needed for heavy querying)
+  assignedLocationIds String[] 
+}
+
+model Company {
+  id        String        @id @default(uuid())
+  name      String
+  taxId     String?
+  logo      String?
+  grade     CompanyGrade
+  status    CompanyStatus
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  locations Location[]
+  tasks     Task[]
+}
+
+model Location {
+  id             String         @id @default(uuid())
+  companyId      String
+  company        Company        @relation(fields: [companyId], references: [id])
+  
+  code           String?
+  status         LocationStatus?
+  name           String
+  address        String
+  postalCode     String?
+  district       String?
+  province       String?
+  region         String?
+  googleMapLink  String?
+  lat            Float
+  lng            Float
+  
+  // Active Customer Additional Fields
+  officialName   String?
+  customerType   CustomerType?
+  ownerName      String?
+  ownerPhone     String?
+  documents      String[]       // Postgres array
+  shippingAddress String?
+  receiverName   String?
+  receiverPhone  String?
+  creditTerm     Int?
+  vatType        VatType?
+  promotionNotes String?
+  notes          String?
+  
+  statusNote     String?
+  
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  createdBy      String?
+
+  contacts       ContactPerson[]
+  visits         Visit[]
+  tasks          Task[]
+  
+  // Determining who is assigned here
+  assignedEmployeeIds String[]
+}
+
+model ContactPerson {
+  id         String   @id @default(uuid())
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  
+  name       String
+  role       String
+  phone      String
+  lineId     String?
+}
+
+model Visit {
+  id           String   @id @default(uuid())
+  employeeId   String
+  employee     Employee @relation(fields: [employeeId], references: [id])
+  locationId   String
+  location     Location @relation(fields: [locationId], references: [id])
+  
+  checkInTime  DateTime
+  checkOutTime DateTime?
+  objectives   String[] // Storing as array of strings
+  notes        String?
+  images       String[] // Storing as array of strings
+  metOwner     Boolean  @default(false)
+  
+  createdAt    DateTime @default(now())
+}
+
+model Task {
+  id             String       @id @default(uuid())
+  title          String
+  description    String?
+  objectives     String[]
+  
+  assigneeId     String
+  assignee       Employee     @relation(fields: [assigneeId], references: [id])
+  
+  customerId     String?
+  company        Company?     @relation(fields: [customerId], references: [id])
+  
+  locationId     String?
+  location       Location?    @relation(fields: [locationId], references: [id])
+  
+  dueDate        DateTime
+  priority       TaskPriority
+  status         TaskStatus
+  completionNote String?
+  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model LeaveRequest {
+  id          String      @id @default(uuid())
+  employeeId  String
+  employee    Employee    @relation(fields: [employeeId], references: [id])
+  
+  type        LeaveType
+  startDate   DateTime
+  endDate     DateTime
+  days        Float
+  reason      String
+  status      LeaveStatus
+  
+  reviewNote  String?
+  reviewedBy  String?     // Keeping as String ID for simplicity, could rel to Employee
+  reviewedAt  DateTime?
+  
+  createdAt   DateTime    @default(now())
+}
+
+model ActivityLog {
+  id           String   @id @default(uuid())
+  type         String   // Keeping as string to allow flexibility or use Enum if strict
+  employeeId   String
+  employee     Employee @relation(fields: [employeeId], references: [id])
+  
+  employeeName String   // Denormalized for easier log reading? Or just relation
+  description  String
+  metadata     Json?    // Postgres JSONB
+  
+  timestamp    DateTime @default(now())
+}

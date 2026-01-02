@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { 
@@ -100,8 +100,27 @@ const getRegion = (province: string, district?: string): string => {
 export default function CustomersPage() {
   const { t, language } = useLanguage();
   const { showToast } = useToast();
-  const [companies, setCompanies] = useState<Company[]>(mockCompanies);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Fetch companies from API
+  useEffect(() => {
+    async function fetchCompanies() {
+      try {
+        const res = await fetch('/api/companies');
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+        setCompanies(data);
+      } catch (error) {
+        console.error('Error fetching companies:', error);
+        showToast('Failed to load companies', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCompanies();
+  }, []);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   
   // Delete Dialog State
@@ -295,14 +314,34 @@ export default function CustomersPage() {
       }
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0] && editingCompany) {
         const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setEditingCompany({ ...editingCompany, logo: reader.result as string });
-        };
-        reader.readAsDataURL(file);
+        
+        // Show loading via toast (simple approach first)
+        const toastId = showToast('Uploading logo...', 'info'); // Assuming showToast returns ID or we just fire standard toast
+        // Actually our toast is simple, let's just show info
+        
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('folder', 'logos');
+
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!res.ok) throw new Error('Upload failed');
+
+            const data = await res.json();
+            setEditingCompany({ ...editingCompany, logo: data.url });
+            showToast('Logo uploaded successfully', 'success');
+
+        } catch (error) {
+            console.error(error);
+            showToast('Failed to upload logo', 'error');
+        }
     }
   };
 
@@ -320,6 +359,13 @@ export default function CustomersPage() {
         </button>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        </div>
+      )}
+
       {/* Search and Filter */}
       <div className="card mb-6 p-4">
           <div className="relative">
@@ -335,6 +381,7 @@ export default function CustomersPage() {
       </div>
 
       {/* Grid of Companies */}
+      {!loading && (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
          {filteredCompanies.map((company) => (
              <div key={company.id} className="card hover:shadow-md transition-shadow group relative">
@@ -446,6 +493,7 @@ export default function CustomersPage() {
              </div>
          ))}
       </div>
+      )}
 
       {/* --- ADD/EDIT MODAL --- */}
       <Modal 
@@ -696,7 +744,7 @@ export default function CustomersPage() {
                                                   <div className="flex flex-wrap gap-2">
                                                       {(loc.documents || []).map((doc, docIdx) => (
                                                           <div key={docIdx} className="relative w-16 h-16 bg-white border border-slate-200 rounded flex items-center justify-center group overflow-hidden">
-                                                              {doc.startsWith('data:image') ? (
+                                                              {(doc.startsWith('data:image') || doc.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) || doc.includes('ekenko-media')) ? (
                                                                   <Image src={doc} alt="Doc" fill className="object-cover" unoptimized />
                                                               ) : (
                                                                   <div className="text-center p-1">
@@ -724,16 +772,31 @@ export default function CustomersPage() {
                                                                   type="file" 
                                                                   accept="image/*,application/pdf"
                                                                   className="hidden"
-                                                                  onChange={(e) => {
+                                                                  onChange={async (e) => {
                                                                       if (e.target.files && e.target.files[0]) {
                                                                           const file = e.target.files[0];
-                                                                          // Mock upload - convert to dataURL
-                                                                          const reader = new FileReader();
-                                                                          reader.onloadend = () => {
-                                                                              const newDocs = [...(loc.documents || []), reader.result as string];
+                                                                          showToast('Uploading document...', 'info');
+                                                                          
+                                                                          try {
+                                                                              const formData = new FormData();
+                                                                              formData.append('file', file);
+                                                                              formData.append('folder', 'documents');
+
+                                                                              const res = await fetch('/api/upload', {
+                                                                                  method: 'POST',
+                                                                                  body: formData,
+                                                                              });
+                                                                              
+                                                                              if (!res.ok) throw new Error('Upload failed');
+                                                                              
+                                                                              const data = await res.json();
+                                                                              const newDocs = [...(loc.documents || []), data.url];
                                                                               updateBranch(idx, 'documents', newDocs);
-                                                                          };
-                                                                          reader.readAsDataURL(file);
+                                                                              showToast('Document uploaded', 'success');
+                                                                          } catch (error) {
+                                                                              console.error(error);
+                                                                              showToast('Upload failed', 'error');
+                                                                          }
                                                                       }
                                                                   }}
                                                               />

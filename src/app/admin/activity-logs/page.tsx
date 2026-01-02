@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { mockActivityLogs, ActivityLog, ActivityType, mockEmployees } from "@/utils/mockData";
 import { format } from "date-fns";
@@ -35,13 +35,14 @@ export default function ActivityLogsPage() {
   const itemsPerPage = 30;
 
   // Initialize dates
-  useState(() => {
+  // Initialize dates on client side only to prevent hydration mismatch
+  useEffect(() => {
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 0); // Last day of month
     setStartDate(start.toISOString().split('T')[0]);
     setEndDate(end.toISOString().split('T')[0]);
-  });
+  }, []);
 
   const isInRange = (dateString: string) => {
     if (!startDate || !endDate) return true;

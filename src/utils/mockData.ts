@@ -456,7 +456,7 @@ export const mockActivityLogs: ActivityLog[] = [
         employeeId: '1',
         employeeName: 'Somchai Prasert',
         description: 'เข้างาน',
-        timestamp: new Date(Date.now() - 3600000).toISOString()
+        timestamp: new Date(now.getTime() - 3600000).toISOString()
     },
     {
         id: 'act2',
@@ -465,7 +465,7 @@ export const mockActivityLogs: ActivityLog[] = [
         employeeName: 'Somchai Prasert',
         description: 'สร้างลูกค้าใหม่: Amazon Cafe - Siam Branch',
         metadata: { companyName: 'Amazon Cafe', branchName: 'Siam Branch' },
-        timestamp: new Date(Date.now() - 7200000).toISOString()
+        timestamp: new Date(now.getTime() - 7200000).toISOString()
     },
     {
         id: 'act3',
@@ -474,7 +474,7 @@ export const mockActivityLogs: ActivityLog[] = [
         employeeName: 'Nida Somjai',
         description: 'เช็คอินที่: Starbucks - Central World',
         metadata: { locationName: 'Starbucks - Central World' },
-        timestamp: new Date(Date.now() - 10800000).toISOString()
+        timestamp: new Date(now.getTime() - 10800000).toISOString()
     },
     {
         id: 'act4',

@@ -24,6 +24,7 @@ export type Location = {
     postalCode?: string;
     district?: string;
     province?: string;
+    region?: string; // New field for Territory/Region
     googleMapLink?: string; // New field for Maps URL
     lat: number;
     lng: number;

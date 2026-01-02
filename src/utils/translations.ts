@@ -52,6 +52,9 @@ export const translations = {
         search_employees: "Search employees...",
         col_name: "Name",
         col_role: "Role",
+        add_contact: "Add Contact",
+        save_changes: "Save Changes",
+        auto_detected: "Auto-detected",
         col_contact: "Contact",
         col_actions: "Actions",
         no_employees: "No employees found matching your search.",
@@ -335,6 +338,10 @@ export const translations = {
         search_employees: "ค้นหาพนักงาน...",
         col_name: "ชื่อ",
         col_role: "ตำแหน่ง",
+        add_contact: "เพิ่มผู้ติดต่อ",
+        save_changes: "บันทึกการเปลี่ยนแปลง",
+        auto_detected: "ระบุอัตโนมัติ",
+        profile_image: "รูปโปรไฟล์",
         col_contact: "ติดต่อ",
         col_actions: "จัดการ",
         no_employees: "ไม่พบพนักงานที่ค้นหา",
@@ -343,7 +350,6 @@ export const translations = {
         confirm_delete_employee: "คุณแน่ใจหรือไม่ที่จะลบพนักงานคนนี้?",
         username: "ชื่อผู้ใช้งาน",
         password: "รหัสผ่าน",
-        profile_image: "รูปโปรไฟล์",
         password_placeholder: "เว้นว่างไว้หากไม่ต้องการเปลี่ยน",
 
         // Settings Page

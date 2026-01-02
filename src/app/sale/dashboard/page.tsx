@@ -12,7 +12,8 @@ import {
   Clock,
   LogOut,
   ChevronRight,
-  FileText
+  FileText,
+  Home
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { mockVisits, mockCompanies } from "@/utils/mockData";
@@ -31,7 +32,10 @@ export default function SaleDashboardPage() {
   const [elapsedTime, setElapsedTime] = useState({ hours: 0, minutes: 0 });
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Load clock-in state from localStorage on mount
+  // WFH State
+  const [isWorkFromHome, setIsWorkFromHome] = useState(false);
+
+  // Load clock-in state and WFH from localStorage on mount
   useEffect(() => {
     const savedClockIn = localStorage.getItem('clockInTime');
     if (savedClockIn) {
@@ -39,7 +43,17 @@ export default function SaleDashboardPage() {
       setClockInTime(savedTime);
       setIsClockedIn(true);
     }
+    
+    // Load WFH Setting
+    const savedWFH = localStorage.getItem('isWorkFromHome') === 'true';
+    setIsWorkFromHome(savedWFH);
   }, []);
+  
+  const toggleWFH = () => {
+    const newState = !isWorkFromHome;
+    setIsWorkFromHome(newState);
+    localStorage.setItem('isWorkFromHome', String(newState));
+  };
 
   // Update current time every second (Bangkok timezone)
   useEffect(() => {
@@ -196,9 +210,26 @@ export default function SaleDashboardPage() {
               {isClockedIn ? t("clock_out") : t("clock_in")}
             </button>
           </div>
-          {/* Decorative Circle */}
           <div className="absolute -right-6 -bottom-10 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
         </div>
+
+        {/* WFH Toggle (Moved from CheckIn Page) */}
+        {!isClockedIn && (
+           <div className="mt-4 flex items-center justify-between p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl">
+              <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isWorkFromHome ? 'bg-teal-100 text-teal-600' : 'bg-slate-200 text-slate-400'}`}>
+                      <Home size={16} />
+                  </div>
+                  <div className="text-sm font-bold text-slate-700">
+                      Work From Home
+                  </div>
+              </div>
+              <label className={`relative inline-flex items-center cursor-pointer`}>
+                <input type="checkbox" className="sr-only peer" checked={isWorkFromHome} onChange={toggleWFH} />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+              </label>
+           </div>
+        )}
       </div>
 
       <div className="px-6 -mt-4">

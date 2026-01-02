@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
-import { MapPin, Camera, X, Check, Search, Navigation, SwitchCamera } from "lucide-react";
+import { MapPin, Camera, X, Check, Search, Navigation, SwitchCamera, Briefcase } from "lucide-react";
 import { mockCompanies, Company, Location, VisitObjective } from "@/utils/mockData";
 import { clsx } from "clsx";
 
@@ -18,7 +18,19 @@ export default function CheckInPage() {
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedLocation, setSelectedLocation] = useState<{ company: Company, location: Location } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isWorkFromHome, setIsWorkFromHome] = useState(false);
   
+  // Load WFH setting from localStorage
+  useEffect(() => {
+    const savedWFH = localStorage.getItem('isWorkFromHome') === 'true';
+    setIsWorkFromHome(savedWFH);
+  }, []);
+  
+  // Location State
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>({ lat: 13.7563, lng: 100.5018 }); // Default for demo
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
   // Form State
   const [objectives, setObjectives] = useState<VisitObjective[]>([]);
   const [notes, setNotes] = useState("");
@@ -32,16 +44,87 @@ export default function CheckInPage() {
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
   const [photoType, setPhotoType] = useState<'visit' | 'asset'>('visit'); // Track which type of photo
 
-  // Mock finding nearby locations
+  // --- Helpers ---
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+      const R = 6371; // km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c; // Distance in km
+  };
+
+  const handleUpdateLocation = () => {
+      setIsLocating(true);
+      setLocationError(null);
+      if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+              (position) => {
+                  setUserLocation({
+                      lat: position.coords.latitude,
+                      lng: position.coords.longitude
+                  });
+                  setIsLocating(false);
+              },
+              (error) => {
+                  console.error("Error getting location", error);
+                  setLocationError("Could not retrieve location.");
+                  setIsLocating(false);
+              },
+              { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+          );
+      } else {
+          setLocationError("Geolocation is not supported by this browser.");
+          setIsLocating(false);
+      }
+  };
+
+  // Find nearby locations (within 500m i.e., 0.5km) OR All locations if WFH
   const nearbyLocations = mockCompanies.flatMap(c => 
-      c.locations.map(l => ({ company: c, location: l }))
-  ).filter(item => 
-      item.company.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      item.location.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      c.locations.map(l => {
+          const distance = userLocation 
+              ? calculateDistance(userLocation.lat, userLocation.lng, l.lat, l.lng) 
+              : Infinity;
+          return { company: c, location: l, distance };
+      })
+  ).filter(item => {
+      // 1. If WFH, ignore distance check. Else, must be within 500m (0.5km)
+      if (!isWorkFromHome && item.distance > 0.5) return false;
+      
+      // 2. Filter by search query if exists
+      if (searchQuery) {
+          return item.company.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                 item.location.name.toLowerCase().includes(searchQuery.toLowerCase());
+      }
+      return true;
+  }).sort((a, b) => a.distance - b.distance);
+
+  const closestLocationName = nearbyLocations.length > 0 ? nearbyLocations[0].location.name : "Unknown / No Store Nearby";
 
   const handleLocationSelect = (item: { company: Company, location: Location }) => {
       setSelectedLocation(item);
+      setStep(2);
+  };
+
+  const handleCreateNewLocation = () => {
+      // Create a temporary mock location for the new store
+      if (!userLocation) {
+        alert("Please update location first.");
+        return;
+      }
+      const newLoc: any = {
+          company: { id: 'new-c', name: 'New Customer (Lead)', grade: 'C', status: 'lead', locations: [] },
+          location: { 
+              id: 'new-l', 
+              name: 'New Location', 
+              address: 'Pinned Location', 
+              lat: userLocation.lat, 
+              lng: userLocation.lng 
+          }
+      };
+      setSelectedLocation(newLoc);
       setStep(2);
   };
 
@@ -176,21 +259,41 @@ export default function CheckInPage() {
                   <h1 className="text-xl font-bold text-slate-900">{t('check_in')} - Select Location</h1>
               </div>
 
-              {/* Mock Map / GPS Status */}
+              {/* Status Bar */}
               <div className="bg-indigo-600 text-white p-4 rounded-xl shadow-lg shadow-indigo-200 mb-6 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center animate-pulse">
-                          <Navigation size={20} />
+                      <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                          {isLocating ? (
+                              <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                          ) : (
+                              <Navigation size={20} />
+                          )}
                       </div>
-                      <div>
-                          <div className="text-sm font-medium opacity-90">Current Location</div>
-                          <div className="font-bold text-sm">13.7563° N, 100.5018° E</div>
+                      <div className="min-w-0">
+                          <div className="text-xs opacity-80 uppercase font-semibold">Current Location</div>
+                          <div className="font-bold text-sm truncate max-w-[180px]">
+                              {userLocation 
+                                  ? (nearbyLocations.length > 0 ? `Near: ${closestLocationName}` : "No registered store nearby")
+                                  : "Location not found"
+                              }
+                          </div>
                       </div>
                   </div>
-                  <button className="text-xs bg-white/20 px-3 py-1.5 rounded-lg hover:bg-white/30 backdrop-blur-sm">
-                      Update
+                  <button 
+                      onClick={handleUpdateLocation}
+                      disabled={isLocating}
+                      className="text-xs bg-white/20 px-3 py-1.5 rounded-lg hover:bg-white/30 backdrop-blur-sm disabled:opacity-50"
+                  >
+                      {isLocating ? "Updating..." : "Update"}
                   </button>
               </div>
+
+              
+              {locationError && (
+                  <div className="mb-4 bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-200">
+                      {locationError}
+                  </div>
+              )}
 
               {/* Search */}
               <div className="relative mb-4">
@@ -206,22 +309,42 @@ export default function CheckInPage() {
 
               {/* List */}
               <div className="space-y-3">
-                  {nearbyLocations.map((item, idx) => (
-                      <button 
-                          key={`${item.company.id}-${item.location.id}`}
-                          onClick={() => handleLocationSelect(item)}
-                          className="w-full text-left bg-white p-4 rounded-xl border border-slate-100 shadow-sm active:scale-[0.98] transition-transform flex items-start gap-3"
-                      >
-                          <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0 mt-1">
-                              <MapPin size={20} />
+                  {nearbyLocations.length > 0 ? (
+                      nearbyLocations.map((item, idx) => (
+                          <button 
+                              key={`${item.company.id}-${item.location.id}`}
+                              onClick={() => handleLocationSelect(item)}
+                              className="w-full text-left bg-white p-4 rounded-xl border border-slate-100 shadow-sm active:scale-[0.98] transition-transform flex items-start gap-3"
+                          >
+                              <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0 mt-1">
+                                  <MapPin size={20} />
+                              </div>
+                              <div className="min-w-0">
+                                  <h3 className="font-bold text-slate-900 truncate">{item.location.name}</h3>
+                                  <p className="text-sm text-slate-600 font-medium truncate">{item.company.name}</p>
+                                  <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                                     <Navigation size={10} />
+                                     {(item.distance * 1000).toFixed(0)}m away
+                                  </p>
+                              </div>
+                          </button>
+                      ))
+                  ) : (
+                      <div className="text-center py-10">
+                          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mx-auto mb-3">
+                              <MapPin size={32} />
                           </div>
-                          <div>
-                              <h3 className="font-bold text-slate-900">{item.location.name}</h3>
-                              <p className="text-sm text-slate-600 font-medium">{item.company.name}</p>
-                              <p className="text-xs text-slate-400 mt-1 truncate">{item.location.address}</p>
-                          </div>
-                      </button>
-                  ))}
+                          <h3 className="text-slate-900 font-bold mb-1">No Stores Nearby</h3>
+                          <p className="text-slate-500 text-sm mb-4">We couldn't find any registered stores within 500m of your location.</p>
+                          
+                          <button 
+                              onClick={handleCreateNewLocation}
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700"
+                          >
+                              Create New Location
+                          </button>
+                      </div>
+                  )}
               </div>
           </div>
       );
@@ -287,23 +410,33 @@ export default function CheckInPage() {
               <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                   <h3 className="text-sm font-bold text-slate-800 mb-3">{t('visit_objectives')}</h3>
                   <div className="space-y-2">
-                      {objectiveList.map(obj => (
-                          <label key={obj} className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50 cursor-pointer active:bg-indigo-50 transition-colors">
-                              <div className={clsx(
-                                  "w-5 h-5 rounded border flex items-center justify-center transition-colors",
-                                  objectives.includes(obj) ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-slate-300"
+                      {objectiveList.map(obj => {
+                          const isDisabled = isWorkFromHome && obj === 'check_assets';
+                          return (
+                              <label key={obj} className={clsx(
+                                  "flex items-center gap-3 p-3 rounded-lg border transition-colors",
+                                  isDisabled ? "bg-slate-100 border-slate-200 opacity-60 cursor-not-allowed" : "bg-slate-50 border-slate-100 cursor-pointer active:bg-indigo-50"
                               )}>
-                                  {objectives.includes(obj) && <Check size={14} />}
-                              </div>
-                              <input 
-                                  type="checkbox" 
-                                  className="hidden"
-                                  checked={objectives.includes(obj)}
-                                  onChange={() => toggleObjective(obj)}
-                              />
-                              <span className="text-sm text-slate-700">{t(`obj_${obj}` as any)}</span>
-                          </label>
-                      ))}
+                                  <div className={clsx(
+                                      "w-5 h-5 rounded border flex items-center justify-center transition-colors",
+                                      objectives.includes(obj) ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-slate-300"
+                                  )}>
+                                      {objectives.includes(obj) && <Check size={14} />}
+                                  </div>
+                                  <input 
+                                      type="checkbox" 
+                                      className="hidden"
+                                      disabled={isDisabled}
+                                      checked={objectives.includes(obj)}
+                                      onChange={() => !isDisabled && toggleObjective(obj)}
+                                  />
+                                  <span className="text-sm text-slate-700">
+                                      {t(`obj_${obj}` as any)}
+                                      {isDisabled && <span className="text-[10px] text-red-500 ml-2">(Disabled for WFH)</span>}
+                                  </span>
+                              </label>
+                          );
+                      })}
                   </div>
               </div>
 

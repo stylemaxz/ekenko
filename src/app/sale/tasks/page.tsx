@@ -16,6 +16,8 @@ import { mockTasks, mockCompanies, mockEmployees, Task } from "@/utils/mockData"
 import { clsx } from "clsx";
 import { format } from "date-fns";
 import { enUS, th } from "date-fns/locale";
+import { Modal } from "@/components/ui/Modal";
+import { Save, X } from "lucide-react";
 
 export default function SaleTasksPage() {
   const { t, language } = useLanguage();
@@ -25,7 +27,43 @@ export default function SaleTasksPage() {
   const currentUserId = "1"; // In reality, get from Auth Context
 
   // Filter tasks for current user
-  const myTasks = mockTasks.filter(task => task.assigneeId === currentUserId);
+  const [myTasks, setMyTasks] = useState<Task[]>(mockTasks.filter(task => task.assigneeId === currentUserId));
+
+  // Update Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [updateStatus, setUpdateStatus] = useState<string>("in_progress");
+  const [updateNote, setUpdateNote] = useState("");
+
+  const handleUpdateClick = (task: Task) => {
+    setSelectedTask(task);
+    setUpdateStatus(task.status);
+    setUpdateNote(task.completionNote || "");
+    setIsModalOpen(true);
+  };
+
+  const handleSaveUpdate = () => {
+    if (!selectedTask) return;
+
+    // 1. Update Global Mock Data (For Admin to see)
+    const taskIndex = mockTasks.findIndex(t => t.id === selectedTask.id);
+    if (taskIndex !== -1) {
+        mockTasks[taskIndex] = {
+            ...mockTasks[taskIndex],
+            status: updateStatus as any,
+            completionNote: updateNote
+        };
+    }
+
+    // 2. Update Local State
+    setMyTasks(prev => prev.map(t => 
+        t.id === selectedTask.id 
+            ? { ...t, status: updateStatus as any, completionNote: updateNote }
+            : t
+    ));
+
+    setIsModalOpen(false);
+  };
 
   // Group by status
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -101,8 +139,8 @@ export default function SaleTasksPage() {
             className={clsx(
               "px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all shrink-0",
               statusFilter === filter.key
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
-                : "bg-white text-slate-600 border border-slate-200 hover:border-indigo-200"
+                ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                : "bg-white text-slate-600 border border-slate-200 hover:border-primary/40"
             )}
           >
             {filter.label} ({filter.count})
@@ -184,7 +222,7 @@ export default function SaleTasksPage() {
                     {task.objectives.slice(0, 2).map((obj) => (
                       <span
                         key={obj}
-                        className="text-[10px] px-2 py-1 bg-indigo-50 text-indigo-600 rounded-md font-medium"
+                        className="text-[10px] px-2 py-1 bg-primary/10 text-primary rounded-md font-medium"
                       >
                         {t(`obj_${obj}` as any)}
                       </span>
@@ -208,9 +246,13 @@ export default function SaleTasksPage() {
                     {isOverdue ? t('status_overdue') : t(`status_${task.status}` as any)}
                   </span>
                   
+                  
                   {task.status !== 'completed' && (
-                    <button className="text-xs text-indigo-600 font-bold hover:text-indigo-700">
-                      {language === 'th' ? 'อัปเดต' : 'Update'}
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); handleUpdateClick(task); }}
+                        className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary-hover shadow-sm transition-all shadow-primary/20"
+                    >
+                      {language === 'th' ? 'อัปเดตสถานะ' : 'Update Status'}
                     </button>
                   )}
                 </div>
@@ -226,6 +268,59 @@ export default function SaleTasksPage() {
           </div>
         )}
       </div>
+
+       {/* Update Task Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={t('language') === 'th' ? 'อัปเดตงาน' : 'Update Task'}
+        width="max-w-md"
+        footer={
+           <>
+              <button 
+                  onClick={() => setIsModalOpen(false)} 
+                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 font-medium text-sm hover:bg-slate-50"
+              >
+                  {t('cancel')}
+              </button>
+              <button 
+                  onClick={handleSaveUpdate} 
+                  className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary-hover flex items-center gap-2"
+              >
+                  <Save size={16} />
+                  {t('language') === 'th' ? 'บันทึก' : 'Save'}
+              </button>
+           </>
+        }
+      >
+         <div className="space-y-4">
+            <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                    {t('language') === 'th' ? 'สถานะ' : 'Status'}
+                </label>
+                <select
+                    className="w-full rounded-lg border-slate-200 text-sm p-2.5"
+                    value={updateStatus}
+                    onChange={(e) => setUpdateStatus(e.target.value)}
+                >
+                    <option value="pending">{t('status_pending')}</option>
+                    <option value="in_progress">{t('status_in_progress')}</option>
+                    <option value="completed">{t('status_completed')}</option>
+                </select>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                    {t('language') === 'th' ? 'ความคืบหน้า / หมายเหตุ' : 'Progress / Note'}
+                </label>
+                <textarea
+                    className="w-full rounded-lg border-slate-200 text-sm p-3 min-h-[100px]"
+                    placeholder={t('language') === 'th' ? 'รายละเอียดการทำงาน...' : 'Task execution details...'}
+                    value={updateNote}
+                    onChange={(e) => setUpdateNote(e.target.value)}
+                />
+            </div>
+         </div>
+      </Modal>
     </div>
   );
 }

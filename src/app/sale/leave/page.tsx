@@ -113,7 +113,7 @@ export default function SaleLeaveRequestsPage() {
         </div>
         <button
           onClick={handleRequestLeave}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20 hover:bg-primary-hover active:scale-95 transition-all"
         >
           <Plus size={20} />
           {t('request_leave')}
@@ -162,7 +162,7 @@ export default function SaleLeaveRequestsPage() {
                       {format(new Date(request.startDate), "d MMM", { locale })} - {format(new Date(request.endDate), "d MMM yyyy", { locale })}
                     </span>
                   </div>
-                  <div className="text-indigo-600 font-bold">
+                  <div className="text-primary font-bold">
                     {days} {t('days')}
                   </div>
                 </div>
@@ -265,11 +265,11 @@ export default function SaleLeaveRequestsPage() {
 
           {/* Days Count */}
           {newRequest.startDate && newRequest.endDate && (
-            <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-center">
-              <div className="text-2xl font-bold text-indigo-600">
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-primary">
                 {calculateDays(newRequest.startDate, newRequest.endDate)}
               </div>
-              <div className="text-sm text-indigo-700">{t('days')}</div>
+              <div className="text-sm text-primary/80">{t('days')}</div>
             </div>
           )}
 

@@ -25,27 +25,43 @@ export default function DashboardPage() {
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const { t } = useLanguage();
 
+  // Date Range State
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+
   // Initialize date on client side only
   useEffect(() => {
     const now = new Date();
     setCurrentMonth(now.getMonth());
     setCurrentYear(now.getFullYear());
     setLastUpdated(now.toLocaleTimeString());
+    
+    // Default range: Beginning of month to End of month
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    setStartDate(formatDateForInput(start));
+    setEndDate(formatDateForInput(end));
   }, []);
 
-  // Helper to check if date is in current month
-  const isCurrentMonth = (dateString: string) => {
-    if (currentMonth === 0 && currentYear === 0) return false; // Not initialized yet
-    const date = new Date(dateString);
-    return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+  const formatDateForInput = (date: Date) => {
+    return date.toISOString().split('T')[0];
+  };
+
+  // Helper to check if date is in selected range
+  const isInRange = (dateString: string) => {
+    if (!startDate || !endDate) return true;
+    const date = new Date(dateString).getTime();
+    const start = new Date(startDate).setHours(0, 0, 0, 0);
+    const end = new Date(endDate).setHours(23, 59, 59, 999);
+    return date >= start && date <= end;
   };
 
   // --- METRIC CALCULATIONS ---
 
   // 1. Existing Customer Coverage % (Location-based)
   const coverageData = mockEmployees.map(emp => {
-    // Find visits by this employee
-    const empVisits = mockVisits.filter(v => v.employeeId === emp.id);
+    // Find visits by this employee within range
+    const empVisits = mockVisits.filter(v => v.employeeId === emp.id && isInRange(v.checkInTime));
     
     // Find unique locations visited belonging to 'existing' companies
     const uniqueLocationsVisited = new Set<string>();
@@ -74,8 +90,8 @@ export default function DashboardPage() {
 
   // 2. New Prospect Visits (Monthly)
   const huntingData = mockEmployees.map(emp => {
-     // Find visits by this employee in current month
-    const empVisits = mockVisits.filter(v => v.employeeId === emp.id && isCurrentMonth(v.checkInTime));
+     // Find visits by this employee in selected range
+    const empVisits = mockVisits.filter(v => v.employeeId === emp.id && isInRange(v.checkInTime));
     
     // Count visits to locations belonging to 'lead' companies
     let leadVisitCount = 0;
@@ -123,8 +139,9 @@ export default function DashboardPage() {
   // Filter feed
   const filteredVisits = enrichedVisits.filter(v => {
     if (selectedEmployee !== "all" && v.employeeId !== selectedEmployee) return false;
+    if (!isInRange(v.checkInTime)) return false;
     return true;
-  });
+  }).slice(0, 20); // Limit to 20 latest activities
 
   return (
     <div className="p-6 space-y-8">
@@ -234,6 +251,27 @@ export default function DashboardPage() {
                                 <option key={e.id} value={e.id}>{e.name}</option>
                             ))}
                         </select>
+                    </div>
+                    
+                     <div className="pt-4 border-t border-slate-100 space-y-3">
+                         <div>
+                            <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{t('start_date') || "Start Date"}</label>
+                            <input 
+                                type="date" 
+                                className="input w-full text-sm"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                            />
+                         </div>
+                         <div>
+                            <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{t('end_date') || "End Date"}</label>
+                            <input 
+                                type="date" 
+                                className="input w-full text-sm"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                            />
+                         </div>
                     </div>
                     
                     <div className="pt-4 border-t border-slate-100">

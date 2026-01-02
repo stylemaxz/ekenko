@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { mockActivityLogs, ActivityLog, ActivityType } from "@/utils/mockData";
+import { mockActivityLogs, ActivityLog, ActivityType, mockEmployees } from "@/utils/mockData";
 import { format } from "date-fns";
 import { th, enUS } from "date-fns/locale";
 import { 
@@ -27,12 +27,36 @@ export default function ActivityLogsPage() {
 
   const [logs] = useState<ActivityLog[]>(mockActivityLogs);
   const [filterType, setFilterType] = useState<ActivityType | 'all'>('all');
+  const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
 
-  const filteredLogs = filterType === 'all' 
-    ? logs 
-    : logs.filter(log => log.type === filterType);
+  // Initialize dates
+  useState(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0); // Last day of month
+    setStartDate(start.toISOString().split('T')[0]);
+    setEndDate(end.toISOString().split('T')[0]);
+  });
+
+  const isInRange = (dateString: string) => {
+    if (!startDate || !endDate) return true;
+    const date = new Date(dateString).getTime();
+    const start = new Date(startDate).setHours(0, 0, 0, 0);
+    const end = new Date(endDate).setHours(23, 59, 59, 999);
+    return date >= start && date <= end;
+  };
+
+  const filteredLogs = logs.filter(log => {
+    if (filterType !== 'all' && log.type !== filterType) return false;
+    if (selectedEmployee !== 'all' && log.employeeId !== selectedEmployee) return false;
+    if (!isInRange(log.timestamp)) return false;
+    return true;
+  });
 
   // Pagination
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
@@ -140,7 +164,48 @@ export default function ActivityLogsPage() {
         </div>
       </div>
 
-      {/* Filter */}
+      {/* Advanced Filter (Date & Employee) */}
+      <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm mb-6">
+        <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2">
+            <Filter size={18} />
+            {language === 'th' ? 'ตัวกรอง' : 'Filters'}
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+             <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{language === 'th' ? 'พนักงาน' : 'Employee'}</label>
+                <select 
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    value={selectedEmployee}
+                    onChange={(e) => { setSelectedEmployee(e.target.value); setCurrentPage(1); }}
+                >
+                    <option value="all">{language === 'th' ? 'พนักงานทั้งหมด' : 'All Employees'}</option>
+                    {mockEmployees.map(e => (
+                        <option key={e.id} value={e.id}>{e.name}</option>
+                    ))}
+                </select>
+             </div>
+             <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{language === 'th' ? 'วันที่เริ่มต้น' : 'Start Date'}</label>
+                <input 
+                    type="date" 
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    value={startDate}
+                    onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
+                />
+             </div>
+             <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{language === 'th' ? 'วันที่สิ้นสุด' : 'End Date'}</label>
+                 <input 
+                    type="date" 
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    value={endDate}
+                    onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }}
+                />
+             </div>
+        </div>
+      </div>
+
+       {/* Type Tags Filter */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
           <Filter size={16} className="text-slate-600" />

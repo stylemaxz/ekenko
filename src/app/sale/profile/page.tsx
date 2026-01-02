@@ -3,15 +3,84 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { LogOut, ChevronRight, Globe, User } from "lucide-react";
+import { LogOut, ChevronRight, Globe, User, Edit, Save, Camera, Mail, Phone, Lock } from "lucide-react";
+import { useState, useRef } from "react";
+import { mockEmployees } from "@/utils/mockData";
+import { useToast } from "@/contexts/ToastContext";
+import { clsx } from "clsx";
 
 export default function SaleProfilePage() {
   const { t, setLanguage, language } = useLanguage();
   const router = useRouter();
+  const { showToast } = useToast();
+
+  // Mock Current User (ID: 1)
+  const currentUserId = "1";
+  const [profileData, setProfileData] = useState(() => 
+    mockEmployees.find(e => e.id === currentUserId) || mockEmployees[0]
+  );
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({ ...profileData, password: "" });
 
   const handleLogout = () => {
-    // Mock logout - redirect to login page
     router.push('/');
+  };
+
+  const toggleEdit = () => {
+    if (isEditing) {
+      // Cancel edit
+      setIsEditing(false);
+      setFormData({ ...profileData, password: "" });
+    } else {
+      // Start edit
+      setIsEditing(true);
+      setFormData({ ...profileData, password: "" });
+    }
+  };
+
+  const handleSave = () => {
+    if (!formData.name || !formData.email || !formData.username) {
+        showToast(t('fill_required'), 'error');
+        return;
+    }
+
+    // Update Global Mock Data
+    const index = mockEmployees.findIndex(e => e.id === currentUserId);
+    if (index !== -1) {
+        const updated = { ...formData };
+        if (!updated.password) {
+            updated.password = mockEmployees[index].password; // Keep old password
+        }
+        mockEmployees[index] = updated as any;
+    }
+
+    setProfileData(formData as any);
+    setIsEditing(false);
+    showToast(t('save_success'), 'success');
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageClick = () => {
+    if (isEditing) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast("Image too large (max 5MB)", "error");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, avatar: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const menuItems = [
@@ -25,19 +94,164 @@ export default function SaleProfilePage() {
 
   return (
     <div className="pb-24 pt-8 px-4 bg-slate-50 min-h-screen">
-       <div className="flex flex-col items-center mb-8">
-           <div className="w-24 h-24 rounded-full bg-slate-200 border-4 border-white shadow-md mb-4 overflow-hidden relative">
-               {/* Placeholder Avatar */}
-               <Image 
-                  src="https://i.pravatar.cc/150?u=1" 
-                  alt="Profile" 
-                  fill
-                  className="object-cover"
-                  unoptimized // External mock image
-               />
+       {/* Profile Header & Form */}
+       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
+           <div className="flex justify-between items-start mb-6">
+               <h2 className="text-lg font-bold text-slate-900">{isEditing ? t('edit_details' as any) : t('my_profile' as any)}</h2>
+               <button 
+                  onClick={isEditing ? handleSave : toggleEdit}
+                  className={clsx(
+                    "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all",
+                    isEditing 
+                        ? "bg-primary text-primary-foreground hover:bg-primary-hover shadow-lg shadow-primary/20" 
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  )}
+               >
+                  {isEditing ? <Save size={16} /> : <Edit size={16} />}
+                  {isEditing ? t('save') : 'Edit'}
+               </button>
            </div>
-           <h2 className="text-xl font-bold text-slate-900">Somchai Salesman</h2>
-           <p className="text-slate-500">Sales Representative</p>
+
+           <div className="flex flex-col items-center mb-8">
+       <div className="relative group">
+                   <div className={clsx(
+                       "w-28 h-28 rounded-full bg-slate-200 border-4 border-white shadow-md overflow-hidden relative",
+                       isEditing && "cursor-pointer ring-4 ring-primary/20"
+                   )} onClick={handleImageClick}>
+                       <Image 
+                          src={isEditing ? (formData.avatar || profileData.avatar || "") : (profileData.avatar || "")} 
+                          alt="Profile" 
+                          fill
+                          className="object-cover"
+                          unoptimized
+                       />
+                       {isEditing && (
+                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                               <Camera className="text-white" size={24} />
+                           </div>
+                       )}
+                   </div>
+                   {isEditing && (
+                     <>
+                        <p className="text-xs text-center text-slate-400 mt-2">Tap to change</p>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={handleFileChange}
+                        />
+                     </>
+                   )}
+               </div>
+               
+               {!isEditing && (
+                   <div className="text-center mt-4">
+                       <h2 className="text-xl font-bold text-slate-900">{profileData.name}</h2>
+                       <p className="text-slate-500 capitalize">{profileData.role}</p>
+                   </div>
+               )}
+           </div>
+
+           {/* View Mode */}
+           {!isEditing && (
+               <div className="space-y-4">
+                   <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                       <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-slate-400 shadow-sm border border-slate-100">
+                           <Mail size={18} />
+                       </div>
+                       <div>
+                           <div className="text-xs text-slate-400 font-medium uppercase">{t('email')}</div>
+                           <div className="text-sm font-medium text-slate-700">{profileData.email}</div>
+                       </div>
+                   </div>
+                   <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                       <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-slate-400 shadow-sm border border-slate-100">
+                           <Phone size={18} />
+                       </div>
+                       <div>
+                           <div className="text-xs text-slate-400 font-medium uppercase">{t('phone')}</div>
+                           <div className="text-sm font-medium text-slate-700">{profileData.phone}</div>
+                       </div>
+                   </div>
+                   <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                       <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-slate-400 shadow-sm border border-slate-100">
+                           <User size={18} />
+                       </div>
+                       <div>
+                           <div className="text-xs text-slate-400 font-medium uppercase">{t('username')}</div>
+                           <div className="text-sm font-medium text-slate-700">{profileData.username}</div>
+                       </div>
+                   </div>
+               </div>
+           )}
+
+           {/* Edit Mode */}
+           {isEditing && (
+               <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                   <div>
+                       <label className="label">{t('col_name')}</label>
+                       <input 
+                           className="input w-full"
+                           value={formData.name || ''}
+                           onChange={(e) => setFormData({...formData, name: e.target.value})}
+                       />
+                   </div>
+                   <div>
+                       <label className="label">{t('email')}</label>
+                       <input 
+                           className="input w-full"
+                           value={formData.email || ''}
+                           onChange={(e) => setFormData({...formData, email: e.target.value})}
+                       />
+                   </div>
+                   <div>
+                       <label className="label">{t('phone')}</label>
+                       <input 
+                           className="input w-full"
+                           value={formData.phone || ''}
+                           onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                       />
+                   </div>
+                   
+                   <div className="pt-4 border-t border-slate-100">
+                       <h3 className="font-bold text-slate-700 text-sm mb-3">Login Credentials</h3>
+                       <div className="space-y-3">
+                           <div>
+                               <label className="label">{t('username')}</label>
+                               <div className="relative">
+                                   <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                   <input 
+                                       className="input w-full pl-9"
+                                       value={formData.username || ''}
+                                       onChange={(e) => setFormData({...formData, username: e.target.value})}
+                                   />
+                               </div>
+                           </div>
+                           <div>
+                               <label className="label">{t('password')} <span className="text-xs font-normal text-slate-400">(Leave blank to keep current)</span></label>
+                               <div className="relative">
+                                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                   <input 
+                                       type="password"
+                                       className="input w-full pl-9"
+                                       placeholder="New Password"
+                                       value={formData.password || ''}
+                                       onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                   />
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+
+                   <button 
+                       onClick={toggleEdit}
+                       className="w-full py-3 mt-4 text-slate-500 font-medium hover:text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+                   >
+                       Cancel
+                   </button>
+               </div>
+           )}
        </div>
 
        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">

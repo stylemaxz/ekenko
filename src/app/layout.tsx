@@ -30,6 +30,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="th">
+      <head>
+        <script src="http://localhost:8097"></script>
+      </head>
       <body className={`${inter.variable} ${sarabun.variable} font-sans antialiased`}>
         <LanguageProvider>
           <ToastProvider>

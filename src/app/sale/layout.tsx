@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Home, Users, MapPin, User, Menu } from 'lucide-react';
+import { Home, Users, MapPin, User, Menu, UserPlus } from 'lucide-react';
 import clsx from 'clsx';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -13,12 +13,12 @@ export default function SalesLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const navItems = [
     { icon: Home, label: t('nav_dashboard'), path: '/sale/dashboard' },
     { icon: Users, label: t('nav_customers'), path: '/sale/customers' },
-    { icon: MapPin, label: t('check_in'), path: '/sale/check-in' },
+    { icon: UserPlus, label: language === 'th' ? 'ลูกค้าใหม่' : 'New Client', path: '/sale/customers?status=lead' },
     { icon: User, label: t('profile'), path: '/sale/profile' },
   ];
 
@@ -34,6 +34,7 @@ export default function SalesLayout({
               src="/ekenko_logo.png" 
               alt="Ekenko Logo" 
               fill
+              sizes="128px"
               className="object-contain"
               priority
             />

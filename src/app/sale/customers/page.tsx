@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Search, MapPin, Plus, User, X, Save, Building2, Edit, AlertCircle, CheckCircle2, FileText, Image as ImageIcon } from "lucide-react";
+import { Search, MapPin, Plus, User, X, Save, Building2, Edit, AlertCircle, CheckCircle2, FileText, Image as ImageIcon, Navigation } from "lucide-react";
 import Image from "next/image";
 import { mockCompanies, Company, Location, LocationStatus, mockActivityLogs } from "@/utils/mockData";
 import { clsx } from "clsx";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/contexts/ToastContext";
 
@@ -63,12 +63,26 @@ export default function SaleCustomersPage() {
     locations: company.locations.filter(loc => loc.createdBy === currentUserId)
   })).filter(company => company.locations.length > 0);
 
-  const filteredCompanies = myCustomers.filter(company => 
-    company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    company.locations.some(loc => 
-        loc.name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
+  const searchParams = useSearchParams();
+  const statusFilter = searchParams.get('status');
+
+  const filteredCompanies = myCustomers.filter(company => {
+    // 1. Search Query
+    const matchesSearch = company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        company.locations.some(loc => loc.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    // 2. Status Filter
+    const matchesStatus = !statusFilter || company.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const getPageTitle = () => {
+      if (statusFilter === 'lead') {
+          return language === 'th' ? 'ลูกค้าใหม่' : 'New Customers';
+      }
+      return t('customers');
+  };
 
   const handleAddCustomer = () => {
       setNewCustomer({
@@ -257,7 +271,7 @@ export default function SaleCustomersPage() {
   return (
     <div className="pb-24 pt-6 px-4">
       <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-slate-900">{t('customers')}</h1>
+          <h1 className="text-2xl font-bold text-slate-900">{getPageTitle()}</h1>
           <button 
             onClick={handleAddCustomer}
             className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-lg shadow-black/20 active:scale-95 transition-transform"
@@ -320,12 +334,23 @@ export default function SaleCustomersPage() {
                                        </span>
                                    </div>
                                </div>
-                               <button
-                                   onClick={() => handleEditCustomer(company, loc)}
-                                   className="p-2 text-primary hover:bg-red-50 rounded-lg transition-colors shrink-0"
-                               >
-                                   <Edit size={16} />
-                               </button>
+                                <div className="flex items-center">
+                                   <button
+                                       onClick={() => handleEditCustomer(company, loc)}
+                                       className="p-2 text-primary hover:bg-slate-100 rounded-lg transition-colors shrink-0"
+                                   >
+                                       <Edit size={16} />
+                                   </button>
+                                   <a
+                                       href={loc.googleMapLink || `https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lng}`}
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors shrink-0 ml-1"
+                                       onClick={(e) => e.stopPropagation()}
+                                   >
+                                        <Navigation size={16} />
+                                   </a>
+                                </div>
                            </div>
                        ))}
                    </div>

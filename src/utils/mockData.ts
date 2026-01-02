@@ -156,6 +156,7 @@ export type Task = {
     priority: 'low' | 'medium' | 'high';
     status: TaskStatus;
     createdAt: string;
+    completionNote?: string; // Result/Note from sales rep
 };
 
 // Mock Data

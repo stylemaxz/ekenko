@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Search, MapPin, Plus, User, X, Save, Building2, Edit, AlertCircle, CheckCircle2, FileText, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
-import { mockCompanies, Company, Location, LocationStatus } from "@/utils/mockData";
+import { mockCompanies, Company, Location, LocationStatus, mockActivityLogs } from "@/utils/mockData";
 import { clsx } from "clsx";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
@@ -123,6 +123,20 @@ export default function SaleCustomersPage() {
       };
 
       setCompanies(prev => [...prev, newCompanyData]);
+      
+      // Log Activity: Customer Created
+      mockActivityLogs.unshift({
+        id: `act_${Date.now()}`,
+        type: 'customer_created',
+        employeeId: currentUserId,
+        employeeName: 'Somchai Salesman', // Mock name
+        description: t('language') === 'th' 
+            ? `สร้างลูกค้าใหม่: ${newCustomer.companyName} - ${newCustomer.branchName}`
+            : `Created new customer: ${newCustomer.companyName} - ${newCustomer.branchName}`,
+        metadata: { companyName: newCustomer.companyName, branchName: newCustomer.branchName },
+        timestamp: new Date().toISOString()
+      });
+
       setIsModalOpen(false);
       showToast(t('save_success'), 'success');
   };
@@ -190,6 +204,27 @@ export default function SaleCustomersPage() {
       }
       return company;
     }));
+
+    // Log Activity: Status Changed
+    const oldStatusLabel = getStatusLabel(editingLocation.location.status);
+    const newStatusLabel = getStatusLabel(editStatus);
+    
+    mockActivityLogs.unshift({
+      id: `act_${Date.now()}`,
+      type: 'customer_status_changed',
+      employeeId: currentUserId,
+      employeeName: 'Somchai Salesman', // Mock name
+      description: t('language') === 'th'
+        ? `เปลี่ยนสถานะลูกค้า: ${editingLocation.company.name} (${oldStatusLabel} → ${newStatusLabel})`
+        : `Customer Status Changed: ${editingLocation.company.name} (${oldStatusLabel} → ${newStatusLabel})`,
+      metadata: { 
+          companyName: editingLocation.company.name, 
+          oldStatus: editingLocation.location.status, 
+          newStatus: editStatus,
+          note: editNote
+      },
+      timestamp: new Date().toISOString()
+    });
 
     setIsEditModalOpen(false);
     showToast(

@@ -65,6 +65,7 @@ export default function LoginPage() {
               fill
               className="object-contain"
               priority
+              sizes="192px"
             />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">

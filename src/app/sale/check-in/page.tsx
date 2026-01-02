@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import { MapPin, Camera, X, Check, Search, Navigation, SwitchCamera, Briefcase } from "lucide-react";
-import { mockCompanies, Company, Location, VisitObjective } from "@/utils/mockData";
+import { mockCompanies, Company, Location, VisitObjective, mockActivityLogs } from "@/utils/mockData";
 import { clsx } from "clsx";
 
 export default function CheckInPage() {
@@ -240,6 +240,25 @@ export default function CheckInPage() {
           assetImages,
           metOwner
       });
+
+      // Log Activity: Check In
+      mockActivityLogs.unshift({
+        id: `act_${Date.now()}`,
+        type: 'check_in',
+        employeeId: '1', // Hardcoded current user
+        employeeName: 'Somchai Salesman',
+        description: t('language') === 'th'
+            ? `เช็คอินที่: ${selectedLocation?.company.name} - ${selectedLocation?.location.name}`
+            : `Check-in at: ${selectedLocation?.company.name} - ${selectedLocation?.location.name}`,
+        metadata: { 
+            companyName: selectedLocation?.company.name, 
+            locationName: selectedLocation?.location.name,
+            objectives: objectives,
+            hasPhoto: images.length > 0
+        },
+        timestamp: new Date().toISOString()
+      });
+
       router.push('/sale/dashboard');
   };
 

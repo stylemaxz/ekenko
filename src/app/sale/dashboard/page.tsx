@@ -16,7 +16,7 @@ import {
   Home
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { mockVisits, mockCompanies } from "@/utils/mockData";
+import { mockVisits, mockCompanies, mockActivityLogs } from "@/utils/mockData";
 import { useState, useEffect } from "react";
 
 export default function SaleDashboardPage() {
@@ -90,6 +90,16 @@ export default function SaleDashboardPage() {
       setIsClockedIn(true);
       // Save to localStorage
       localStorage.setItem('clockInTime', bangkokTime.toISOString());
+
+      // Log Activity: Clock In
+      mockActivityLogs.unshift({
+        id: `act_${Date.now()}`,
+        type: 'clock_in',
+        employeeId: currentUserId,
+        employeeName: 'Somchai Salesman',
+        description: t('language') === 'th' ? 'เข้างาน' : 'Clock In',
+        timestamp: bangkokTime.toISOString()
+      });
     } else {
       // Clocking out - check if worked less than 8 hours
       const now = toZonedTime(new Date(), BANGKOK_TZ);
@@ -118,6 +128,19 @@ export default function SaleDashboardPage() {
       setElapsedTime({ hours: 0, minutes: 0 });
       // Remove from localStorage
       localStorage.removeItem('clockInTime');
+
+      // Log Activity: Clock Out
+      mockActivityLogs.unshift({
+        id: `act_${Date.now()}`,
+        type: 'clock_out',
+        employeeId: currentUserId,
+        employeeName: 'Somchai Salesman',
+        description: t('language') === 'th' 
+          ? `ออกงาน (ทำงาน ${elapsedTime.hours} ชม. ${elapsedTime.minutes} นาที)` 
+          : `Clock Out (Worked ${elapsedTime.hours}h ${elapsedTime.minutes}m)`,
+        metadata: { hoursWorked: elapsedTime.hours + (elapsedTime.minutes / 60) },
+        timestamp: new Date().toISOString()
+      });
     }
     // In real app: API call to record time & location
   };

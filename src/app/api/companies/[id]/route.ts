@@ -33,7 +33,7 @@ export async function PUT(
 ) {
     try {
         const session = await getSession();
-        if (!session || session.role !== 'manager') {
+        if (!session || !['admin', 'manager', 'sale', 'sales'].includes(session.role as string)) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 

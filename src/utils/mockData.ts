@@ -1,165 +1,24 @@
-// --- Level 3: Contact Person ---
-export type ContactPerson = {
-    id: string;
-    name: string;
-    role: string; // e.g. Manager, Purchasing
-    phone: string;
-    lineId?: string;
-};
+import {
+    Company,
+    Location,
+    ContactPerson,
+    Employee,
+    LeaveRequest,
+    ActivityLog,
+    Visit,
+    Task,
+    VisitObjective,
+    VisitObjectives as SharedVisitObjectives
+} from "@/types";
 
-// --- Level 2: Branch / Location ---
-export type CustomerStatus = 'active' | 'closed' | 'inactive';
+// Re-export types for backward compatibility if needed, distinct from local types
+// but since we want to unify, we should remove local definitions.
 
-export type LocationStatus = CompanyStatus;
+// Visit Objectives - Re-export or use shared
+export const VisitObjectives = SharedVisitObjectives;
+export type { VisitObjective };
 
-export type CustomerType = 'individual' | 'juristic';
-export type VatType = 'ex-vat' | 'in-vat' | 'non-vat';
-
-export type Location = {
-    id: string;
-    code?: string; // Store Code
-    status?: LocationStatus; // Branch specific status
-    name: string; // e.g. "Siam Paragon Branch" (Internal/Display Name)
-    address: string;
-    postalCode?: string;
-    district?: string;
-    province?: string;
-    region?: string; // New field for Territory/Region
-    googleMapLink?: string; // New field for Maps URL
-    lat: number;
-    lng: number;
-    contacts: ContactPerson[]; // People at this branch
-    createdBy?: string;
-    customerStatus?: CustomerStatus;
-    statusNote?: string;
-    assignedTo?: string[]; // Array of Employee IDs assigned to this location
-
-    // --- Active Customer Additional Fields ---
-    officialName?: string; // ชื่อร้านค้า (เป็นทางการ)
-    customerType?: CustomerType; // ประเภทลูกค้า
-    ownerName?: string; // ชื่อเจ้าของร้าน หรือกรรมการ
-    ownerPhone?: string; // เบอร์โทรเจ้าของร้าน หรือกรรมการ
-    documents?: string[]; // Attached documents (max 6)
-    shippingAddress?: string; // ที่อยู่จัดส่ง
-    receiverName?: string;
-    receiverPhone?: string;
-    creditTerm?: number; // 0, 5, 15, 30, 45, 60, 90
-    vatType?: VatType;
-    promotionNotes?: string; // โปรโมชั่นการขาย และราคา
-    notes?: string; // Note (General)
-};
-
-// --- Level 1: Company / Account ---
-export type CompanyGrade = 'A' | 'B' | 'C';
-export type CompanyStatus = 'existing' | 'lead' | 'inactive' | 'closed' | 'terminate';
-
-export type Company = {
-    id: string;
-    name: string; // e.g. "Amazon Cafe HQ"
-    taxId?: string;
-    logo?: string; // New field for company logo
-    grade: CompanyGrade;
-    status: CompanyStatus;
-    locations: Location[]; // Branches belonging to this company
-};
-
-export type Employee = {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    role: 'sales' | 'manager';
-    avatar?: string;
-    portfolioSize: number; // Total target 'Locations' assigned to this rep
-    username?: string;
-    password?: string;
-};
-
-export type LeaveType = 'sick' | 'personal' | 'vacation' | 'other';
-export type LeaveStatus = 'pending' | 'approved' | 'rejected';
-
-export type LeaveRequest = {
-    id: string;
-    employeeId: string;
-    type: LeaveType;
-    startDate: string;
-    endDate: string;
-    days: number;
-    reason: string;
-    status: LeaveStatus;
-    reviewNote?: string;
-    reviewedBy?: string;
-    reviewedAt?: string;
-    createdAt: string;
-};
-
-// Activity Log
-export type ActivityType =
-    | 'customer_created'
-    | 'customer_status_changed'
-    | 'check_in'
-    | 'leave_requested'
-    | 'leave_approved'
-    | 'leave_rejected'
-    | 'task_created'
-    | 'task_completed'
-    | 'employee_created'
-    | 'clock_in'
-    | 'clock_out';
-
-export type ActivityLog = {
-    id: string;
-    type: ActivityType;
-    employeeId: string;
-    employeeName: string;
-    description: string;
-    metadata?: Record<string, any>;
-    timestamp: string;
-};
-
-export type Visit = {
-    id: string;
-    employeeId: string;
-    locationId: string;
-    checkInTime: string; // ISO String
-    checkOutTime?: string; // ISO String
-    objectives: VisitObjective[];
-    notes?: string;
-    images: string[];
-    metOwner: boolean;
-};
-
-// --- Task / Assignment ---
-// --- Task / Assignment ---
-export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'overdue';
-
-// Visit Objectives
-export const VisitObjectives = [
-    'propose_new_products',       // เสนอสินค้าใหม่
-    'discuss_promotion',          // คุยโปรโมชั่น
-    'check_assets',               // ตรวจเช็คทรัพย์สินบริษัท
-    'collect_debt',               // ตามหนี้สิน
-    'general_followup'            // ติดตามพูดคุยทั่วไป
-] as const;
-
-export type VisitObjective = typeof VisitObjectives[number];
-
-export type Task = {
-    id: string;
-    title: string;
-    description?: string;
-    objectives?: VisitObjective[]; // Selected objectives
-    assigneeId: string; // Employee ID
-    customerId?: string; // Company ID
-    locationId?: string; // Location ID
-    dueDate: string; // ISO Date String
-    priority: 'low' | 'medium' | 'high';
-    status: TaskStatus;
-    createdAt: string;
-    completionNote?: string; // Result/Note from sales rep
-};
-
-// Mock Data
+// Maintain exported arrays typed with shared types
 export const mockTasks: Task[] = [
     {
         id: 't1',
@@ -223,12 +82,11 @@ export const mockCompanies: Company[] = [
                 googleMapLink: 'https://maps.app.goo.gl/example1',
                 lat: 13.7563,
                 lng: 100.5018,
-                assignedTo: ['1', '2'], // Assigned to Somchai and Somsri
+                assignedEmployeeIds: ['1', '2'], // Assigned to Somchai and Somsri
                 contacts: [
                     { id: 'ct1', name: 'Manager John', role: 'Branch Manager', phone: '081-234-5678', lineId: 'john711' }
                 ],
                 createdBy: "1",
-                customerStatus: "active"
             },
             {
                 id: 'l2',
@@ -240,12 +98,11 @@ export const mockCompanies: Company[] = [
                 googleMapLink: 'https://maps.app.goo.gl/example2',
                 lat: 13.7291,
                 lng: 100.5358,
-                assignedTo: ['3'], // Assigned to Danai
+                assignedEmployeeIds: ['3'], // Assigned to Danai
                 contacts: [
                     { id: 'ct2', name: 'Asst. Jane', role: 'Asst. Manager', phone: '089-876-5432' }
                 ],
                 createdBy: "1",
-                customerStatus: "active"
             },
         ]
     },
@@ -269,7 +126,6 @@ export const mockCompanies: Company[] = [
                     { id: 'ct3', name: 'Auntie Dang', role: 'Owner', phone: '089-999-9999' }
                 ],
                 createdBy: "1",
-                customerStatus: "active"
             }
         ]
     },
@@ -293,7 +149,6 @@ export const mockCompanies: Company[] = [
                     { id: 'ct4', name: 'K. Somkiat', role: 'Purchasing Director', phone: '02-999-8888', lineId: 'somkiat.tech' }
                 ],
                 createdBy: "1",
-                customerStatus: "active"
             }
         ]
     },
@@ -316,7 +171,6 @@ export const mockCompanies: Company[] = [
                     { id: 'ct5', name: 'Barista Joe', role: 'General Manager', phone: '088-777-6666' }
                 ],
                 createdBy: "1",
-                customerStatus: "active"
             }
         ]
     }

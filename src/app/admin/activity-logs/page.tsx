@@ -94,7 +94,7 @@ export default function ActivityLogsPage() {
       case 'customer_created':
         return <UserPlus size={18} className="text-teal-600" />;
       case 'customer_status_changed':
-        return <Edit size={18} className="text-indigo-600" />;
+        return <Edit size={18} className="text-orange-600" />;
       case 'check_in':
         return <MapPin size={18} className="text-purple-600" />;
       case 'clock_in':
@@ -120,7 +120,7 @@ export default function ActivityLogsPage() {
       case 'customer_created':
         return 'bg-teal-50 border-teal-100';
       case 'customer_status_changed':
-        return 'bg-indigo-50 border-indigo-100';
+        return 'bg-orange-50 border-orange-100';
       case 'check_in':
         return 'bg-purple-50 border-purple-100';
       case 'clock_in':
@@ -180,7 +180,7 @@ export default function ActivityLogsPage() {
           </div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-          <div className="text-2xl font-bold text-indigo-600">
+          <div className="text-2xl font-bold text-red-600">
             {logs.filter(l => l.type === 'check_in').length}
           </div>
           <div className="text-xs text-slate-600 mt-1">
@@ -199,7 +199,7 @@ export default function ActivityLogsPage() {
              <div>
                 <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{language === 'th' ? 'พนักงาน' : 'Employee'}</label>
                 <select 
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     value={selectedEmployee}
                     onChange={(e) => { setSelectedEmployee(e.target.value); setCurrentPage(1); }}
                 >
@@ -213,7 +213,7 @@ export default function ActivityLogsPage() {
                 <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{language === 'th' ? 'วันที่เริ่มต้น' : 'Start Date'}</label>
                 <input 
                     type="date" 
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     value={startDate}
                     onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
                 />
@@ -222,7 +222,7 @@ export default function ActivityLogsPage() {
                 <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{language === 'th' ? 'วันที่สิ้นสุด' : 'End Date'}</label>
                  <input 
                     type="date" 
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     value={endDate}
                     onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }}
                 />
@@ -249,8 +249,8 @@ export default function ActivityLogsPage() {
               className={clsx(
                 "px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all",
                 filterType === type.value
-                  ? "bg-indigo-600 text-white shadow-md"
-                  : "bg-white text-slate-700 border border-slate-200 hover:border-indigo-300"
+                  ? "bg-primary text-white shadow-md"
+                  : "bg-white text-slate-700 border border-slate-200 hover:border-red-200"
               )}
             >
               {type.label}
@@ -292,7 +292,7 @@ export default function ActivityLogsPage() {
                             if (log.type === 'leave_requested' && log.metadata?.leaveType) {
                                 const typeMap: any = { sick: 'ลาป่วย', personal: 'ลากิจ', vacation: 'ลาพักร้อน', other: 'ลาอื่นๆ' };
                                 const typeLabel = typeMap[log.metadata.leaveType] || log.metadata.leaveType;
-                                return `ขอ${typeLabel} จำนวน ${log.metadata.days || '-'} วัน`;
+                                return `ขอ${typeLabel} จำนวน ${log.metadata.days || '-'} วัน (เหตุผล: ${log.metadata.reason || '-'})`;
                             }
                             if ((log.type === 'leave_approved' || log.type === 'leave_rejected') && log.metadata?.targetEmployeeName) {
                                 const action = log.type === 'leave_approved' ? 'อนุมัติ' : 'ไม่อนุมัติ';

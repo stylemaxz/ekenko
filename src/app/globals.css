@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-inter), var(--font-sarabun), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans: var(--font-trirong), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
   --color-background: #f8fafc;
   --color-foreground: #0f172a;
@@ -21,6 +21,7 @@
 @layer base {
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: var(--font-trirong), sans-serif;
   }
 }
 

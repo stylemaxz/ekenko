@@ -20,6 +20,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { mockCompanies, Company, Location, ContactPerson, mockEmployees } from "@/utils/mockData";
+import { Employee } from "@/types";
 import { clsx } from "clsx";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -100,26 +101,35 @@ const getRegion = (province: string, district?: string): string => {
 export default function CustomersPage() {
   const { t, language } = useLanguage();
   const { showToast } = useToast();
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch companies from API
+  // Fetch companies and employees
   useEffect(() => {
-    async function fetchCompanies() {
+    async function fetchData() {
       try {
-        const res = await fetch('/api/companies');
-        if (!res.ok) throw new Error('Failed to fetch');
-        const data = await res.json();
-        setCompanies(data);
+        const [companiesRes, employeesRes] = await Promise.all([
+          fetch('/api/companies'),
+          fetch('/api/employees')
+        ]);
+        
+        if (!companiesRes.ok || !employeesRes.ok) throw new Error('Failed to fetch data');
+        
+        const companiesData = await companiesRes.json();
+        const employeesData = await employeesRes.json();
+        
+        setCompanies(companiesData);
+        setEmployees(employeesData);
       } catch (error) {
-        console.error('Error fetching companies:', error);
-        showToast('Failed to load companies', 'error');
+        console.error('Error fetching data:', error);
+        showToast('Failed to load data', 'error');
       } finally {
         setLoading(false);
       }
     }
-    fetchCompanies();
+    fetchData();
   }, []);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   
@@ -185,6 +195,25 @@ export default function CustomersPage() {
               if (!res.ok) throw new Error('Delete failed');
               
               showToast(t('delete_success'), 'success');
+              
+              const deletedCompany = companies.find(c => c.id === companyToDelete);
+              if (deletedCompany) {
+                 // Log Activity: Customer Deleted
+                 await fetch('/api/activity-logs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'customer_status_changed', // Reuse status changed or create new type
+                        employeeId: '4',
+                        description: language === 'th' ? `ลบลูกค้า: ${deletedCompany.name}` : `Deleted Customer: ${deletedCompany.name}`,
+                        metadata: {
+                           companyName: deletedCompany.name,
+                           action: 'delete'
+                        }
+                    })
+                 });
+              }
+
               setCompanyToDelete(null);
               setIsDeleteDialogOpen(false);
               
@@ -220,6 +249,20 @@ export default function CustomersPage() {
                   const error = await res.json();
                   throw new Error(error.error || 'Failed to update');
               }
+              
+              // Log Activity: Customer Updated
+              await fetch('/api/activity-logs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'customer_status_changed',
+                    employeeId: '4', // Mock Admin ID for now or fetch actual admin
+                    description: language === 'th' ? `อัปเดตข้อมูลลูกค้า: ${editingCompany.name}` : `Updated Customer Info: ${editingCompany.name}`,
+                    metadata: {
+                       companyName: editingCompany.name
+                    }
+                })
+              });
           } else {
               // Create
               const res = await fetch('/api/companies', {
@@ -232,6 +275,20 @@ export default function CustomersPage() {
                   const error = await res.json();
                   throw new Error(error.error || 'Failed to create');
               }
+
+              // Log Activity: Customer Created
+              await fetch('/api/activity-logs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'customer_created',
+                    employeeId: '4', // Mock Admin ID
+                    description: language === 'th' ? `สร้างลูกค้าใหม่: ${editingCompany.name}` : `Created New Customer: ${editingCompany.name}`,
+                    metadata: {
+                       companyName: editingCompany.name
+                    }
+                })
+              });
           }
           
           setIsModalOpen(false);
@@ -1043,22 +1100,22 @@ export default function CustomersPage() {
                                               {language === 'th' ? 'พนักงานดูแล' : 'Assigned Sales'}
                                           </label>
                                           <div className="flex flex-wrap gap-2">
-                                              {mockEmployees.filter(e => e.role === 'sales').map(emp => {
-                                                  const isAssigned = (loc.assignedTo || []).includes(emp.id);
+                                              {employees.filter(e => e.role === 'sales').map(emp => {
+                                                  const isAssigned = (loc.assignedEmployeeIds || []).includes(emp.id);
                                                   return (
                                                       <button
                                                           key={emp.id}
                                                           onClick={() => {
                                                               if (editingCompany) {
                                                                   const newLocs = [...editingCompany.locations];
-                                                                  const currentAssigned = newLocs[idx].assignedTo || [];
+                                                                  const currentAssigned = newLocs[idx].assignedEmployeeIds || [];
                                                                   
                                                                   if (isAssigned) {
                                                                       // Remove
-                                                                      newLocs[idx].assignedTo = currentAssigned.filter(id => id !== emp.id);
+                                                                      newLocs[idx].assignedEmployeeIds = currentAssigned.filter(id => id !== emp.id);
                                                                   } else {
                                                                       // Add
-                                                                      newLocs[idx].assignedTo = [...currentAssigned, emp.id];
+                                                                      newLocs[idx].assignedEmployeeIds = [...currentAssigned, emp.id];
                                                                   }
                                                                   setEditingCompany({ ...editingCompany, locations: newLocs });
                                                               }

@@ -1,20 +1,14 @@
 import type { Metadata } from "next";
-import { Inter, Sarabun } from "next/font/google"; // Import Sarabun
+import { Trirong } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { ConfirmDialogProvider } from "@/contexts/ConfirmDialogContext";
 
-const inter = Inter({ 
-  subsets: ["latin"],
-  variable: '--font-inter',
-  display: 'swap',
-});
-
-const sarabun = Sarabun({
-  weight: ['300', '400', '500', '600', '700'],
+const trirong = Trirong({
+  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
   subsets: ['thai', 'latin'],
-  variable: '--font-sarabun',
+  variable: '--font-trirong',
   display: 'swap',
 });
 
@@ -32,7 +26,7 @@ export default function RootLayout({
     <html lang="th">
       <head>
       </head>
-      <body className={`${inter.variable} ${sarabun.variable} font-sans antialiased`}>
+      <body className={`${trirong.variable} font-sans antialiased`}>
         <LanguageProvider>
           <ToastProvider>
             <ConfirmDialogProvider>

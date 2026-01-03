@@ -4,9 +4,9 @@ export type Role = 'sales' | 'manager';
 
 export type CustomerStatus = 'lead' | 'existing' | 'inactive' | 'closed' | 'terminate';
 
-export type LocationStatus = 'active' | 'inactive' | 'lead';
+export type LocationStatus = 'lead' | 'existing' | 'inactive' | 'closed' | 'terminate';
 
-export type LeaveType = 'sick' | 'personal' | 'annual' | 'other';
+export type LeaveType = 'sick' | 'personal' | 'annual' | 'vacation' | 'other';
 
 export type LeaveStatus = 'pending' | 'approved' | 'rejected';
 
@@ -39,6 +39,11 @@ export type VisitObjective =
     | 'support'
     | 'promotion'
     | 'relationship'
+    | 'propose_new_products'
+    | 'check_assets'
+    | 'collect_debt'
+    | 'discuss_promotion'
+    | 'general_followup'
     | 'other';
 
 export const VisitObjectives: VisitObjective[] = [
@@ -49,20 +54,19 @@ export const VisitObjectives: VisitObjective[] = [
     'support',
     'promotion',
     'relationship',
+    'propose_new_products',
+    'check_assets',
+    'collect_debt',
+    'discuss_promotion',
+    'general_followup',
     'other'
 ];
 
-export type VatType = 'include' | 'exclude' | 'none';
+export type VatType = 'ex-vat' | 'in-vat' | 'non-vat';
 
 export type CreditTerm = 0 | 7 | 15 | 30 | 45 | 60 | 90;
 
-export type CustomerType =
-    | 'restaurant'
-    | 'cafe'
-    | 'hotel'
-    | 'retail'
-    | 'wholesale'
-    | 'other';
+export type CustomerType = 'individual' | 'juristic';
 
 // Entity Types
 export interface Employee {
@@ -74,6 +78,7 @@ export interface Employee {
     avatar?: string | null;
     portfolioSize: number;
     username?: string | null;
+    password?: string | null;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -88,8 +93,8 @@ export interface ContactPerson {
 
 export interface Location {
     id: string;
-    code: string;
-    status: LocationStatus;
+    code?: string;
+    status?: LocationStatus;
     name: string;
     address: string;
     postalCode: string;
@@ -113,7 +118,7 @@ export interface Location {
     notes?: string | null;
     statusNote?: string | null;
     createdBy?: string | null;
-    assignedTo?: string[];
+    assignedEmployeeIds?: string[];
     contacts?: ContactPerson[];
 }
 

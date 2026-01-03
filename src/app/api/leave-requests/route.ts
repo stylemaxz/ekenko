@@ -57,7 +57,8 @@ export async function POST(request: Request) {
                 leaveType: data.type,
                 days: data.days,
                 startDate: data.startDate,
-                endDate: data.endDate
+                endDate: data.endDate,
+                reason: data.reason
             }
         });
 

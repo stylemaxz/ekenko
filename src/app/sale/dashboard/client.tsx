@@ -97,68 +97,79 @@ export default function SaleDashboardClient({ initialData, currentUser }: SaleDa
   const currentUserId = currentUser.id;
 
   const handleClockInOut = async () => {
-    if (!isClockedIn) {
-      // Clocking in
-      const bangkokTime = toZonedTime(new Date(), BANGKOK_TZ);
-      setClockInTime(bangkokTime);
-      setIsClockedIn(true);
-      // Save to localStorage
-      localStorage.setItem('clockInTime', bangkokTime.toISOString());
+    try {
+        if (!isClockedIn) {
+        // Clocking in
+        const bangkokTime = toZonedTime(new Date(), BANGKOK_TZ);
+        setClockInTime(bangkokTime);
+        setIsClockedIn(true);
+        // Save to localStorage
+        localStorage.setItem('clockInTime', bangkokTime.toISOString());
 
-      // Log Activity: Clock In
-      mockActivityLogs.unshift({
-        id: `act_${Date.now()}`,
-        type: 'clock_in',
-        employeeId: currentUserId,
-        employeeName: 'Somchai Salesman',
-        description: t('language') === 'th' ? 'เข้างาน' : 'Clock In',
-        timestamp: bangkokTime.toISOString()
-      });
-    } else {
-      // Clocking out - check if worked less than 8 hours
-      const now = toZonedTime(new Date(), BANGKOK_TZ);
-      const diff = clockInTime ? now.getTime() - clockInTime.getTime() : 0;
-      const hoursWorked = diff / (1000 * 60 * 60);
-      
-      if (hoursWorked < 8) {
-        const confirmClockOut = await confirm({
-          title: language === 'th' ? 'ยังไม่ครบ 8 ชั่วโมง' : 'Less than 8 Hours',
-          message: language === 'th' 
-            ? `คุณทำงานไปเพียง ${elapsedTime.hours} ชั่วโมง ${elapsedTime.minutes} นาที\n(ยังไม่ครบ 8 ชั่วโมง)\n\nต้องการออกงานจริงหรือไม่?`
-            : `You have worked only ${elapsedTime.hours} hours ${elapsedTime.minutes} minutes\n(less than 8 hours)\n\nAre you sure you want to clock out?`,
-          confirmText: language === 'th' ? 'ออกงาน' : 'Clock Out',
-          cancelText: language === 'th' ? 'ยกเลิก' : 'Cancel',
-          type: 'warning'
+        // Call API
+        await fetch('/api/activity-logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                employeeId: currentUserId,
+                type: 'clock_in',
+                description: t('language') === 'th' ? 'เข้างาน' : 'Clock In',
+                metadata: {
+                    userAgent: navigator.userAgent
+                }
+            })
         });
-        
-        if (!confirmClockOut) {
-          return; // Cancel clock out
-        }
-      }
-      
-      // Proceed with clock out
-      setIsClockedIn(false);
-      setClockInTime(null);
-      setElapsedTime({ hours: 0, minutes: 0 });
-      // Remove from localStorage
-      localStorage.removeItem('clockInTime');
 
-      // Log Activity: Clock Out
-      mockActivityLogs.unshift({
-        id: `act_${Date.now()}`,
-        type: 'clock_out',
-        employeeId: currentUserId,
-        employeeName: 'Somchai Salesman',
-        description: t('language') === 'th' 
-          ? `ออกงาน (ทำงาน ${elapsedTime.hours} ชม. ${elapsedTime.minutes} นาที)` 
-          : `Clock Out (Worked ${elapsedTime.hours}h ${elapsedTime.minutes}m)`,
-        metadata: { hoursWorked: elapsedTime.hours + (elapsedTime.minutes / 60) },
-        timestamp: new Date().toISOString()
-      });
+        } else {
+        // Clocking out - check if worked less than 8 hours
+        const now = toZonedTime(new Date(), BANGKOK_TZ);
+        const diff = clockInTime ? now.getTime() - clockInTime.getTime() : 0;
+        const hoursWorked = diff / (1000 * 60 * 60);
+        
+        if (hoursWorked < 8) {
+            const confirmClockOut = await confirm({
+            title: language === 'th' ? 'ยังไม่ครบ 8 ชั่วโมง' : 'Less than 8 Hours',
+            message: language === 'th' 
+                ? `คุณทำงานไปเพียง ${elapsedTime.hours} ชั่วโมง ${elapsedTime.minutes} นาที\n(ยังไม่ครบ 8 ชั่วโมง)\n\nต้องการออกงานจริงหรือไม่?`
+                : `You have worked only ${elapsedTime.hours} hours ${elapsedTime.minutes} minutes\n(less than 8 hours)\n\nAre you sure you want to clock out?`,
+            confirmText: language === 'th' ? 'ออกงาน' : 'Clock Out',
+            cancelText: language === 'th' ? 'ยกเลิก' : 'Cancel',
+            type: 'warning'
+            });
+            
+            if (!confirmClockOut) {
+            return; // Cancel clock out
+            }
+        }
+        
+        // Proceed with clock out
+        setIsClockedIn(false);
+        setClockInTime(null);
+        setElapsedTime({ hours: 0, minutes: 0 });
+        // Remove from localStorage
+        localStorage.removeItem('clockInTime');
+
+        // Call API
+        await fetch('/api/activity-logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                employeeId: currentUserId,
+                type: 'clock_out',
+                description: t('language') === 'th' 
+                    ? `ออกงาน (ทำงาน ${elapsedTime.hours} ชม. ${elapsedTime.minutes} นาที)` 
+                    : `Clock Out (Worked ${elapsedTime.hours}h ${elapsedTime.minutes}m)`,
+                metadata: { 
+                    hoursWorked: elapsedTime.hours + (elapsedTime.minutes / 60),
+                    userAgent: navigator.userAgent
+                }
+            })
+        });
+        }
+    } catch (error) {
+        console.error("Error clocking in/out:", error);
+        // Optionally revert state here if critical
     }
-    // #4 Input Sanitization & #2 Zero-Trust (Simulated)
-    // In a real app, this data would be sent to an API endpoint
-    // await fetch('/api/clock-in', { method: 'POST', body: JSON.stringify({ ...sanitizedData }) })
   };
 
   // Filter recent activity for this user

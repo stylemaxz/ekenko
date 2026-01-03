@@ -32,6 +32,17 @@ export const companyService = {
         });
     },
 
+    // Helper to map vatType from string to Enum
+    mapVatType: (vatType?: string) => {
+        if (!vatType) return null;
+        switch (vatType) {
+            case 'ex-vat': return 'ex_vat';
+            case 'in-vat': return 'in_vat';
+            case 'non-vat': return 'non_vat';
+            default: return null;
+        }
+    },
+
     // Create new company with locations and contacts
     createCompany: async (data: any) => {
         return await prisma.company.create({
@@ -63,12 +74,12 @@ export const companyService = {
                         receiverName: loc.receiverName,
                         receiverPhone: loc.receiverPhone,
                         creditTerm: loc.creditTerm,
-                        vatType: loc.vatType,
+                        vatType: companyService.mapVatType(loc.vatType),
                         promotionNotes: loc.promotionNotes,
                         notes: loc.notes,
                         statusNote: loc.statusNote,
                         createdBy: loc.createdBy,
-                        assignedEmployeeIds: loc.assignedTo || [],
+                        assignedEmployeeIds: loc.assignedEmployeeIds || loc.assignedTo || [],
                         contacts: {
                             create: (loc.contacts || []).map((contact: any) => ({
                                 name: contact.name,
@@ -171,12 +182,12 @@ export const companyService = {
                                 receiverName: loc.receiverName,
                                 receiverPhone: loc.receiverPhone,
                                 creditTerm: loc.creditTerm,
-                                vatType: loc.vatType,
+                                vatType: companyService.mapVatType(loc.vatType),
                                 promotionNotes: loc.promotionNotes,
                                 notes: loc.notes,
                                 statusNote: loc.statusNote,
                                 createdBy: loc.createdBy,
-                                assignedEmployeeIds: loc.assignedTo || [],
+                                assignedEmployeeIds: loc.assignedEmployeeIds || loc.assignedTo || [],
                                 contacts: {
                                     create: (loc.contacts || []).map((contact: any) => ({
                                         name: contact.name,
@@ -207,12 +218,12 @@ export const companyService = {
                                 receiverName: loc.receiverName,
                                 receiverPhone: loc.receiverPhone,
                                 creditTerm: loc.creditTerm,
-                                vatType: loc.vatType,
+                                vatType: companyService.mapVatType(loc.vatType),
                                 promotionNotes: loc.promotionNotes,
                                 notes: loc.notes,
                                 statusNote: loc.statusNote,
                                 createdBy: loc.createdBy,
-                                assignedEmployeeIds: loc.assignedTo || [],
+                                assignedEmployeeIds: loc.assignedEmployeeIds || loc.assignedTo || [],
                                 contacts: {
                                     deleteMany: {},
                                     create: (loc.contacts || []).map((contact: any) => ({

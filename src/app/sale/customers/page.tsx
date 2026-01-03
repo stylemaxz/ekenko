@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Search, MapPin, Plus, User, X, Save, Building2, Edit, AlertCircle, CheckCircle2, FileText, Image as ImageIcon, Navigation } from "lucide-react";
+import { Search, MapPin, Plus, User, X, Save, Building2, Edit, AlertCircle, CheckCircle2, FileText, Image as ImageIcon, Navigation, Eye } from "lucide-react";
 import Image from "next/image";
 import { Company, Location, LocationStatus } from "@/types";
+import { thaiAddressDatabase } from "@/utils/thaiAddressData";
 import { clsx } from "clsx";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
@@ -16,22 +17,30 @@ export default function SaleCustomersPage() {
   const { showToast } = useToast();
   
   // Mock current user ID
-  const currentUserId = "1";
+  // Current User State
+  const [currentUser, setCurrentUser] = useState<any>(null);
   
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch companies from API
+  // Fetch companies and current user
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch('/api/companies');
-        if (res.ok) {
-          setCompanies(await res.json());
+        const [companiesRes, userRes] = await Promise.all([
+          fetch('/api/companies'),
+          fetch('/api/auth/me')
+        ]);
+
+        if (companiesRes.ok && userRes.ok) {
+          const companiesData = await companiesRes.json();
+          const userData = await userRes.json();
+          setCompanies(companiesData);
+          setCurrentUser(userData);
         }
       } catch (error) {
-        console.error('Error fetching companies:', error);
+        console.error('Error fetching data:', error);
         showToast('Failed to load customers', 'error');
       } finally {
         setLoading(false);
@@ -40,7 +49,6 @@ export default function SaleCustomersPage() {
     fetchData();
   }, []);
 
-  
   // Add Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
@@ -73,14 +81,26 @@ export default function SaleCustomersPage() {
   const [editVatType, setEditVatType] = useState<"ex-vat" | "in-vat" | "non-vat">("in-vat");
   const [editPromotionNotes, setEditPromotionNotes] = useState("");
   
+  // Address & Map Fields
+  const [editCode, setEditCode] = useState("");
+  const [editAddress, setEditAddress] = useState("");
+  const [editPostalCode, setEditPostalCode] = useState("");
+  const [editDistrict, setEditDistrict] = useState("");
+  const [editProvince, setEditProvince] = useState("");
+  const [editGoogleMapLink, setEditGoogleMapLink] = useState("");
+  const [editRegion, setEditRegion] = useState("");
+  
   // Dropdown visibility state
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(true);
   const [showBranchDropdown, setShowBranchDropdown] = useState(true);
 
-  // Filter: Show only customers created by current user
-  const myCustomers = companies.map(company => ({
+  // Filter: Show customers created by OR assigned to current user
+  const myCustomers = (!currentUser || loading) ? [] : companies.map(company => ({
     ...company,
-    locations: company.locations.filter(loc => loc.createdBy === currentUserId)
+    locations: company.locations.filter(loc => 
+        loc.createdBy === currentUser.id || 
+        (loc.assignedEmployeeIds && loc.assignedEmployeeIds.includes(currentUser.id))
+    )
   })).filter(company => company.locations.length > 0);
 
   const searchParams = useSearchParams();
@@ -104,6 +124,11 @@ export default function SaleCustomersPage() {
       return t('customers');
   };
 
+  const searchAddressByPostalCode = (code: string) => {
+    if (!code || code.length < 5) return [];
+    return thaiAddressDatabase[code] || [];
+  };
+
   const handleAddCustomer = () => {
       setNewCustomer({
         companyName: "",
@@ -117,52 +142,133 @@ export default function SaleCustomersPage() {
       setIsModalOpen(true);
   };
 
-  const handleSaveCustomer = () => {
+  const handleSaveCustomer = async () => {
       // Validation
       if (!newCustomer.companyName || !newCustomer.branchName || !newCustomer.address) {
           showToast(t('fill_required'), 'error');
           return;
       }
 
-      // Create new company with location
-      const newCompanyId = `c_${Date.now()}`;
-      const newLocationId = `loc_${Date.now()}`;
-      
-      const newLocation: Location = {
-          id: newLocationId,
-          name: newCustomer.branchName,
-          address: newCustomer.address,
-          postalCode: "",
-          district: "",
-          province: "",
-          lat: 13.75,
-          lng: 100.50,
-          contacts: newCustomer.contactName ? [{
-              id: `ct_${Date.now()}`,
-              name: newCustomer.contactName,
-              role: "",
-              phone: newCustomer.contactPhone
-          }] : [],
-          status: "lead", // Default status
-          createdBy: currentUserId, // Track who created this
-      };
+      try {
+          // If the company already exists (selected from dropdown), we should probably use its ID.
+          // BUT, companyService.createCompany creates a NEW company.
+          // If the company name matches an existing one, the backend/db might create a duplicate or we should handle it.
+          // For now, let's assume we are sending a structure that the backend can handle.
+          // Ideally, we should check if company exists: if so, add location to it. If not, create everything.
+          // However, the current backend `createCompany` creates a whole new structure.
+          // Let's optimize: Check if company name matches existing company in `companies` state.
+          
+          const existingCompany = companies.find(c => c.name.toLowerCase() === newCustomer.companyName.toLowerCase());
 
-      const newCompanyData: Company = {
-          id: newCompanyId,
-          name: newCustomer.companyName,
-          taxId: "",
-          grade: "C",
-          status: "lead",
-          locations: [newLocation]
-      };
+          if (existingCompany) {
+              // Add location to existing company
+              // We need an endpoint for adding location or use UPDATE company.
+              // companyService.updateCompany uses "upsert" for locations.
+              // So we can send the existing company ID with the new location appended.
+              
+              const newLocation = {
+                  // No ID or starts with loc_ tells backend it's new
+                  name: newCustomer.branchName,
+                  address: newCustomer.address,
+                  lat: 13.75, // Default or use GPS if we had it
+                  lng: 100.50,
+                  status: "lead",
+                  createdBy: currentUser?.id,
+                  contacts: newCustomer.contactName ? [{
+                      name: newCustomer.contactName,
+                      role: "Owner", // Default role
+                      phone: newCustomer.contactPhone
+                  }] : []
+              };
 
-      setCompanies(prev => [...prev, newCompanyData]);
-      
-      // TODO: Log Activity via API
-      // Activity logging will be implemented when activity log API is ready
+              const updatedCompany = {
+                  ...existingCompany,
+                  locations: [...existingCompany.locations, newLocation]
+              };
 
-      setIsModalOpen(false);
-      showToast(t('save_success'), 'success');
+              const res = await fetch(`/api/companies/${existingCompany.id}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(updatedCompany)
+              });
+
+              if (!res.ok) throw new Error('Failed to update company');
+              
+              const data = await res.json();
+               // Update local state with returning data from server to ensure sync
+               // We should probably re-fetch or replace the item in the list
+               setCompanies(prev => prev.map(c => c.id === data.id ? data : c));
+
+              // Log Activity: New Branch Added
+              await fetch('/api/activity-logs', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      employeeId: currentUser?.id,
+                      type: 'customer_created', // Or create a new type 'branch_created' if preferred, but customer_created fits generic 'new customer'
+                      description: language === 'th' ? `เพิ่มสาขาใหม่: ${newCustomer.companyName} (${newCustomer.branchName})` : `Added New Branch: ${newCustomer.companyName} (${newCustomer.branchName})`,
+                      metadata: {
+                         companyName: newCustomer.companyName,
+                         branchName: newCustomer.branchName
+                      }
+                  })
+              });
+
+          } else {
+            // Create New Company
+            const newCompanyPayload = {
+                name: newCustomer.companyName,
+                grade: "C",
+                status: "lead",
+                locations: [{
+                    name: newCustomer.branchName,
+                    address: newCustomer.address,
+                    lat: 13.75,
+                    lng: 100.50,
+                    status: "lead",
+                    createdBy: currentUser?.id,
+                    contacts: newCustomer.contactName ? [{
+                        name: newCustomer.contactName,
+                        role: "Owner",
+                        phone: newCustomer.contactPhone
+                    }] : []
+                }]
+            };
+
+            const res = await fetch('/api/companies', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newCompanyPayload)
+            });
+
+            if (!res.ok) throw new Error('Failed to create company');
+            
+            const data = await res.json();
+            setCompanies(prev => [data, ...prev]);
+
+            // Log Activity: Customer Created
+            await fetch('/api/activity-logs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    employeeId: currentUser?.id,
+                    type: 'customer_created',
+                    description: language === 'th' ? `สร้างลูกค้าใหม่: ${newCustomer.companyName}` : `Created New Customer: ${newCustomer.companyName}`,
+                    metadata: {
+                       companyName: newCustomer.companyName,
+                       branchName: newCustomer.branchName
+                    }
+                })
+            });
+          }
+
+          setIsModalOpen(false);
+          showToast(t('save_success'), 'success');
+          
+      } catch (error) {
+          console.error("Error saving customer:", error);
+          showToast('Failed to save customer', 'error');
+      }
   };
 
   const handleEditCustomer = (company: Company, location: Location) => {
@@ -182,11 +288,20 @@ export default function SaleCustomersPage() {
     setEditCreditTerm(location.creditTerm || 0);
     setEditVatType(location.vatType || "in-vat");
     setEditPromotionNotes(location.promotionNotes || "");
+
+    // Load Address & Map
+    setEditCode(location.code || "");
+    setEditAddress(location.address || "");
+    setEditPostalCode(location.postalCode || "");
+    setEditDistrict(location.district || "");
+    setEditProvince(location.province || "");
+    setEditGoogleMapLink(location.googleMapLink || "");
+    setEditRegion(location.region || "");
     
     setIsEditModalOpen(true);
   };
 
-  const handleSaveStatus = () => {
+  const handleSaveStatus = async () => {
     if (!editingLocation) return;
 
     // Validate: require note for closed/inactive status
@@ -195,70 +310,90 @@ export default function SaleCustomersPage() {
       return;
     }
 
-    // Update location status
-    setCompanies(prev => prev.map(company => {
-      if (company.id === editingLocation.company.id) {
-        return {
-          ...company,
-          locations: company.locations.map(loc => {
+    try {
+        // We need to update the specific location in the company
+        // Prepare the updated company object
+        const companyToUpdate = companies.find(c => c.id === editingLocation.company.id);
+        if (!companyToUpdate) return;
+
+        const updatedLocations = companyToUpdate.locations.map(loc => {
             if (loc.id === editingLocation.location.id) {
-              return {
-                ...loc,
-                status: editStatus,
-                statusNote: editNote.trim() || loc.statusNote,
-                // Update detailed fields if status is existing
-                ...(editStatus === 'existing' ? {
-                    officialName: editOfficialName,
-                    customerType: editCustomerType,
-                    ownerName: editOwnerName,
-                    ownerPhone: editOwnerPhone,
-                    documents: editDocuments,
-                    shippingAddress: editShippingAddress,
-                    receiverName: editReceiverName,
-                    receiverPhone: editReceiverPhone,
-                    creditTerm: editCreditTerm,
-                    vatType: editVatType,
-                    promotionNotes: editPromotionNotes
-                } : {})
-              };
+                return {
+                    ...loc,
+                    status: editStatus,
+                    statusNote: editNote.trim() || loc.statusNote,
+                    // Update detailed fields if status is existing
+                    ...(editStatus === 'existing' ? {
+                        officialName: editOfficialName,
+                        customerType: editCustomerType,
+                        ownerName: editOwnerName,
+                        ownerPhone: editOwnerPhone,
+                        documents: editDocuments,
+                        shippingAddress: editShippingAddress,
+                        receiverName: editReceiverName,
+                        receiverPhone: editReceiverPhone,
+                        creditTerm: editCreditTerm,
+                        vatType: editVatType,
+                        promotionNotes: editPromotionNotes
+                    } : {}),
+                    // Update basic details always
+                    code: editCode,
+                    address: editAddress,
+                    postalCode: editPostalCode,
+                    district: editDistrict,
+                    province: editProvince,
+                    googleMapLink: editGoogleMapLink,
+                    region: editRegion
+                };
             }
             return loc;
-          })
+        });
+
+        const updatedCompany = {
+            ...companyToUpdate,
+            locations: updatedLocations
         };
-      }
-      return company;
-    }));
 
-    // Log Activity: Status Changed
-    const oldStatusLabel = getStatusLabel(editingLocation.location.status);
-    const newStatusLabel = getStatusLabel(editStatus);
-    
-    // TODO: Log Activity via API
-    // Activity logging will be implemented when activity log API is ready
-    /*
-    mockActivityLogs.unshift({
-      id: `act_${Date.now()}`,
-      type: 'customer_status_changed',
-      employeeId: currentUserId,
-      employeeName: 'Somchai Salesman', // Mock name
-      description: t('language') === 'th'
-        ? `เปลี่ยนสถานะลูกค้า: ${editingLocation.company.name} (${oldStatusLabel} → ${newStatusLabel})`
-        : `Customer Status Changed: ${editingLocation.company.name} (${oldStatusLabel} → ${newStatusLabel})`,
-      metadata: { 
-          companyName: editingLocation.company.name, 
-          oldStatus: editingLocation.location.status, 
-          newStatus: editStatus,
-          note: editNote
-      },
-      timestamp: new Date().toISOString()
-    });
-    */
+        const res = await fetch(`/api/companies/${editingLocation.company.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedCompany)
+        });
 
-    setIsEditModalOpen(false);
-    showToast(
-      language === 'th' ? 'อัปเดตสถานะเรียบร้อย' : 'Status updated successfully',
-      'success'
-    );
+        if (!res.ok) throw new Error('Failed to update status');
+
+        const data = await res.json();
+        
+        // Update local state
+        setCompanies(prev => prev.map(c => c.id === data.id ? data : c));
+
+        // Call API to log activity
+        await fetch('/api/activity-logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                employeeId: currentUser?.id,
+                type: 'customer_status_changed',
+                description: language === 'th' ? `เปลี่ยนสถานะลูกค้า: ${editingLocation.company.name}` : `Customer Status Changed: ${editingLocation.company.name}`,
+                metadata: {
+                   companyName: editingLocation.company.name,
+                   oldStatus: editingLocation.location.status,
+                   newStatus: editStatus,
+                   note: editNote
+                }
+            })
+        });
+
+        setIsEditModalOpen(false);
+        showToast(
+            language === 'th' ? 'อัปเดตสถานะเรียบร้อย' : 'Status updated successfully',
+            'success'
+        );
+
+    } catch (error) {
+        console.error("Error updating status:", error);
+        showToast('Failed to update status', 'error');
+    }
   };
 
   const getStatusColor = (status?: LocationStatus) => {
@@ -351,6 +486,13 @@ export default function SaleCustomersPage() {
                                 <div className="flex items-center">
                                    <button
                                        onClick={() => handleEditCustomer(company, loc)}
+                                       className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
+                                       title={t('view_details')}
+                                   >
+                                       <Eye size={16} />
+                                   </button>
+                                   <button
+                                       onClick={() => handleEditCustomer(company, loc)}
                                        className="p-2 text-primary hover:bg-slate-100 rounded-lg transition-colors shrink-0"
                                    >
                                        <Edit size={16} />
@@ -435,31 +577,38 @@ export default function SaleCustomersPage() {
                         <div className="p-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 font-medium">
                           ⚠️ {t('language') === 'th' ? 'พบบริษัทที่คล้ายกัน' : 'Similar companies found'}:
                         </div>
-                        {matchingCompanies.map(company => (
-                          <button
-                            key={company.id}
-                            type="button"
-                            onClick={() => {
-                              setNewCustomer({ 
-                                ...newCustomer, 
-                                companyName: company.name 
-                              });
-                              setShowCompanyDropdown(false);
-                            }}
-                            className="w-full text-left p-3 hover:bg-slate-50 border-b border-slate-50 last:border-0 transition-colors"
-                          >
-                            <div className="font-medium text-slate-900">{company.name}</div>
-                            <div className="text-xs text-slate-500 mt-1">
-                              {company.locations.length} {t('language') === 'th' ? 'สาขา' : 'branches'} • 
-                              <span className={clsx(
-                                "ml-1",
-                                company.status === 'existing' ? "text-blue-600" : "text-teal-600"
-                              )}>
-                                {company.status === 'existing' ? t('status_existing') : t('status_lead')}
-                              </span>
-                            </div>
-                          </button>
-                        ))}
+                        {matchingCompanies.map(company => {
+                          const myBranchCount = company.locations.filter(loc => 
+                             loc.createdBy === currentUser?.id || 
+                             (loc.assignedEmployeeIds && loc.assignedEmployeeIds.includes(currentUser?.id))
+                          ).length;
+
+                          return (
+                            <button
+                                key={company.id}
+                                type="button"
+                                onClick={() => {
+                                setNewCustomer({ 
+                                    ...newCustomer, 
+                                    companyName: company.name 
+                                });
+                                setShowCompanyDropdown(false);
+                                }}
+                                className="w-full text-left p-3 hover:bg-slate-50 border-b border-slate-50 last:border-0 transition-colors"
+                            >
+                                <div className="font-medium text-slate-900">{company.name}</div>
+                                <div className="text-xs text-slate-500 mt-1">
+                                {myBranchCount} {t('language') === 'th' ? 'สาขาที่คุณดูแล' : 'my branches'} • 
+                                <span className={clsx(
+                                    "ml-1",
+                                    company.status === 'existing' ? "text-blue-600" : "text-teal-600"
+                                )}>
+                                    {company.status === 'existing' ? t('status_existing') : t('status_lead')}
+                                </span>
+                                </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     );
                   }
@@ -497,7 +646,8 @@ export default function SaleCustomersPage() {
                   
                   if (selectedCompany) {
                     const matchingBranches = selectedCompany.locations.filter(loc =>
-                      loc.name.toLowerCase().includes(newCustomer.branchName.toLowerCase())
+                      loc.name.toLowerCase().includes(newCustomer.branchName.toLowerCase()) &&
+                      (loc.createdBy === currentUser?.id || (loc.assignedEmployeeIds && loc.assignedEmployeeIds.includes(currentUser?.id)))
                     );
                     
                     if (matchingBranches.length > 0) {
@@ -525,10 +675,13 @@ export default function SaleCustomersPage() {
                     }
                   }
                   
-                  // Show all branches from all companies with similar names
+                  // Show all branches from all companies with similar names (Only My Branches)
                   const allMatchingBranches = companies.flatMap(c => 
                     c.locations
-                      .filter(loc => loc.name.toLowerCase().includes(newCustomer.branchName.toLowerCase()))
+                      .filter(loc => 
+                          loc.name.toLowerCase().includes(newCustomer.branchName.toLowerCase()) &&
+                          (loc.createdBy === currentUser?.id || (loc.assignedEmployeeIds && loc.assignedEmployeeIds.includes(currentUser?.id)))
+                      )
                       .map(loc => ({ company: c, location: loc }))
                   );
                   
@@ -536,7 +689,7 @@ export default function SaleCustomersPage() {
                     return (
                       <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                         <div className="p-2 bg-blue-50 border-b border-blue-100 text-xs text-blue-700 font-medium">
-                          ℹ️ {t('language') === 'th' ? 'พบสาขาที่คล้ายกันในบริษัทอื่น' : 'Similar branches in other companies'}:
+                          ℹ️ {t('language') === 'th' ? 'พบสาขาที่คล้ายกัน' : 'Similar branches found'}:
                         </div>
                         {allMatchingBranches.map((item, idx) => (
                           <div
@@ -629,6 +782,35 @@ export default function SaleCustomersPage() {
         }
       >
         <div className="space-y-4">
+           {/* Company Logo & Header */}
+           <div className="flex items-center gap-4 border-b border-slate-100 pb-4">
+              <div className="relative w-16 h-16 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden shrink-0">
+                  {editingLocation?.company.logo ? (
+                      <Image 
+                          src={editingLocation.company.logo} 
+                          alt="Logo" 
+                          fill 
+                          className="object-cover" 
+                          unoptimized
+                      />
+                  ) : (
+                      <div className="flex items-center justify-center w-full h-full text-slate-300">
+                          <Building2 size={24} />
+                      </div>
+                  )}
+              </div>
+              <div>
+                  <h3 className="font-bold text-slate-900 text-lg">{editingLocation?.company.name}</h3>
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                      <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium text-xs">
+                          {editingLocation?.company.taxId || 'Tax ID: -'}
+                      </span>
+                      <span>•</span>
+                      <span>Grade {editingLocation?.company.grade || '-'}</span>
+                  </div>
+              </div>
+           </div>
+
           {/* Customer Status */}
           <div>
             <label className="label">{t('customer_status')}</label>
@@ -759,6 +941,102 @@ export default function SaleCustomersPage() {
                        />
                    </div>
                </div>
+
+                {/* Address & Map */}
+                <div className="bg-slate-50/50 p-3 rounded border border-slate-100">
+                   <div className="grid grid-cols-2 gap-4 mb-3">
+                       <div>
+                           <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('store_code')}</label>
+                           <input 
+                               value={editCode}
+                               onChange={(e) => setEditCode(e.target.value)}
+                               className="input w-full bg-white h-8 text-xs"
+                               placeholder="Store Code"
+                           />
+                       </div>
+                       <div>
+                           <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('google_maps_link')}</label>
+                           <input 
+                               value={editGoogleMapLink}
+                               onChange={(e) => setEditGoogleMapLink(e.target.value)}
+                               className="input w-full bg-white h-8 text-xs text-blue-600"
+                               placeholder="https://maps..."
+                           />
+                       </div>
+                   </div>
+                   
+                   <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('address')}</label>
+                   <input 
+                       value={editAddress}
+                       onChange={(e) => setEditAddress(e.target.value)}
+                       className="input w-full bg-white h-8 text-xs mb-3"
+                       placeholder="Address"
+                   />
+                   
+                   <div className="grid grid-cols-3 gap-3">
+                       <div>
+                           <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('postal_code')}</label>
+                           <input 
+                               value={editPostalCode}
+                               onChange={(e) => setEditPostalCode(e.target.value)}
+                               className="input w-full bg-white h-8 text-xs"
+                               placeholder="Postal Code"
+                               maxLength={5}
+                           />
+                       </div>
+                       <div>
+                           <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('district')}</label>
+                           {searchAddressByPostalCode(editPostalCode).length > 0 ? (
+                               <select
+                                    value={editDistrict}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setEditDistrict(val);
+                                        const matches = searchAddressByPostalCode(editPostalCode);
+                                        const match = matches.find(m => 
+                                            language === 'th' ? m.districtTH === val : m.district === val
+                                        );
+                                        if (match) {
+                                            setEditProvince(language === 'th' ? match.provinceTH : match.province);
+                                        }
+                                    }}
+                                    className="input w-full bg-white h-8 text-xs p-1"
+                               >
+                                    <option value="">{t('select_district') || "Select..."}</option>
+                                    {searchAddressByPostalCode(editPostalCode).map((m, i) => (
+                                        <option key={i} value={language === 'th' ? m.districtTH : m.district}>
+                                            {language === 'th' ? m.districtTH : m.district}
+                                        </option>
+                                    ))}
+                               </select>
+                           ) : (
+                               <input 
+                                   value={editDistrict}
+                                   onChange={(e) => setEditDistrict(e.target.value)}
+                                   className="input w-full bg-white h-8 text-xs"
+                                   placeholder="District"
+                               />
+                           )}
+                       </div>
+                       <div>
+                           <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('province')}</label>
+                           <input 
+                               value={editProvince}
+                               onChange={(e) => setEditProvince(e.target.value)}
+                               className="input w-full bg-white h-8 text-xs"
+                               placeholder="Province"
+                           />
+                       </div>
+                   </div>
+                   
+                   {/* Region Display */}
+                   <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between">
+                        <span className="text-[10px] font-semibold text-slate-400 uppercase">Zone / Region</span>
+                        <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                            {editRegion || t('auto_detected')}
+                        </span>
+                   </div>
+                </div>
 
                {/* Documents Upload */}
                <div>

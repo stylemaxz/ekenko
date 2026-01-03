@@ -27,9 +27,9 @@ import { useState, useEffect } from "react";
 
 interface SaleDashboardClientProps {
   initialData: {
-    visits: Visit[];
-    companies: Company[];
-    activityLogs: ActivityLog[];
+    visits: any[];
+    companies: any[];
+    activityLogs: any[];
   };
   currentUser: {
     id: string;

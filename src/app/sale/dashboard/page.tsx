@@ -26,7 +26,10 @@ export default async function SaleDashboardPage() {
       });
       
       if (user) {
-        currentUser = user;
+        currentUser = {
+          ...user,
+          avatar: user.avatar || ''
+        };
       }
     } catch (error) {
       console.error('Error verifying token:', error);

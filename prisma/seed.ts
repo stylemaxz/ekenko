@@ -93,8 +93,8 @@ async function main() {
                 name: comp.name,
                 taxId: comp.taxId,
                 logo: comp.logo,
-                grade: comp.grade,
-                status: comp.status,
+                grade: (comp.grade as any) || 'C',
+                status: (comp.status as any),
                 // Using nested write for locations to ensure connection
                 locations: {
                     create: comp.locations.map((loc) => ({
@@ -108,8 +108,8 @@ async function main() {
                         province: loc.province,
                         region: loc.region,
                         googleMapLink: loc.googleMapLink,
-                        lat: loc.lat,
-                        lng: loc.lng,
+                        lat: loc.lat || 0,
+                        lng: loc.lng || 0,
                         officialName: loc.officialName,
                         customerType: loc.customerType,
                         ownerName: loc.ownerName,
@@ -119,15 +119,15 @@ async function main() {
                         receiverName: loc.receiverName,
                         receiverPhone: loc.receiverPhone,
                         creditTerm: loc.creditTerm,
-                        vatType: mapVatType(loc.vatType), // Fix Enum Mismatch
+                        vatType: mapVatType(loc.vatType || undefined), // Fix Enum Mismatch
                         promotionNotes: loc.promotionNotes,
                         notes: loc.notes,
                         statusNote: loc.statusNote,
                         createdBy: loc.createdBy,
-                        assignedEmployeeIds: loc.assignedTo || [],
+                        assignedEmployeeIds: loc.assignedEmployeeIds || [],
                         // Create Contacts nested within Location
                         contacts: {
-                            create: loc.contacts.map(contact => ({
+                            create: (loc.contacts || []).map(contact => ({
                                 id: contact.id,
                                 name: contact.name,
                                 role: contact.role,
@@ -155,9 +155,9 @@ async function main() {
                     customerId: task.customerId, // Optional relation to Company
                     locationId: task.locationId, // Optional relation to Location
                     dueDate: new Date(task.dueDate),
-                    priority: task.priority,
+                    priority: (task.priority as any) || 'medium',
                     status: task.status,
-                    createdAt: new Date(task.createdAt),
+                    createdAt: new Date(task.createdAt || new Date()),
                     completionNote: task.completionNote,
                 },
             });
@@ -192,11 +192,11 @@ async function main() {
                 data: {
                     id: leave.id,
                     employeeId: leave.employeeId,
-                    type: leave.type,
+                    type: (leave.type === 'annual' ? 'vacation' : leave.type) as any,
                     startDate: new Date(leave.startDate),
                     endDate: new Date(leave.endDate),
-                    days: leave.days,
-                    reason: leave.reason,
+                    days: leave.days || 1,
+                    reason: leave.reason || '-',
                     status: leave.status,
                     reviewNote: leave.reviewNote,
                     reviewedBy: leave.reviewedBy,
@@ -216,7 +216,7 @@ async function main() {
                     id: log.id,
                     type: log.type,
                     employeeId: log.employeeId,
-                    employeeName: log.employeeName,
+                    employeeName: log.employeeName || 'Unknown',
                     description: log.description,
                     metadata: log.metadata || {}, // JSONB
                     timestamp: new Date(log.timestamp),

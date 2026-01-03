@@ -403,6 +403,10 @@ export default function CustomersPage() {
   const addContact = (locIndex: number) => {
       if (editingCompany) {
           const newLocs = [...editingCompany.locations];
+          // Ensure contacts array exists
+          if (!newLocs[locIndex].contacts) {
+             newLocs[locIndex].contacts = [];
+          }
           newLocs[locIndex].contacts.push({
               id: `ct_${Date.now()}`,
               name: "",
@@ -416,8 +420,10 @@ export default function CustomersPage() {
   const removeContact = (locIndex: number, contactIndex: number) => {
       if (editingCompany) {
           const newLocs = [...editingCompany.locations];
-          newLocs[locIndex].contacts = newLocs[locIndex].contacts.filter((_, i) => i !== contactIndex);
-          setEditingCompany({ ...editingCompany, locations: newLocs });
+          if (newLocs[locIndex].contacts) {
+              newLocs[locIndex].contacts = newLocs[locIndex].contacts.filter((_, i) => i !== contactIndex);
+              setEditingCompany({ ...editingCompany, locations: newLocs });
+          }
       }
   };
 
@@ -426,7 +432,7 @@ export default function CustomersPage() {
             const newLocs = [...editingCompany.locations];
             const currentContacts = newLocs[locIndex].contacts;
             
-            if (currentContacts[contactIndex]) {
+            if (currentContacts && currentContacts[contactIndex]) {
                 currentContacts[contactIndex] = { ...currentContacts[contactIndex], [field]: value };
                 setEditingCompany({ ...editingCompany, locations: newLocs });
             }
@@ -592,7 +598,7 @@ export default function CustomersPage() {
                                          </a>
                                      )}
 
-                                     {loc.contacts.length > 0 && (
+                                     {(loc.contacts?.length || 0) > 0 && loc.contacts && (
                                          <div className="pt-1.5 border-t border-slate-200/50 pl-5 flex items-center gap-2 text-xs text-slate-500">
                                              <User size={12} />
                                              <span className="truncate">{loc.contacts[0].name} ({loc.contacts[0].role})</span>
@@ -696,7 +702,7 @@ export default function CustomersPage() {
                          <div>
                              <label className="label">{t('tax_id')}</label>
                              <input 
-                                value={editingCompany.taxId || ''}
+                                value={editingCompany.taxId ?? ''}
                                 onChange={(e) => updateField('taxId', e.target.value)}
                                 className="input w-full"
                                 placeholder="Tax ID"
@@ -705,7 +711,7 @@ export default function CustomersPage() {
                          <div>
                              <label className="label">{t('grade')}</label>
                              <select 
-                                value={editingCompany.grade}
+                                value={editingCompany.grade ?? ''}
                                 onChange={(e) => updateField('grade', e.target.value)}
                                 className="input w-full"
                              >
@@ -756,7 +762,7 @@ export default function CustomersPage() {
                                           <div>
                                               <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">{t('store_code')}</label>
                                               <input 
-                                                  value={loc.code || ''}
+                                                  value={loc.code ?? ''}
                                                   onChange={(e) => updateBranch(idx, 'code', e.target.value)}
                                                   className="input w-full bg-white h-9 text-sm"
                                                   placeholder="e.g. S001"
@@ -1097,7 +1103,7 @@ export default function CustomersPage() {
                                       <div>
                                           <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block text-indigo-600">{t('google_maps_link')}</label>
                                           <input 
-                                              value={loc.googleMapLink || ''}
+                                              value={loc.googleMapLink ?? ''}
                                               onChange={(e) => updateBranch(idx, 'googleMapLink', e.target.value)}
                                               className="input w-full bg-white h-9 text-sm border-indigo-200 focus:border-indigo-400 focus:ring-indigo-100"
                                               placeholder="https://maps.app.goo.gl/..."
@@ -1149,7 +1155,7 @@ export default function CustomersPage() {
                                       {/* Contact Persons Management */}
                                       <div className="bg-white p-3 rounded-lg border border-slate-100">
                                           <div className="flex items-center justify-between mb-2">
-                                              <div className="text-xs font-bold text-indigo-600">{t('contact_person')} ({loc.contacts.length})</div>
+                                              <div className="text-xs font-bold text-indigo-600">{t('contact_person')} ({loc.contacts?.length || 0})</div>
                                               <button 
                                                   onClick={() => addContact(idx)}
                                                   className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded hover:bg-indigo-100 font-bold flex items-center gap-1 transition-colors"
@@ -1158,14 +1164,14 @@ export default function CustomersPage() {
                                               </button>
                                           </div>
                                           
-                                          {loc.contacts.length === 0 && (
+                                          {(loc.contacts?.length || 0) === 0 && (
                                               <div className="text-center text-xs text-slate-400 py-2 italic bg-slate-50 rounded border border-dashed border-slate-200">
                                                   No contacts added
                                               </div>
                                           )}
 
                                           <div className="space-y-2">
-                                              {loc.contacts.map((contact, contactIdx) => (
+                                              {(loc.contacts || []).map((contact, contactIdx) => (
                                                   <div key={contact.id || contactIdx} className="grid grid-cols-12 gap-2 items-center group/contact">
                                                       <div className="col-span-4">
                                                           <input 

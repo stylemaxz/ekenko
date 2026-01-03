@@ -3,8 +3,14 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    domains: ['i.pravatar.cc', 'source.unsplash.com', 'images.unsplash.com', 'storage.googleapis.com'],
+    remotePatterns: [
+      { protocol: 'https', hostname: 'i.pravatar.cc' },
+      { protocol: 'https', hostname: 'source.unsplash.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'storage.googleapis.com' },
+    ],
   },
+  output: "standalone",
 };
 
 export default nextConfig;

@@ -99,7 +99,9 @@ export default function TasksPage() {
       if (diff !== 0) return diff;
       
       // Then by Date
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
   });
 
   // --- Create Task Logic ---
@@ -331,7 +333,7 @@ export default function TasksPage() {
                       <label className="label">{t('task_detail')}</label>
                       <textarea 
                           className="input w-full min-h-[100px]" 
-                          value={newTask.description}
+                          value={newTask.description ?? ''}
                           onChange={e => setNewTask({...newTask, description: e.target.value})}
                           placeholder="Enter detailed instructions..."
                       />
@@ -416,7 +418,7 @@ export default function TasksPage() {
                               <label className="label text-xs uppercase">{t('select_customer')}</label>
                               <select 
                                   className="input w-full text-sm"
-                                  value={newTask.customerId}
+                                  value={newTask.customerId ?? ''}
                                   onChange={e => setNewTask({...newTask, customerId: e.target.value, locationId: ""})}
                               >
                                   <option value="">-- None --</option>
@@ -430,7 +432,7 @@ export default function TasksPage() {
                                   <label className="label text-xs uppercase">{t('select_location')}</label>
                                   <select 
                                       className="input w-full text-sm"
-                                      value={newTask.locationId}
+                                      value={newTask.locationId ?? ''}
                                       onChange={e => setNewTask({...newTask, locationId: e.target.value})}
                                   >
                                       <option value="">-- All Locations / Head Office --</option>

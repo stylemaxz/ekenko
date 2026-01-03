@@ -210,7 +210,7 @@ export const mockVisits: Visit[] = [
         locationId: 'l3',
         checkInTime: yesterday.toISOString(),
         checkOutTime: new Date(yesterday.getTime() + 1000 * 60 * 20).toISOString(),
-        objectives: ['discuss_promotion'],
+        objectives: ['promotion'],
         notes: 'Owner not in, left brochures with staff.',
         images: [],
         metOwner: false
@@ -220,7 +220,7 @@ export const mockVisits: Visit[] = [
         employeeId: '1',
         locationId: 'l4',
         checkInTime: twoDaysAgo.toISOString(),
-        objectives: ['general_followup'],
+        objectives: ['relationship'],
         notes: 'Regular delivery completed.',
         images: [],
         metOwner: true
@@ -241,7 +241,7 @@ export const mockVisits: Visit[] = [
         employeeId: '3',
         locationId: 'l5', // Lead (same lead, different sales rep maybe?)
         checkInTime: yesterday.toISOString(),
-        objectives: ['general_followup'],
+        objectives: ['relationship'],
         notes: 'Follow up call, no answer.',
         images: [],
         metOwner: false

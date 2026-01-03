@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import SaleCustomersClient from './client';
 
 export const metadata = {
@@ -6,5 +7,9 @@ export const metadata = {
 };
 
 export default function SaleCustomersPage() {
-  return <SaleCustomersClient />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SaleCustomersClient />
+    </Suspense>
+  );
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { mockActivityLogs, ActivityLog, ActivityType, mockEmployees } from "@/utils/mockData";
+import { ActivityLog, ActivityType, Employee } from "@/types";
 import { format } from "date-fns";
 import { th, enUS } from "date-fns/locale";
 import { 
@@ -25,7 +25,9 @@ export default function ActivityLogsPage() {
   const { t, language } = useLanguage();
   const locale = language === "th" ? th : enUS;
 
-  const [logs] = useState<ActivityLog[]>(mockActivityLogs);
+  const [logs, setLogs] = useState<ActivityLog[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<ActivityType | 'all'>('all');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [startDate, setStartDate] = useState<string>("");
@@ -33,6 +35,28 @@ export default function ActivityLogsPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
+
+  // Fetch data from APIs
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [logsRes, empRes] = await Promise.all([
+          fetch('/api/activity-logs'),
+          fetch('/api/employees'),
+        ]);
+        if (logsRes.ok) setLogs(await logsRes.json());
+        if (empRes.ok) {
+          const empData = await empRes.json();
+          setEmployees(empData.filter((e: Employee) => e.role === 'sales'));
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   // Initialize dates
   // Initialize dates on client side only to prevent hydration mismatch
@@ -180,7 +204,7 @@ export default function ActivityLogsPage() {
                     onChange={(e) => { setSelectedEmployee(e.target.value); setCurrentPage(1); }}
                 >
                     <option value="all">{language === 'th' ? 'พนักงานทั้งหมด' : 'All Employees'}</option>
-                    {mockEmployees.map(e => (
+                    {employees.map(e => (
                         <option key={e.id} value={e.id}>{e.name}</option>
                     ))}
                 </select>

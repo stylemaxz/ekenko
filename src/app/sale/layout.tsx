@@ -60,11 +60,11 @@ export default function SalesLayout({
                 onClick={() => router.push(item.path)}
                 className={clsx(
                   "flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors relative",
-                  isActive ? "text-indigo-600" : "text-slate-400 hover:text-slate-600"
+                  isActive ? "text-primary" : "text-slate-400 hover:text-slate-600"
                 )}
               >
                 {isActive && (
-                    <span className="absolute top-0 w-8 h-1 bg-indigo-600 rounded-b-full"></span>
+                    <span className="absolute top-0 w-8 h-1 bg-primary rounded-b-full"></span>
                 )}
                 <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
                 <span className="text-[10px] font-medium">{item.label}</span>

@@ -4,8 +4,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { LogOut, ChevronRight, Globe, User, Edit, Save, Camera, Mail, Phone, Lock } from "lucide-react";
-import { useState, useRef } from "react";
-import { mockEmployees } from "@/utils/mockData";
+import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/contexts/ToastContext";
 import { clsx } from "clsx";
 
@@ -16,16 +15,49 @@ export default function SaleProfilePage() {
 
   // Mock Current User (ID: 1)
   const currentUserId = "1";
-  const [profileData, setProfileData] = useState(() => 
-    mockEmployees.find(e => e.id === currentUserId) || mockEmployees[0]
-  );
+  const [profileData, setProfileData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch employee data
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const res = await fetch(`/api/employees/${currentUserId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setProfileData(data);
+          setFormData({ ...data, password: "" });
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProfile();
+  }, [currentUserId]);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({ ...profileData, password: "" });
+  const [formData, setFormData] = useState<any>({ password: "" });
 
-  const handleLogout = () => {
-    router.push('/');
+  const handleLogout = async () => {
+    try {
+      const res = await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+
+      if (res.ok) {
+        showToast('Logged out successfully', 'success');
+        router.push('/login');
+      } else {
+        throw new Error('Logout failed');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      showToast('Failed to logout', 'error');
+    }
   };
+
 
   const toggleEdit = () => {
     if (isEditing) {
@@ -45,15 +77,8 @@ export default function SaleProfilePage() {
         return;
     }
 
-    // Update Global Mock Data
-    const index = mockEmployees.findIndex(e => e.id === currentUserId);
-    if (index !== -1) {
-        const updated = { ...formData };
-        if (!updated.password) {
-            updated.password = mockEmployees[index].password; // Keep old password
-        }
-        mockEmployees[index] = updated as any;
-    }
+    // TODO: Update via API
+    // await fetch(`/api/employees/${currentUserId}`, { method: 'PATCH', body: JSON.stringify(formData) });
 
     setProfileData(formData as any);
     setIsEditing(false);
@@ -97,7 +122,12 @@ export default function SaleProfilePage() {
        {/* Profile Header & Form */}
        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
            <div className="flex justify-between items-start mb-6">
-               <h2 className="text-lg font-bold text-slate-900">{isEditing ? t('edit_details' as any) : t('my_profile' as any)}</h2>
+               <h2 className="text-lg font-bold text-slate-900">
+                  {isEditing 
+                    ? (language === 'th' ? 'แก้ไขข้อมูล' : 'Edit Profile')
+                    : (language === 'th' ? 'โปรไฟล์ของฉัน' : 'My Profile')
+                  }
+                </h2>
                <button 
                   onClick={isEditing ? handleSave : toggleEdit}
                   className={clsx(
@@ -112,14 +142,25 @@ export default function SaleProfilePage() {
                </button>
            </div>
 
-           <div className="flex flex-col items-center mb-8">
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto"></div>
+                <p className="text-slate-500 mt-4">Loading profile...</p>
+              </div>
+            ) : !profileData ? (
+              <div className="text-center py-12">
+                <p className="text-red-500">Failed to load profile data</p>
+              </div>
+            ) : (
+              <>
+            <div className="flex flex-col items-center mb-8">
        <div className="relative group">
                    <div className={clsx(
                        "w-28 h-28 rounded-full bg-slate-200 border-4 border-white shadow-md overflow-hidden relative",
                        isEditing && "cursor-pointer ring-4 ring-primary/20"
                    )} onClick={handleImageClick}>
                        <Image 
-                          src={isEditing ? (formData.avatar || profileData.avatar || "") : (profileData.avatar || "")} 
+                          src={isEditing ? (formData.avatar || profileData?.avatar || "/default-avatar.png") : (profileData?.avatar || "/default-avatar.png")} 
                           alt="Profile" 
                           fill
                           className="object-cover"
@@ -251,6 +292,8 @@ export default function SaleProfilePage() {
                        Cancel
                    </button>
                </div>
+           )}
+           </>
            )}
        </div>
 

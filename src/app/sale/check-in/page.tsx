@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import { MapPin, Camera, X, Check, Search, Navigation, SwitchCamera, Briefcase } from "lucide-react";
-import { mockCompanies, Company, Location, VisitObjective, mockActivityLogs } from "@/utils/mockData";
+import { Company, Location, VisitObjective } from "@/types";
 import { clsx } from "clsx";
 
 export default function CheckInPage() {
@@ -13,6 +13,25 @@ export default function CheckInPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // State
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch companies
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/companies');
+        if (res.ok) setCompanies(await res.json());
+      } catch (error) {
+        console.error('Error fetching companies:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   // Step 1: Select Location, Step 2: Fill Report
   const [step, setStep] = useState<1 | 2>(1);
@@ -82,7 +101,7 @@ export default function CheckInPage() {
   };
 
   // Find nearby locations (within 500m i.e., 0.5km) OR All locations if WFH
-  const nearbyLocations = mockCompanies.flatMap(c => 
+  const nearbyLocations = companies.flatMap(c => 
       c.locations.map(l => {
           const distance = userLocation 
               ? calculateDistance(userLocation.lat, userLocation.lng, l.lat, l.lng) 
@@ -230,8 +249,9 @@ export default function CheckInPage() {
   };
 
   const handleSubmit = () => {
-      // In a real app, this would post to an API
-      // For now, we just simulate a success and go back to dashboard
+      // TODO: Post to API
+      // await fetch('/api/visits', { method: 'POST', body: JSON.stringify({ locationId, objectives, notes, images, assetImages, metOwner }) });
+      
       console.log("Check-in Submitted:", {
           locationId: selectedLocation?.location.id,
           objectives,
@@ -241,23 +261,9 @@ export default function CheckInPage() {
           metOwner
       });
 
-      // Log Activity: Check In
-      mockActivityLogs.unshift({
-        id: `act_${Date.now()}`,
-        type: 'check_in',
-        employeeId: '1', // Hardcoded current user
-        employeeName: 'Somchai Salesman',
-        description: t('language') === 'th'
-            ? `เช็คอินที่: ${selectedLocation?.company.name} - ${selectedLocation?.location.name}`
-            : `Check-in at: ${selectedLocation?.company.name} - ${selectedLocation?.location.name}`,
-        metadata: { 
-            companyName: selectedLocation?.company.name, 
-            locationName: selectedLocation?.location.name,
-            objectives: objectives,
-            hasPhoto: images.length > 0
-        },
-        timestamp: new Date().toISOString()
-      });
+      // TODO: Log Activity via API
+      // Activity logging will be implemented when activity log API is ready
+
 
       router.push('/sale/dashboard');
   };

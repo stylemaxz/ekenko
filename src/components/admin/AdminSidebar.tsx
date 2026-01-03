@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   Users, 
   MapPin, 
@@ -20,10 +20,32 @@ import {
 import clsx from "clsx";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/utils/translations";
+import { useToast } from "@/contexts/ToastContext";
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { t, language, setLanguage } = useLanguage();
+  const { showToast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      const res = await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+
+      if (res.ok) {
+        showToast('Logged out successfully', 'success');
+        router.push('/login');
+      } else {
+        throw new Error('Logout failed');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      showToast('Failed to logout', 'error');
+    }
+  };
+
 
   const navItems = [
     { href: "/admin/dashboard", label: t('dashboard'), icon: LayoutDashboard },
@@ -87,7 +109,10 @@ export default function AdminSidebar() {
             <Settings size={18} className="text-slate-400" />
             {t('settings')}
           </Link>
-          <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-red-600 hover:bg-red-50 mt-1">
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-red-600 hover:bg-red-50 mt-1"
+          >
             <LogOut size={18} className="text-red-400" />
             {t('logout')}
           </button>

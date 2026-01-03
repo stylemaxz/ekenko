@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { 
   CheckCircle2, 
@@ -12,7 +12,7 @@ import {
   ChevronRight,
   AlertCircle
 } from "lucide-react";
-import { mockTasks, mockCompanies, mockEmployees, Task } from "@/utils/mockData";
+import { Task, Company } from "@/types";
 import { clsx } from "clsx";
 import { format } from "date-fns";
 import { enUS, th } from "date-fns/locale";
@@ -26,8 +26,31 @@ export default function SaleTasksPage() {
   // Mock Current User (Sales Rep)
   const currentUserId = "1"; // In reality, get from Auth Context
 
-  // Filter tasks for current user
-  const [myTasks, setMyTasks] = useState<Task[]>(mockTasks.filter(task => task.assigneeId === currentUserId));
+  // State
+  const [myTasks, setMyTasks] = useState<Task[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch data from API
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [tasksRes, companiesRes] = await Promise.all([
+          fetch(`/api/tasks?assigneeId=${currentUserId}`),
+          fetch('/api/companies'),
+        ]);
+        
+        if (tasksRes.ok) setMyTasks(await tasksRes.json());
+        if (companiesRes.ok) setCompanies(await companiesRes.json());
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [currentUserId]);
+
 
   // Update Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,17 +68,10 @@ export default function SaleTasksPage() {
   const handleSaveUpdate = () => {
     if (!selectedTask) return;
 
-    // 1. Update Global Mock Data (For Admin to see)
-    const taskIndex = mockTasks.findIndex(t => t.id === selectedTask.id);
-    if (taskIndex !== -1) {
-        mockTasks[taskIndex] = {
-            ...mockTasks[taskIndex],
-            status: updateStatus as any,
-            completionNote: updateNote
-        };
-    }
+    // TODO: Call API to update task status
+    // await fetch(`/api/tasks/${selectedTask.id}`, { method: 'PATCH', body: JSON.stringify({ status: updateStatus, completionNote: updateNote }) });
 
-    // 2. Update Local State
+    // Update Local State
     setMyTasks(prev => prev.map(t => 
         t.id === selectedTask.id 
             ? { ...t, status: updateStatus as any, completionNote: updateNote }
@@ -152,7 +168,7 @@ export default function SaleTasksPage() {
       <div className="space-y-3">
         {filteredTasks.length > 0 ? (
           filteredTasks.map((task) => {
-            const company = mockCompanies.find(c => c.id === task.customerId);
+            const company = companies.find(c => c.id === task.customerId);
             const location = company?.locations.find(l => l.id === task.locationId);
             const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'completed';
             const priorityColors = {

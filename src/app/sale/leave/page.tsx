@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import { 
@@ -12,7 +12,7 @@ import {
   Clock,
   ChevronRight
 } from "lucide-react";
-import { mockLeaveRequests, mockEmployees, LeaveRequest, LeaveType } from "@/utils/mockData";
+import { LeaveRequest, LeaveType } from "@/types";
 import { clsx } from "clsx";
 import { format, differenceInDays } from "date-fns";
 import { enUS, th } from "date-fns/locale";
@@ -28,7 +28,24 @@ export default function SaleLeaveRequestsPage() {
   // Mock Current User
   const currentUserId = "1";
 
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(mockLeaveRequests);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch leave requests
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch(`/api/leave-requests?employeeId=${currentUserId}`);
+        if (res.ok) setLeaveRequests(await res.json());
+      } catch (error) {
+        console.error('Error fetching leave requests:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [currentUserId]);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newRequest, setNewRequest] = useState({
     leaveType: 'sick' as LeaveType,

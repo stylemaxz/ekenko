@@ -1,21 +1,68 @@
-import { mockVisits, mockCompanies, mockActivityLogs, mockEmployees } from "@/utils/mockData";
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
+import { prisma } from '@/lib/prisma';
 import SaleDashboardClient from "./client";
 
-export default function SaleDashboardPage() {
-  // #1 Server vs Client Separation
-  // Fetch data on the server (mocked) and pass to Client Component.
-  // In a real app, this would be a database call: await db.query(...)
+const SECRET_KEY = process.env.JWT_SECRET_KEY || 'your-secret-key-change-it-in-prod';
+const key = new TextEncoder().encode(SECRET_KEY);
+
+export default async function SaleDashboardPage() {
+  // Get current user from session
+  const cookieStore = await cookies();
+  const token = cookieStore.get('accessToken')?.value;
   
-  // #5 Principle of Least Privilege
-  // Filter data to only what is necessary for this user (hardcoded '1' for now)
-  const currentUserId = "1";
-  const currentUser = mockEmployees.find(e => e.id === currentUserId) || { id: "1", name: "Somchai Salesman", avatar: "" };
-  
+  let currentUserId = '';
+  let currentUser = { id: '', name: 'Guest', avatar: '' };
+
+  if (token) {
+    try {
+      const { payload } = await jwtVerify(token, key);
+      currentUserId = payload.userId as string;
+      
+      // Fetch current user details
+      const user = await prisma.employee.findUnique({
+        where: { id: currentUserId },
+        select: { id: true, name: true, avatar: true }
+      });
+      
+      if (user) {
+        currentUser = user;
+      }
+    } catch (error) {
+      console.error('Error verifying token:', error);
+    }
+  }
+
+  // Fetch data for this specific employee
+  const [visits, companies, activityLogs] = await Promise.all([
+    prisma.visit.findMany({
+      where: { employeeId: currentUserId },
+      include: {
+        location: {
+          include: {
+            company: true
+          }
+        }
+      },
+      orderBy: { checkInTime: 'desc' }
+    }),
+    prisma.company.findMany({
+      include: {
+        locations: true
+      }
+    }),
+    prisma.activityLog.findMany({
+      where: { employeeId: currentUserId },
+      orderBy: { timestamp: 'desc' },
+      take: 50
+    })
+  ]);
+
   const initialData = {
-    visits: mockVisits.filter(v => v.employeeId === currentUserId),
-    companies: mockCompanies, // Note: Ideally filter companies too if possible
-    activityLogs: mockActivityLogs.filter(l => l.employeeId === currentUserId)
+    visits,
+    companies,
+    activityLogs
   };
 
-  return <SaleDashboardClient initialData={initialData} currentUser={{ id: currentUser.id, name: currentUser.name, avatar: currentUser.avatar }} />;
+  return <SaleDashboardClient initialData={initialData} currentUser={currentUser} />;
 }

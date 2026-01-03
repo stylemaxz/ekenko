@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { 
   CheckCircle2, 
@@ -17,7 +17,7 @@ import {
   AlertCircle,
   Target
 } from "lucide-react";
-import { mockTasks, mockEmployees, mockCompanies, Task, TaskStatus, VisitObjectives, VisitObjective } from "@/utils/mockData";
+import { Task, TaskStatus, VisitObjectives, VisitObjective, Employee, Company } from "@/types";
 import { clsx } from "clsx";
 import { format } from "date-fns";
 import { enUS, th } from "date-fns/locale";
@@ -27,7 +27,13 @@ import { useToast } from "@/contexts/ToastContext";
 export default function TasksPage() {
   const { t, language } = useLanguage();
   const { showToast } = useToast();
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  
+  // Data State
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchEmployee, setSearchEmployee] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,6 +50,33 @@ export default function TasksPage() {
       status: 'pending'
   });
 
+  // Fetch data from APIs
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [tasksRes, employeesRes, companiesRes] = await Promise.all([
+          fetch('/api/tasks'),
+          fetch('/api/employees'),
+          fetch('/api/companies'),
+        ]);
+
+        if (tasksRes.ok) setTasks(await tasksRes.json());
+        if (employeesRes.ok) {
+          const empData = await employeesRes.json();
+          // Filter sales only
+          setEmployees(empData.filter((e: Employee) => e.role === 'sales'));
+        }
+        if (companiesRes.ok) setCompanies(await companiesRes.json());
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        showToast('Failed to load data', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
   const locale = language === 'th' ? th : enUS;
 
   // --- Filter Logic ---
@@ -53,7 +86,7 @@ export default function TasksPage() {
       
       // 2. Employee Search Filter
       if (searchEmployee) {
-          const assignee = mockEmployees.find(e => e.id === task.assigneeId);
+          const assignee = employees.find(e => e.id === task.assigneeId);
           if (!assignee?.name.toLowerCase().includes(searchEmployee.toLowerCase())) return false;
       }
       
@@ -133,7 +166,7 @@ export default function TasksPage() {
 
   // Helper to find location options based on selected customer
   const locationOptions = newTask.customerId 
-      ? mockCompanies.find(c => c.id === newTask.customerId)?.locations || []
+      ? companies.find(c => c.id === newTask.customerId)?.locations || []
       : [];
 
   return (
@@ -184,8 +217,8 @@ export default function TasksPage() {
       {/* Task List */}
       <div className="space-y-4">
           {filteredTasks.map(task => {
-              const assignee = mockEmployees.find(e => e.id === task.assigneeId);
-              const company = mockCompanies.find(c => c.id === task.customerId);
+              const assignee = employees.find(e => e.id === task.assigneeId);
+              const company = companies.find(c => c.id === task.customerId);
               const location = company?.locations.find(l => l.id === task.locationId);
 
               return (
@@ -342,7 +375,7 @@ export default function TasksPage() {
                               onChange={e => setNewTask({...newTask, assigneeId: e.target.value})}
                           >
                               <option value="">-- Select --</option>
-                              {mockEmployees.map(e => (
+                              {employees.map(e => (
                                   <option key={e.id} value={e.id}>{e.name}</option>
                               ))}
                           </select>
@@ -387,7 +420,7 @@ export default function TasksPage() {
                                   onChange={e => setNewTask({...newTask, customerId: e.target.value, locationId: ""})}
                               >
                                   <option value="">-- None --</option>
-                                  {mockCompanies.map(c => (
+                                  {companies.map(c => (
                                       <option key={c.id} value={c.id}>{c.name}</option>
                                   ))}
                               </select>

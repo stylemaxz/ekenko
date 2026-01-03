@@ -48,14 +48,14 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
         {/* Header */}
-        <div className="bg-indigo-600 p-8 text-center relative overflow-hidden">
+        <div className="bg-primary p-8 text-center relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
           
-          <div className="bg-white/20 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm shadow-lg">
-             <Image src="/ekenko_logo.png" alt="Logo" width={50} height={50} className="object-contain" />
+          <div className="relative bg-white w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl ring-4 ring-white/30">
+             <Image src="/ekenko_logo.png" alt="Logo" width={80} height={80} className="object-contain" priority />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-indigo-100 text-sm">Sign in to access your dashboard</p>
+          <h1 className="text-2xl font-bold text-white mb-2 relative">Welcome Back</h1>
+          <p className="text-white/90 text-sm relative">Sign in to access your dashboard</p>
         </div>
 
         {/* Form */}
@@ -99,7 +99,7 @@ export default function LoginPage() {
               type="submit"
               disabled={loading}
               className={clsx(
-                "btn btn-primary w-full h-12 text-base font-bold shadow-lg shadow-indigo-200 transition-all",
+                "btn btn-primary w-full h-12 text-base font-bold shadow-lg shadow-primary/20 transition-all",
                 loading && "opacity-80 cursor-not-allowed"
               )}
             >

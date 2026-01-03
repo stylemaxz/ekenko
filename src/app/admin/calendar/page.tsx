@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Modal } from "@/components/ui/Modal";
-import { mockVisits, mockCompanies, mockEmployees, Visit, VisitObjectives, VisitObjective } from "@/utils/mockData";
+import { Visit, VisitObjective, VisitObjectives, Employee, Company } from "@/types";
 import { 
   format, 
   startOfMonth, 
@@ -32,7 +32,38 @@ export default function CalendarPage() {
   const [view, setView] = useState<ViewType>('month');
   const [selectedVisit, setSelectedVisit] = useState<any | null>(null);
 
+  // Data State
+  const [visits, setVisits] = useState<Visit[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const locale = language === 'th' ? th : enUS;
+
+  // Fetch data from APIs
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [visitsRes, empRes, compRes] = await Promise.all([
+          fetch('/api/visits'),
+          fetch('/api/employees'),
+          fetch('/api/companies'),
+        ]);
+        if (visitsRes.ok) setVisits(await visitsRes.json());
+        if (empRes.ok) {
+          const empData = await empRes.json();
+          setEmployees(empData.filter((e: Employee) => e.role === 'sales'));
+        }
+        if (compRes.ok) setCompanies(await compRes.json());
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
 
   // --- Date Logic ---
   
@@ -51,10 +82,10 @@ export default function CalendarPage() {
   const today = () => setCurrentDate(new Date());
 
   // --- Data Preparation ---
-  const events = mockVisits.map(v => {
-      const company = mockCompanies.find(c => c.locations.some(l => l.id === v.locationId));
+  const events = visits.map(v => {
+      const company = companies.find(c => c.locations.some(l => l.id === v.locationId));
       const location = company?.locations.find(l => l.id === v.locationId);
-      const employee = mockEmployees.find(e => e.id === v.employeeId);
+      const employee = employees.find(e => e.id === v.employeeId);
       
       return {
           ...v,

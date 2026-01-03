@@ -7,7 +7,7 @@ export const taskService = {
         return await prisma.task.findMany({
             include: {
                 assignee: true,
-                customer: true,
+                company: true,
                 location: true,
             },
             orderBy: {
@@ -22,7 +22,7 @@ export const taskService = {
             where: { assigneeId },
             include: {
                 assignee: true,
-                customer: true,
+                company: true,
                 location: true,
             },
             orderBy: {
@@ -37,7 +37,7 @@ export const taskService = {
             where: { id },
             include: {
                 assignee: true,
-                customer: true,
+                company: true,
                 location: true,
             },
         });
@@ -60,7 +60,7 @@ export const taskService = {
             },
             include: {
                 assignee: true,
-                customer: true,
+                company: true,
                 location: true,
             }
         });
@@ -84,7 +84,7 @@ export const taskService = {
             },
             include: {
                 assignee: true,
-                customer: true,
+                company: true,
                 location: true,
             }
         });

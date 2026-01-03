@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { 
   Calendar as CalendarIcon, 
@@ -10,7 +10,7 @@ import {
   Clock,
   MessageSquare
 } from "lucide-react";
-import { mockLeaveRequests, mockEmployees, LeaveRequest } from "@/utils/mockData";
+import { LeaveRequest, Employee } from "@/types";
 import { clsx } from "clsx";
 import { format, differenceInDays } from "date-fns";
 import { enUS, th } from "date-fns/locale";
@@ -22,11 +22,39 @@ export default function AdminLeaveManagementPage() {
   const locale = language === "th" ? th : enUS;
   const { showToast } = useToast();
 
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(mockLeaveRequests);
+  // Data State
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const [statusFilter, setStatusFilter] = useState<string>("pending");
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
   const [reviewNote, setReviewNote] = useState("");
+
+  // Fetch data from APIs
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [leaveRes, empRes] = await Promise.all([
+          fetch('/api/leave-requests'),
+          fetch('/api/employees'),
+        ]);
+
+        if (leaveRes.ok) setLeaveRequests(await leaveRes.json());
+        if (empRes.ok) {
+          const empData = await empRes.json();
+          setEmployees(empData.filter((e: Employee) => e.role === 'sales'));
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        showToast('Failed to load data', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   const filteredRequests = leaveRequests
     .filter(req => statusFilter === "all" || req.status === statusFilter)
@@ -165,7 +193,7 @@ export default function AdminLeaveManagementPage() {
       {/* Leave Requests List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {filteredRequests.map((request) => {
-          const employee = mockEmployees.find(e => e.id === request.employeeId);
+          const employee = employees.find(e => e.id === request.employeeId);
           const days = calculateDays(request.startDate, request.endDate);
           
           return (
@@ -306,7 +334,7 @@ export default function AdminLeaveManagementPage() {
             {/* Request Summary */}
             <div className="bg-slate-50 p-4 rounded-lg">
               <div className="font-bold text-slate-900 mb-2">
-                {mockEmployees.find(e => e.id === selectedRequest.employeeId)?.name}
+                {employees.find(e => e.id === selectedRequest.employeeId)?.name}
               </div>
               <div className="text-sm text-slate-600 space-y-1">
                 <div><strong>{t('leave_type')}:</strong> {t(`leave_${selectedRequest.type}` as any)}</div>

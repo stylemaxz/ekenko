@@ -1,16 +1,48 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/contexts/ToastContext";
 import { FileText, Download, BarChart, Calendar as CalendarIcon, Filter, Search } from "lucide-react";
-import { mockVisits, mockEmployees, mockCompanies, VisitObjective } from "@/utils/mockData";
+import { Visit, VisitObjective, Employee, Company } from "@/types";
 import { clsx } from "clsx";
 
 export default function ReportsPage() {
   const { t } = useLanguage();
   const { showToast } = useToast();
   const [filterText, setFilterText] = useState("");
+  
+  // Data State
+  const [visits, setVisits] = useState<Visit[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch data from APIs
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [visitsRes, empRes, compRes] = await Promise.all([
+          fetch('/api/visits'),
+          fetch('/api/employees'),
+          fetch('/api/companies'),
+        ]);
+        if (visitsRes.ok) setVisits(await visitsRes.json());
+        if (empRes.ok) {
+          const empData = await empRes.json();
+          setEmployees(empData.filter((e: Employee) => e.role === 'sales'));
+        }
+        if (compRes.ok) setCompanies(await compRes.json());
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        showToast('Failed to load data', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
 
   const handleExport = () => {
     if (filteredData.length === 0) {
@@ -57,15 +89,15 @@ export default function ReportsPage() {
 
   // Enrich data for export table
   const reportData = useMemo(() => {
-    return mockVisits.map(visit => {
-        const employee = mockEmployees.find(e => e.id === visit.employeeId);
+    return visits.map(visit => {
+        const employee = employees.find(e => e.id === visit.employeeId);
         let customerName = "Unknown";
         let province = "Unknown";
         let status = "Unknown"; // e.g., New vs Existing
         let statusKey = "";
         
         // Find Company
-        mockCompanies.forEach(c => {
+        companies.forEach(c => {
              const location = c.locations.find(l => l.id === visit.locationId);
              if(location) {
                  customerName = c.name;
@@ -95,7 +127,7 @@ export default function ReportsPage() {
             rawDate: new Date(visit.checkInTime),
         };
       }).sort((a,b) => b.rawDate.getTime() - a.rawDate.getTime());
-  }, [mockVisits, mockEmployees, mockCompanies, t]); // Re-calc if language changes
+  }, [visits, employees, companies, t]); // Re-calc if language changes
 
   // Filter Data
   const filteredData = useMemo(() => {

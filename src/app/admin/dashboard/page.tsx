@@ -14,9 +14,43 @@ import {
   Target,
   UserPlus
 } from "lucide-react";
-import { mockVisits, mockEmployees, mockCompanies, Visit, Employee, Company } from "@/utils/mockData";
 import { clsx } from "clsx";
 import { useLanguage } from "@/contexts/LanguageContext";
+
+// Types
+type Employee = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  avatar?: string | null;
+  portfolioSize: number;
+};
+
+type Company = {
+  id: string;
+  name: string;
+  status: string;
+  locations: any[];
+};
+
+type Visit = {
+  id: string;
+  employeeId: string;
+  locationId: string;
+  checkInTime: string;
+  checkOutTime?: string | null;
+  objectives: string[];
+  notes?: string | null;
+  images: string[];
+  employee?: Employee;
+  location?: {
+    id: string;
+    name: string;
+    company: Company;
+  };
+};
 
 export default function DashboardPage() {
   const [selectedEmployee, setSelectedEmployee] = useState<string>("all");
@@ -25,9 +59,51 @@ export default function DashboardPage() {
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const { t } = useLanguage();
 
+  // Data State
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [visits, setVisits] = useState<Visit[]>([]);
+  const [loading, setLoading] = useState(true);
+
   // Date Range State
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+
+  // Fetch data from APIs
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [employeesRes, companiesRes, visitsRes] = await Promise.all([
+          fetch('/api/employees'),
+          fetch('/api/companies'),
+          fetch('/api/visits'),
+        ]);
+
+        if (employeesRes.ok) {
+          const empData = await employeesRes.json();
+          // Filter to only show sales employees (exclude managers)
+          const salesOnly = empData.filter((emp: Employee) => emp.role === 'sales');
+          setEmployees(salesOnly);
+        }
+
+        if (companiesRes.ok) {
+          const compData = await companiesRes.json();
+          setCompanies(compData);
+        }
+
+        if (visitsRes.ok) {
+          const visitData = await visitsRes.json();
+          setVisits(visitData);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
 
   // Initialize date on client side only
   useEffect(() => {
@@ -65,16 +141,16 @@ export default function DashboardPage() {
   // --- METRIC CALCULATIONS ---
 
   // 1. Existing Customer Coverage % (Location-based)
-  const coverageData = mockEmployees.map(emp => {
+  const coverageData = employees.map(emp => {
     // Find visits by this employee within range
-    const empVisits = mockVisits.filter(v => v.employeeId === emp.id && isInRange(v.checkInTime));
+    const empVisits = visits.filter(v => v.employeeId === emp.id && isInRange(v.checkInTime));
     
     // Find unique locations visited belonging to 'existing' companies
     const uniqueLocationsVisited = new Set<string>();
     
     empVisits.forEach(v => {
       // Find company for this location
-      const company = mockCompanies.find(c => c.locations.some(l => l.id === v.locationId));
+      const company = companies.find(c => c.locations.some(l => l.id === v.locationId));
       if (company && company.status === 'existing') {
         uniqueLocationsVisited.add(v.locationId);
       }
@@ -95,14 +171,14 @@ export default function DashboardPage() {
   }).sort((a, b) => b.coverage.percentage - a.coverage.percentage);
 
   // 2. New Prospect Visits (Monthly)
-  const huntingData = mockEmployees.map(emp => {
+  const huntingData = employees.map(emp => {
      // Find visits by this employee in selected range
-    const empVisits = mockVisits.filter(v => v.employeeId === emp.id && isInRange(v.checkInTime));
+    const empVisits = visits.filter(v => v.employeeId === emp.id && isInRange(v.checkInTime));
     
     // Count visits to locations belonging to 'lead' companies
     let leadVisitCount = 0;
     empVisits.forEach(v => {
-      const company = mockCompanies.find(c => c.locations.some(l => l.id === v.locationId));
+      const company = companies.find(c => c.locations.some(l => l.id === v.locationId));
       if (company && company.status === 'lead') {
         leadVisitCount++;
       }
@@ -118,13 +194,13 @@ export default function DashboardPage() {
   // --- FEED PREPARATION ---
   
   // Enrich visits with related data for the feed
-  const enrichedVisits = mockVisits.map(visit => {
-    const employee = mockEmployees.find(e => e.id === visit.employeeId);
+  const enrichedVisits = visits.map(visit => {
+    const employee = employees.find(e => e.id === visit.employeeId);
     let locationName = "Unknown Location";
     let companyName = "Unknown Company";
     let companyStatus = "existing";
     
-    mockCompanies.forEach(c => {
+    companies.forEach(c => {
         const foundLoc = c.locations.find(l => l.id === visit.locationId);
         if (foundLoc) {
             locationName = foundLoc.name;
@@ -253,7 +329,7 @@ export default function DashboardPage() {
                             onChange={(e) => setSelectedEmployee(e.target.value)}
                         >
                             <option value="all">{t('all_employees')}</option>
-                            {mockEmployees.map(e => (
+                            {employees.map(e => (
                                 <option key={e.id} value={e.id}>{e.name}</option>
                             ))}
                         </select>

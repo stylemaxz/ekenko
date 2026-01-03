@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Search, MapPin, Plus, User, X, Save, Building2, Edit, AlertCircle, CheckCircle2, FileText, Image as ImageIcon, Navigation } from "lucide-react";
 import Image from "next/image";
-import { mockCompanies, Company, Location, LocationStatus, mockActivityLogs } from "@/utils/mockData";
+import { Company, Location, LocationStatus } from "@/types";
 import { clsx } from "clsx";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
@@ -18,8 +18,28 @@ export default function SaleCustomersPage() {
   // Mock current user ID
   const currentUserId = "1";
   
-  const [companies, setCompanies] = useState<Company[]>(mockCompanies);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Fetch companies from API
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/companies');
+        if (res.ok) {
+          setCompanies(await res.json());
+        }
+      } catch (error) {
+        console.error('Error fetching companies:', error);
+        showToast('Failed to load customers', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
   
   // Add Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -138,18 +158,8 @@ export default function SaleCustomersPage() {
 
       setCompanies(prev => [...prev, newCompanyData]);
       
-      // Log Activity: Customer Created
-      mockActivityLogs.unshift({
-        id: `act_${Date.now()}`,
-        type: 'customer_created',
-        employeeId: currentUserId,
-        employeeName: 'Somchai Salesman', // Mock name
-        description: t('language') === 'th' 
-            ? `สร้างลูกค้าใหม่: ${newCustomer.companyName} - ${newCustomer.branchName}`
-            : `Created new customer: ${newCustomer.companyName} - ${newCustomer.branchName}`,
-        metadata: { companyName: newCustomer.companyName, branchName: newCustomer.branchName },
-        timestamp: new Date().toISOString()
-      });
+      // TODO: Log Activity via API
+      // Activity logging will be implemented when activity log API is ready
 
       setIsModalOpen(false);
       showToast(t('save_success'), 'success');
@@ -223,6 +233,9 @@ export default function SaleCustomersPage() {
     const oldStatusLabel = getStatusLabel(editingLocation.location.status);
     const newStatusLabel = getStatusLabel(editStatus);
     
+    // TODO: Log Activity via API
+    // Activity logging will be implemented when activity log API is ready
+    /*
     mockActivityLogs.unshift({
       id: `act_${Date.now()}`,
       type: 'customer_status_changed',
@@ -239,6 +252,7 @@ export default function SaleCustomersPage() {
       },
       timestamp: new Date().toISOString()
     });
+    */
 
     setIsEditModalOpen(false);
     showToast(

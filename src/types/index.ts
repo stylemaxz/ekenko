@@ -42,8 +42,6 @@ export type VisitObjective =
     | 'propose_new_products'
     | 'check_assets'
     | 'collect_debt'
-    | 'discuss_promotion'
-    | 'general_followup'
     | 'other';
 
 export const VisitObjectives: VisitObjective[] = [
@@ -57,8 +55,6 @@ export const VisitObjectives: VisitObjective[] = [
     'propose_new_products',
     'check_assets',
     'collect_debt',
-    'discuss_promotion',
-    'general_followup',
     'other'
 ];
 

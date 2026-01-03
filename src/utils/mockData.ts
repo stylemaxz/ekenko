@@ -350,7 +350,7 @@ export const mockActivityLogs: ActivityLog[] = [
         employeeId: '2',
         employeeName: 'Nida Somjai',
         description: 'ขอลาพักร้อน 5 วัน',
-        metadata: { leaveType: 'vacation', days: 5 },
+        metadata: { leaveType: 'sick', days: 1, reason: 'ปวดหัว' },
         timestamp: new Date(Date.now() - 18000000).toISOString()
     },
     {

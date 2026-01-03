@@ -4,11 +4,11 @@ import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import { MapPin, Camera, X, Check, Search, Navigation, SwitchCamera, Briefcase } from "lucide-react";
-import { Company, Location, VisitObjective } from "@/types";
+import { Company, Location, VisitObjective, VisitObjectives } from "@/types";
 import { clsx } from "clsx";
 
 export default function CheckInPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -62,6 +62,10 @@ export default function CheckInPage() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
   const [photoType, setPhotoType] = useState<'visit' | 'asset'>('visit'); // Track which type of photo
+  
+  // Submission State
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
 
   // --- Helpers ---
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -104,7 +108,7 @@ export default function CheckInPage() {
   const nearbyLocations = companies.flatMap(c => 
       c.locations.map(l => {
           const distance = userLocation 
-              ? calculateDistance(userLocation.lat, userLocation.lng, l.lat, l.lng) 
+              ? calculateDistance(userLocation.lat, userLocation.lng, l.lat || 0, l.lng || 0) 
               : Infinity;
           return { company: c, location: l, distance };
       })
@@ -228,29 +232,99 @@ export default function CheckInPage() {
       setImages(images.filter((_, i) => i !== idx));
   };
 
-  const handleSubmit = () => {
-      console.log("Check-in Submitted:", {
-          locationId: selectedLocation?.location.id,
-          objectives,
-          notes,
-          images,
-          assetImages,
-          metOwner
+  // Fetch current user ID
+  useEffect(() => {
+    async function fetchCurrentUser() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const employee = await res.json();
+          setCurrentUserId(employee.id); // Use employee.id instead of data.userId
+        } else {
+          console.error('Failed to fetch current user, status:', res.status);
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    }
+    fetchCurrentUser();
+  }, []);
+
+  const handleSubmit = async () => {
+    // Validation checks
+    if (!selectedLocation) {
+      alert(language === 'th' ? 'กรุณาเลือกสถานที่' : 'Please select a location');
+      return;
+    }
+
+    if (!currentUserId) {
+      alert(language === 'th' ? 'ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่อีกครั้ง' : 'User not found. Please login again.');
+      return;
+    }
+
+    if (images.length === 0) {
+      alert(language === 'th' ? 'กรุณาถ่ายรูปยืนยันอย่างน้อย 1 รูป' : 'Please take at least 1 confirmation photo');
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      // 1. Create Visit Record
+      const visitResponse = await fetch('/api/visits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employeeId: currentUserId,
+          locationId: selectedLocation.location.id,
+          objectives: objectives,
+          notes: notes,
+          images: images,
+          metOwner: metOwner
+        })
       });
+
+      if (!visitResponse.ok) {
+        throw new Error('Failed to create visit');
+      }
+
+      const visit = await visitResponse.json();
+
+      // 2. Create Activity Log
+      const activityResponse = await fetch('/api/activity-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employeeId: currentUserId,
+          type: 'check_in',
+          description: `เช็คอินที่ ${selectedLocation.location.name}`,
+          metadata: {
+            visitId: visit.id,
+            locationId: selectedLocation.location.id,
+            locationName: selectedLocation.location.name,
+            companyName: selectedLocation.company.name,
+            objectives: objectives,
+            metOwner: metOwner
+          }
+        })
+      });
+
+      if (!activityResponse.ok) {
+        console.error('Failed to create activity log');
+      }
+
+      // Success - redirect to dashboard
       router.push('/sale/dashboard');
+    } catch (error) {
+      console.error('Error submitting check-in:', error);
+      alert(language === 'th' ? 'เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง' : 'Error saving data. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // Use objectives from common types
-  const objectiveList: VisitObjective[] = [
-    'sales',
-    'delivery',
-    'collect_payment',
-    'survey',
-    'support',
-    'promotion',
-    'relationship',
-    'other'
-  ];
+  // Use objectives from common types - import from type definition
+  const objectiveList: VisitObjective[] = VisitObjectives;
 
   // --- RENDER STEP 1: SELECT LOCATION ---
   if (step === 1) {
@@ -346,7 +420,7 @@ export default function CheckInPage() {
 
   // --- RENDER STEP 2: FILL REPORT ---
   return (
-      <div className="pb-24 pt-6 px-4 min-h-screen bg-slate-50">
+      <div className="pb-32 pt-6 px-4 min-h-screen bg-slate-50">
           <div className="flex items-center gap-3 mb-6">
               <button onClick={() => setStep(1)} className="p-2 rounded-full bg-white shadow-sm border border-slate-200">
                   <X size={20} className="text-slate-600" />
@@ -435,12 +509,9 @@ export default function CheckInPage() {
                   </div>
               </div>
 
+
               {/* Asset Inspection Photos (shown only when check_assets is selected) */}
-              {/* 
-                  If 'check_assets' was a required feature, it must be added to type first. 
-                  For now I will comment out this section to avoid type errors since I am using strictly VisitObjective type.
-               */}
-              {/* {objectives.includes('check_assets') && (
+              {objectives.includes('check_assets') && (
                   <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                       <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
                           <Camera size={16} className="text-primary" />
@@ -475,7 +546,7 @@ export default function CheckInPage() {
                            ))}
                       </div>
                   </div>
-              )} */}
+              )}
 
               {/* Met Owner Section */}
               <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
@@ -532,22 +603,22 @@ export default function CheckInPage() {
                       onChange={(e) => setNotes(e.target.value)}
                   />
               </div>
-          </div>
 
-          {/* Bottom Action Bar */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 z-50">
-              <button 
-                  onClick={handleSubmit}
-                  disabled={images.length === 0}
-                  className="w-full py-3.5 rounded-xl bg-primary text-white font-bold shadow-lg shadow-black/20 disabled:opacity-50 disabled:shadow-none"
-              >
-                  {t('save')}
-              </button>
+              {/* Save Button */}
+              <div className="mt-6 mb-6">
+                  <button 
+                      onClick={handleSubmit}
+                      disabled={images.length === 0 || isSubmitting}
+                      className="w-full py-3.5 rounded-xl bg-primary text-white font-bold shadow-lg shadow-black/20 disabled:opacity-50 disabled:shadow-none active:scale-[0.98] transition-transform"
+                  >
+                      {isSubmitting ? (language === 'th' ? 'กำลังบันทึก...' : 'Saving...') : t('save')}
+                  </button>
+              </div>
           </div>
 
           {/* Camera Modal */}
           {isCameraOpen && (
-              <div className="fixed inset-0 bg-black z-[100] flex flex-col">
+              <div className="fixed inset-0 bg-black z-[2000] flex flex-col">
                   {/* Camera Preview */}
                   <div className="flex-1 relative">
                       <video

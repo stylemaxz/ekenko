@@ -298,6 +298,11 @@ export default function ActivityLogsPage() {
                                 const action = log.type === 'leave_approved' ? 'อนุมัติ' : 'ไม่อนุมัติ';
                                 return `${action}การลาของ ${log.metadata.targetEmployeeName}`;
                             }
+                            // Clock In with WFH
+                            if (log.type === 'clock_in' && log.metadata?.isWFH) {
+                                return 'เข้างาน (Work From Home)';
+                            }
+
                             // Fallback to stored description if no metadata match
                             return log.description;
                         })()}

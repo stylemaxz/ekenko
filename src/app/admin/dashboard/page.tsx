@@ -140,24 +140,27 @@ export default function DashboardPage() {
 
   // --- METRIC CALCULATIONS ---
 
-  // 1. Existing Customer Coverage % (Location-based)
+  // 1. Existing Customer Coverage % (Location/Branch-based)
   const coverageData = employees.map(emp => {
     // Find visits by this employee within range
     const empVisits = visits.filter(v => v.employeeId === emp.id && isInRange(v.checkInTime));
     
-    // Find unique locations visited belonging to 'existing' companies
+    // Find unique LOCATIONS (branches) visited with active status
     const uniqueLocationsVisited = new Set<string>();
     
     empVisits.forEach(v => {
-      // Find company for this location
-      const company = companies.find(c => c.locations.some(l => l.id === v.locationId));
-      if (company && company.status === 'existing') {
-        uniqueLocationsVisited.add(v.locationId);
-      }
+      // Find location and check its status
+      companies.forEach(c => {
+        const location = c.locations.find(l => l.id === v.locationId);
+        // Count locations with status 'active' or 'existing' (both mean current customer)
+        if (location && (location.status === 'active' || location.status === 'existing')) {
+          uniqueLocationsVisited.add(v.locationId);
+        }
+      });
     });
 
-    const visitedCount = uniqueLocationsVisited.size;
-    const totalAssigned = emp.portfolioSize || 1; // Total target locations assigned
+    const visitedCount = uniqueLocationsVisited.size; // Number of unique branches visited
+    const totalAssigned = emp.portfolioSize || 1; // Total branches assigned to this employee
     const percentage = Math.round((visitedCount / totalAssigned) * 100);
 
     return {
@@ -178,10 +181,13 @@ export default function DashboardPage() {
     // Count visits to locations belonging to 'lead' companies
     let leadVisitCount = 0;
     empVisits.forEach(v => {
-      const company = companies.find(c => c.locations.some(l => l.id === v.locationId));
-      if (company && company.status === 'lead') {
-        leadVisitCount++;
-      }
+      // Find location and check its status
+      companies.forEach(c => {
+        const location = c.locations.find(l => l.id === v.locationId);
+        if (location && location.status === 'lead') {
+          leadVisitCount++;
+        }
+      });
     });
 
     return {
@@ -198,14 +204,14 @@ export default function DashboardPage() {
     const employee = employees.find(e => e.id === visit.employeeId);
     let locationName = "Unknown Location";
     let companyName = "Unknown Company";
-    let companyStatus = "existing";
+    let locationStatus = "active";
     
     companies.forEach(c => {
         const foundLoc = c.locations.find(l => l.id === visit.locationId);
         if (foundLoc) {
             locationName = foundLoc.name;
             companyName = c.name;
-            companyStatus = c.status;
+            locationStatus = foundLoc.status || "active";
         }
     });
 
@@ -214,7 +220,7 @@ export default function DashboardPage() {
       employeeName: employee?.name || "Unknown",
       locationName,
       companyName,
-      companyStatus
+      companyStatus: locationStatus
     };
   }).sort((a, b) => new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime());
 

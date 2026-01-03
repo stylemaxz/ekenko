@@ -13,11 +13,16 @@ import {
   LogOut,
   ChevronRight,
   FileText,
-  Home
+  Home,
+  LogIn,
+  Edit,
+  CheckCircle,
+  XCircle,
+  Activity
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { mockActivityLogs, Visit, Company, ActivityLog } from "@/utils/mockData";
+import { Visit, Company, ActivityLog } from "@/types";
 import { useState, useEffect } from "react";
 
 interface SaleDashboardClientProps {
@@ -115,7 +120,8 @@ export default function SaleDashboardClient({ initialData, currentUser }: SaleDa
                 type: 'clock_in',
                 description: t('language') === 'th' ? 'เข้างาน' : 'Clock In',
                 metadata: {
-                    userAgent: navigator.userAgent
+                    userAgent: navigator.userAgent,
+                    isWFH: isWorkFromHome
                 }
             })
         });
@@ -173,13 +179,37 @@ export default function SaleDashboardClient({ initialData, currentUser }: SaleDa
   };
 
   // Filter recent activity for this user
-  // Filter recent activity for this user using Server Provided Data (#5)
-  const myRecentVisits = initialData.visits
-    .sort(
-      (a, b) =>
-        new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime()
-    )
-    .slice(0, 5);
+  // Helper functions for icons and colors
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'customer_created': return <UserPlus size={18} className="text-teal-600" />;
+      case 'customer_status_changed': return <Edit size={18} className="text-orange-600" />;
+      case 'check_in': return <MapPin size={18} className="text-purple-600" />;
+      case 'clock_in': return <LogIn size={18} className="text-green-600" />;
+      case 'clock_out': return <LogOut size={18} className="text-slate-600" />;
+      case 'leave_requested': return <FileText size={18} className="text-amber-600" />;
+      case 'leave_approved': return <CheckCircle size={18} className="text-green-600" />;
+      case 'leave_rejected': return <XCircle size={18} className="text-red-600" />;
+      default: return <Activity size={18} className="text-blue-600" />;
+    }
+  };
+
+  const getActivityColor = (type: string) => {
+    switch (type) {
+      case 'customer_created': return 'bg-teal-50 border-teal-100';
+      case 'customer_status_changed': return 'bg-orange-50 border-orange-100';
+      case 'check_in': return 'bg-purple-50 border-purple-100';
+      case 'clock_in': return 'bg-green-50 border-green-100';
+      case 'clock_out': return 'bg-slate-50 border-slate-100';
+      case 'leave_requested': return 'bg-amber-50 border-amber-100';
+      case 'leave_approved': return 'bg-green-50 border-green-100';
+      case 'leave_rejected': return 'bg-red-50 border-red-100';
+      default: return 'bg-blue-50 border-blue-100';
+    }
+  };
+
+  // Filter recent activity logs
+  const recentLogs = initialData.activityLogs.slice(0, 10); // Show top 10 recent activities
 
   const quickActions = [
     {
@@ -322,52 +352,58 @@ export default function SaleDashboardClient({ initialData, currentUser }: SaleDa
           </div>
 
           <div className="space-y-3">
-            {myRecentVisits.length > 0 ? (
-              myRecentVisits.map((visit) => {
-                const company = initialData.companies.find((c) =>
-                  c.locations.some((l) => l.id === visit.locationId)
-                );
-                const location = company?.locations.find(
-                  (l) => l.id === visit.locationId
-                );
-
-                return (
-                  <div
-                    key={visit.id}
-                    className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-start gap-4"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-primary shrink-0">
-                      <MapPin size={18} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-bold text-slate-800 truncate">
-                          {company?.name || "Unknown Company"}
-                        </h3>
-                        <span className="text-[10px] font-medium text-slate-400">
-                          {format(new Date(visit.checkInTime), "HH:mm")}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 truncate mb-2">
-                        {location?.name}
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        {(visit.objectives || []).slice(0, 2).map((obj) => (
-                          <span
-                            key={obj}
-                            className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md"
-                          >
-                            {t(`obj_${obj}` as any)}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+            {recentLogs.length > 0 ? (
+              recentLogs.map((log) => (
+                <div
+                  key={log.id}
+                  className={`p-4 rounded-xl shadow-sm border flex items-start gap-4 ${getActivityColor(log.type)}`}
+                >
+                  <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center shrink-0">
+                    {getActivityIcon(log.type)}
                   </div>
-                );
-              })
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start">
+                      <h3 className="font-bold text-slate-800 truncate">
+                        {(() => {
+                            if (language !== 'th') return log.description;
+                            
+                            // Clock In with WFH
+                            if (log.type === 'clock_in' && log.metadata?.isWFH) {
+                                return 'เข้างาน (Work From Home)';
+                            }
+                            
+                            // Thai Logic for Leave Requests
+                            if (log.type === 'leave_requested' && log.metadata?.leaveType) {
+                                const typeMap: any = { sick: 'ลาป่วย', personal: 'ลากิจ', vacation: 'ลาพักร้อน', other: 'ลาอื่นๆ' };
+                                const typeLabel = typeMap[log.metadata.leaveType] || log.metadata.leaveType;
+                                return `ขอ${typeLabel} จำนวน ${log.metadata.days || '-'} วัน (เหตุผล: ${log.metadata.reason || '-'})`;
+                            }
+                            return log.description;
+                        })()}
+                      </h3>
+                      <span className="text-[10px] font-medium text-slate-400">
+                        {format(new Date(log.timestamp), "HH:mm")}
+                      </span>
+                    </div>
+                    { // Optional Subtitle/Details based on type
+                      log.metadata && (
+                         <p className="text-xs text-slate-500 truncate mt-1">
+                            {log.metadata.companyName ? `${log.metadata.companyName}` : ''}
+                            {log.metadata.note ? ` • ${log.metadata.note}` : ''}
+                         </p>
+                      )
+                    }
+                     <div className="flex items-center gap-2 mt-2">
+                        <span className="text-[10px] text-slate-400">
+                             {format(new Date(log.timestamp), "d MMM yyyy", { locale })}
+                        </span>
+                     </div>
+                  </div>
+                </div>
+              ))
             ) : (
               <div className="text-center py-8 text-slate-400 text-sm bg-slate-50 rounded-xl border-dashed border border-slate-200">
-                No recent activity.
+                {language === 'th' ? "ไม่พบกิจกรรมล่าสุด" : "No recent activity."}
               </div>
             )}
           </div>

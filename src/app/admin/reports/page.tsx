@@ -53,7 +53,7 @@ export default function ReportsPage() {
     showToast(t('export_csv') + "...", "info");
 
     // Generate CSV Content
-    const headers = [t('date'), t('time'), t('employee'), t('customer'), t('province'), t('status'), t('type')];
+    const headers = [t('date'), t('time'), t('employee'), t('customer'), t('branch'), t('province'), t('status'), t('type')];
     const csvContent = [
         headers.join(","),
         ...filteredData.map(row => [
@@ -61,6 +61,7 @@ export default function ReportsPage() {
             row.time,
             `"${row.employee}"`,
             `"${row.customer}"`,
+            `"${row.branch}"`,
             `"${row.province}"`,
             row.status,
             `"${row.type}"`
@@ -92,38 +93,38 @@ export default function ReportsPage() {
     return visits.map(visit => {
         const employee = employees.find(e => e.id === visit.employeeId);
         let customerName = "Unknown";
+        let locationName = "Unknown";
         let province = "Unknown";
-        let status = "Unknown"; // e.g., New vs Existing
+        let status = "Unknown";
         let statusKey = "";
         
-        // Find Company
+        // Find Company and Location
         companies.forEach(c => {
              const location = c.locations.find(l => l.id === visit.locationId);
              if(location) {
                  customerName = c.name;
-                 // Use provinceTH if available and language is Thai, otherwise province default (English usually)
-                 // But wait, the mockData might not have provinceTH populated fully yet or the interface might be missing it in some parts.
-                 // For now, let's just use 'province' property which is the main one. 
-                 // If we want bilingual support here we should ideally check locale. 
-                 // As per previous context, we just added 'province'. 
+                 locationName = location.name;
                  province = location.province || "Unknown";
                  
-                 statusKey = c.status === 'lead' ? 'status_new' : 'status_existing';
+                 // Use location status instead of company status
+                 statusKey = location.status || 'active';
+                 status = (location.status === 'lead') ? t('status_lead') : t('status_existing');
              }
         });
 
-        // Translate Status
-        const objectivesStr = (visit.objectives || []).map(o => getObjectiveLabel(o)).join(", ");
+        // Activity type is always "check-in" for visits
+        const activityType = t('check_in');
 
         return {
             date: new Date(visit.checkInTime).toLocaleDateString(),
             time: new Date(visit.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             employee: employee?.name || "Unknown",
             customer: customerName,
+            branch: locationName, // Add branch name
             province: province,
-            statusKey: statusKey, // Keep key for styling
-            status: statusKey ? t(statusKey as any) : "Unknown", // Translated status
-            type: objectivesStr,
+            statusKey: statusKey, // 'lead' or 'active'
+            status: status, // Translated status
+            type: activityType, // Always "check-in"
             rawDate: new Date(visit.checkInTime),
         };
       }).sort((a,b) => b.rawDate.getTime() - a.rawDate.getTime());
@@ -218,6 +219,7 @@ export default function ReportsPage() {
                          <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('time')}</th>
                          <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('employee')}</th>
                          <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('customer')}</th>
+                          <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('branch')}</th>
                          <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('province')}</th>
                          <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('status')}</th>
                          <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('type')}</th>
@@ -236,11 +238,12 @@ export default function ReportsPage() {
                                      {row.employee}
                                  </td>
                                  <td className="py-4 px-6 font-medium">{row.customer}</td>
+                                  <td className="py-4 px-6 text-slate-600">{row.branch}</td>
                                  <td className="py-4 px-6 font-medium text-slate-500">{row.province}</td>
                                  <td className="py-4 px-6">
                                      <span className={clsx(
                                          "inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide",
-                                         row.statusKey === 'status_new' ? "bg-amber-100 text-amber-700" : "bg-blue-50 text-blue-700"
+                                         row.statusKey === 'lead' ? "bg-amber-100 text-amber-700" : "bg-blue-50 text-blue-700"
                                          )}>
                                          {row.status}
                                      </span>
@@ -252,7 +255,7 @@ export default function ReportsPage() {
                          ))
                      ) : (
                          <tr>
-                             <td colSpan={7} className="py-12 text-center text-slate-400 italic">
+                             <td colSpan={8} className="py-12 text-center text-slate-400 italic">
                                  No data matches your search.
                              </td>
                          </tr>

@@ -25,26 +25,35 @@ export default function SaleLeaveRequestsPage() {
   const locale = language === "th" ? th : enUS;
   const { showToast } = useToast();
 
-  // Mock Current User
-  const currentUserId = "1";
-
+  // Current User
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch leave requests
+  // Fetch current user & leave requests
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch(`/api/leave-requests?employeeId=${currentUserId}`);
+        // 1. Fetch current user
+        const userRes = await fetch('/api/auth/me');
+        if (!userRes.ok) {
+           if (userRes.status === 401) router.push('/login');
+           return;
+        }
+        const user = await userRes.json();
+        setCurrentUser(user);
+
+        // 2. Fetch leave requests for this user
+        const res = await fetch(`/api/leave-requests?employeeId=${user.id}`);
         if (res.ok) setLeaveRequests(await res.json());
       } catch (error) {
-        console.error('Error fetching leave requests:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
     }
     fetchData();
-  }, [currentUserId]);
+  }, [router]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newRequest, setNewRequest] = useState({
@@ -56,7 +65,7 @@ export default function SaleLeaveRequestsPage() {
 
   // Filter for current user
   const myRequests = leaveRequests
-    .filter(req => req.employeeId === currentUserId)
+    .filter(req => req.employeeId === currentUser?.id)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const handleRequestLeave = () => {
@@ -73,27 +82,54 @@ export default function SaleLeaveRequestsPage() {
     return differenceInDays(new Date(end), new Date(start)) + 1;
   };
 
-  const handleSubmitRequest = () => {
+  const handleSubmitRequest = async () => {
     if (!newRequest.startDate || !newRequest.endDate || !newRequest.reason) {
       showToast(t('fill_required'), 'error');
       return;
     }
 
-    const newLeaveRequest: LeaveRequest = {
-      id: `lr_${Date.now()}`,
-      employeeId: currentUserId,
-      type: newRequest.leaveType, 
-      startDate: newRequest.startDate,
-      endDate: newRequest.endDate,
-      days: calculateDays(newRequest.startDate, newRequest.endDate),
-      reason: newRequest.reason,
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    };
+    if (!currentUser) {
+        showToast("User not loaded", "error");
+        return;
+    }
 
-    setLeaveRequests(prev => [newLeaveRequest, ...prev]);
-    setIsModalOpen(false);
-    showToast(t('save_success'), 'success');
+    try {
+      const res = await fetch('/api/leave-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          employeeId: currentUser.id,
+          type: newRequest.leaveType,
+          startDate: newRequest.startDate,
+          endDate: newRequest.endDate,
+          days: calculateDays(newRequest.startDate, newRequest.endDate),
+          reason: newRequest.reason,
+        }),
+      });
+
+      if (res.ok) {
+        const createdRequest = await res.json();
+        setLeaveRequests(prev => [createdRequest, ...prev]);
+        setIsModalOpen(false);
+        showToast(t('save_success'), 'success');
+        
+        // Reset form
+        setNewRequest({
+          leaveType: 'sick',
+          startDate: '',
+          endDate: '',
+          reason: ''
+        });
+      } else {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to create request');
+      }
+    } catch (error) {
+      console.error('Error creating leave request:', error);
+      showToast('Failed to create leave request', 'error');
+    }
   };
 
   const getStatusIcon = (status: string) => {

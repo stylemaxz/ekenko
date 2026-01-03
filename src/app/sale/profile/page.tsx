@@ -13,8 +13,6 @@ export default function SaleProfilePage() {
   const router = useRouter();
   const { showToast } = useToast();
 
-  // Mock Current User (ID: 1)
-  const currentUserId = "1";
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -22,11 +20,16 @@ export default function SaleProfilePage() {
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const res = await fetch(`/api/employees/${currentUserId}`);
+        const res = await fetch('/api/auth/me'); // Fetch current user
         if (res.ok) {
           const data = await res.json();
           setProfileData(data);
           setFormData({ ...data, password: "" });
+        } else {
+             // If unauthorized or not found, maybe redirect or show error
+             if (res.status === 401) {
+                 router.push('/login');
+             }
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -35,7 +38,7 @@ export default function SaleProfilePage() {
       }
     }
     fetchProfile();
-  }, [currentUserId]);
+  }, [router]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<any>({ password: "" });
@@ -71,18 +74,45 @@ export default function SaleProfilePage() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name || !formData.email || !formData.username) {
         showToast(t('fill_required'), 'error');
         return;
     }
 
-    // TODO: Update via API
-    // await fetch(`/api/employees/${currentUserId}`, { method: 'PATCH', body: JSON.stringify(formData) });
+    try {
+      const payload = {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          username: formData.username,
+          avatar: formData.avatar,
+          password: formData.password
+      };
 
-    setProfileData(formData as any);
-    setIsEditing(false);
-    showToast(t('save_success'), 'success');
+      const res = await fetch('/api/auth/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const updatedData = await res.json();
+        setProfileData(updatedData);
+        // keep password empty in form
+        setFormData({ ...updatedData, password: "" }); 
+        setIsEditing(false);
+        showToast(t('save_success'), 'success');
+      } else {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      showToast('Failed to update profile', 'error');
+    }
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);

@@ -32,19 +32,26 @@ export default function AdminLeaveManagementPage() {
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
   const [reviewNote, setReviewNote] = useState("");
 
+  // Current User
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  
   // Fetch data from APIs
   useEffect(() => {
     async function fetchData() {
       try {
-        const [leaveRes, empRes] = await Promise.all([
+        const [leaveRes, empRes, userRes] = await Promise.all([
           fetch('/api/leave-requests'),
           fetch('/api/employees'),
+          fetch('/api/auth/me'),
         ]);
 
         if (leaveRes.ok) setLeaveRequests(await leaveRes.json());
         if (empRes.ok) {
           const empData = await empRes.json();
           setEmployees(empData.filter((e: Employee) => e.role === 'sales'));
+        }
+        if (userRes.ok) {
+            setCurrentUser(await userRes.json());
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -73,62 +80,64 @@ export default function AdminLeaveManagementPage() {
     setReviewModalOpen(true);
   };
 
-  const handleApprove = (request: LeaveRequest) => {
-    const updatedRequest: LeaveRequest = {
-      ...request,
-      status: 'approved',
-      reviewedBy: '4', // Mock manager ID
-      reviewedAt: new Date().toISOString(),
-    };
+  const updateRequestStatus = async (id: string, status: 'approved' | 'rejected', note?: string) => {
+      try {
+        const res = await fetch(`/api/leave-requests/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                status,
+                reviewedBy: currentUser?.id || 'admin',
+                reviewNote: note,
+                reviewedAt: new Date().toISOString() // Although backend triggers update, explicitly sending it if needed or rely on backend
+            })
+        });
 
-    setLeaveRequests(prev => 
-      prev.map(req => req.id === request.id ? updatedRequest : req)
-    );
-
-    showToast(
-      language === 'th' ? 'อนุมัติการลาเรียบร้อย' : 'Leave approved successfully', 
-      'success'
-    );
+        if (res.ok) {
+            const updated = await res.json();
+            setLeaveRequests(prev => 
+                prev.map(req => req.id === id ? updated : req)
+            );
+            return true;
+        } else {
+            throw new Error('Failed to update');
+        }
+      } catch (error) {
+          console.error('Update error', error);
+          showToast('Failed to update request', 'error');
+          return false;
+      }
   };
 
-  const handleReject = (request: LeaveRequest) => {
-    const updatedRequest: LeaveRequest = {
-      ...request,
-      status: 'rejected',
-      reviewedBy: '4', // Mock manager ID
-      reviewedAt: new Date().toISOString(),
-    };
-
-    setLeaveRequests(prev => 
-      prev.map(req => req.id === request.id ? updatedRequest : req)
-    );
-
-    showToast(
-      language === 'th' ? 'ไม่อนุมัติการลาเรียบร้อย' : 'Leave rejected successfully', 
-      'success'
-    );
+  const handleApprove = async (request: LeaveRequest) => {
+    const success = await updateRequestStatus(request.id, 'approved');
+    if (success) {
+        showToast(
+        language === 'th' ? 'อนุมัติการลาเรียบร้อย' : 'Leave approved successfully', 
+        'success'
+        );
+    }
   };
 
-  const handleSubmitReview = (action: 'approve' | 'reject') => {
+  const handleReject = async (request: LeaveRequest) => {
+    const success = await updateRequestStatus(request.id, 'rejected');
+    if (success) {
+        showToast(
+        language === 'th' ? 'ไม่อนุมัติการลาเรียบร้อย' : 'Leave rejected successfully', 
+        'success'
+        );
+    }
+  };
+
+  const handleSubmitReview = async (action: 'approve' | 'reject') => {
     if (!selectedRequest) return;
 
-    const updatedRequest: LeaveRequest = {
-      ...selectedRequest,
-      status: action === 'approve' ? 'approved' : 'rejected',
-      reviewedBy: '4', // Mock manager ID
-      reviewedAt: new Date().toISOString(),
-      reviewNote: reviewNote || undefined
-    };
-
-    setLeaveRequests(prev => 
-      prev.map(req => req.id === selectedRequest.id ? updatedRequest : req)
-    );
-
-    setReviewModalOpen(false);
-    showToast(
-      action === 'approve' ? t('save_success') : t('save_success'), 
-      'success'
-    );
+    const success = await updateRequestStatus(selectedRequest.id, action === 'approve' ? 'approved' : 'rejected', reviewNote);
+    
+    if (success) {
+        setReviewModalOpen(false);
+        showToast(t('save_success'), 'success');
+    }
   };
 
   const getStatusIcon = (status: string) => {

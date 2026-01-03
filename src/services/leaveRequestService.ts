@@ -45,6 +45,7 @@ export const leaveRequestService = {
                 type: data.type,
                 startDate: new Date(data.startDate),
                 endDate: new Date(data.endDate),
+                days: data.days,
                 reason: data.reason,
                 status: data.status || 'pending',
                 reviewedBy: data.reviewedBy,

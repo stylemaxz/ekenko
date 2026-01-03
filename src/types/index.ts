@@ -157,11 +157,13 @@ export interface LeaveRequest {
     type: LeaveType;
     startDate: string;
     endDate: string;
+    days?: number;
     reason?: string | null;
     status: LeaveStatus;
     reviewedBy?: string | null;
+    reviewedAt?: string | null;
     reviewNote?: string | null;
-    createdAt?: string;
+    createdAt: string;
     employee?: Employee;
 }
 

@@ -1,0 +1,31 @@
+
+# Use the official Node.js image.
+# https://hub.docker.com/_/node
+FROM node:20-alpine
+
+# Create and change to the app directory.
+WORKDIR /usr/src/app
+
+# Copy application dependency manifests to the container image.
+# A wildcard is used to ensure both package.json AND package-lock.json are copied.
+COPY package*.json ./
+
+# Install production dependencies.
+RUN npm install --omit=dev --unsafe-perm
+
+# Copy local code to the container image.
+COPY . .
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Build the application
+# We need to install devDependencies to build, but let's try a simple build first
+# If this fails, we might need a multi-stage build again but simpler logic
+# Actually, for debugging, let's just install ALL dependencies first
+RUN npm install --unsafe-perm
+RUN npm run build
+
+# Run the web service on container startup.
+CMD [ "npm", "start" ]
+

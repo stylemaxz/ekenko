@@ -17,9 +17,19 @@ export type TaskPriority = 'low' | 'medium' | 'high';
 export type ActivityType =
     | 'visit'
     | 'task_completed'
+    | 'task_created'
     | 'leave_request'
+    | 'leave_requested'
+    | 'leave_approved'
+    | 'leave_rejected'
+    | 'leave_updated'
     | 'customer_added'
-    | 'note_added';
+    | 'customer_created'
+    | 'customer_status_changed'
+    | 'note_added'
+    | 'check_in'
+    | 'clock_in'
+    | 'clock_out';
 
 export type VisitObjective =
     | 'sales'
@@ -170,6 +180,7 @@ export interface LeaveRequest {
 export interface ActivityLog {
     id: string;
     employeeId: string;
+    employeeName?: string | null;
     type: ActivityType;
     description: string;
     metadata?: any;

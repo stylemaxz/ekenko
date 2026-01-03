@@ -284,7 +284,24 @@ export default function ActivityLogsPage() {
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-1">
-                    <p className="font-medium text-slate-900">{log.description}</p>
+                    <p className="font-medium text-slate-900">
+                        {(() => {
+                            if (language !== 'th') return log.description; // Fallback for English strictly if needed, or use logic below to localize EN too. Here using original string for now or better logic:
+                            
+                            // Thai Logic
+                            if (log.type === 'leave_requested' && log.metadata?.leaveType) {
+                                const typeMap: any = { sick: 'ลาป่วย', personal: 'ลากิจ', vacation: 'ลาพักร้อน', other: 'ลาอื่นๆ' };
+                                const typeLabel = typeMap[log.metadata.leaveType] || log.metadata.leaveType;
+                                return `ขอ${typeLabel} จำนวน ${log.metadata.days || '-'} วัน`;
+                            }
+                            if ((log.type === 'leave_approved' || log.type === 'leave_rejected') && log.metadata?.targetEmployeeName) {
+                                const action = log.type === 'leave_approved' ? 'อนุมัติ' : 'ไม่อนุมัติ';
+                                return `${action}การลาของ ${log.metadata.targetEmployeeName}`;
+                            }
+                            // Fallback to stored description if no metadata match
+                            return log.description;
+                        })()}
+                    </p>
                     <span className="text-xs text-slate-500 whitespace-nowrap">
                       {format(new Date(log.timestamp), "HH:mm", { locale })}
                     </span>

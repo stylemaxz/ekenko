@@ -1,6 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { leaveRequestService } from '@/services/leaveRequestService';
+import { activityLogService } from '@/services/activityLogService';
 import { getSession } from '@/lib/auth';
 
 export async function GET(request: Request) {
@@ -36,6 +37,29 @@ export async function POST(request: Request) {
 
         const data = await request.json();
         const leaveRequest = await leaveRequestService.createLeaveRequest(data);
+
+        // Create Activity Log
+        const leaveTypeTH: Record<string, string> = {
+            sick: 'ลาป่วย',
+            personal: 'ลากิจ',
+            vacation: 'ลาพักร้อน',
+            other: 'ลาอื่นๆ'
+        };
+        const typeLabel = leaveTypeTH[data.type] || data.type;
+
+        await activityLogService.createActivityLog({
+            employeeId: session.userId,
+            employeeName: session.name,
+            type: 'leave_requested',
+            description: `ขอ${typeLabel} จำนวน ${data.days} วัน`,
+            metadata: {
+                leaveId: leaveRequest.id,
+                leaveType: data.type,
+                days: data.days,
+                startDate: data.startDate,
+                endDate: data.endDate
+            }
+        });
 
         return NextResponse.json(leaveRequest, { status: 201 });
     } catch (error: any) {

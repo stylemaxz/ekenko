@@ -46,15 +46,24 @@ export function Modal({ isOpen, onClose, title, subtitle, children, width = "max
            isOpen ? "scale-100 translate-y-0" : "scale-95 translate-y-8"
        )}>
           {/* Header */}
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white/50 rounded-t-2xl">
-              <div>
-                  {title && <h2 className="text-xl font-bold text-slate-800">{title}</h2>}
-                  {subtitle && <p className="text-sm text-slate-500 mt-1">{subtitle}</p>}
-              </div>
-              <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
-                  <X size={24} />
-              </button>
-          </div>
+          {(title || subtitle) ? (
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white/50 rounded-t-2xl h-fit shrink-0">
+                <div>
+                    {title && <h2 className="text-xl font-bold text-slate-800">{title}</h2>}
+                    {subtitle && <p className="text-sm text-slate-500 mt-1">{subtitle}</p>}
+                </div>
+                <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+                    <X size={24} />
+                </button>
+            </div>
+          ) : (
+             <button 
+                onClick={onClose} 
+                className="absolute top-3 right-3 p-2 text-slate-400 hover:text-slate-600 bg-white/80 hover:bg-slate-100 rounded-full transition-colors z-20 shadow-sm border border-slate-100"
+             >
+                <X size={20} />
+             </button>
+          )}
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-6">

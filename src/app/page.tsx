@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { LogIn, User, Lock, Eye, EyeOff } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { mockEmployees } from "@/utils/mockData";
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,29 +17,34 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
 
-    // Find user in mockEmployees
-    const user = mockEmployees.find(
-      emp => emp.username === username && emp.password === password
-    );
+      const data = await res.json();
 
-    if (user) {
-      // Successful login
-      if (user.role === 'manager') {
-        router.push('/admin/dashboard');
+      if (res.ok && data.success) {
+         if (data.redirectUrl) {
+            router.push(data.redirectUrl);
+         } else {
+             router.push(data.user.role === 'manager' ? '/admin/dashboard' : '/sale/dashboard');
+         }
       } else {
-        router.push('/sale/dashboard');
+        setError(data.error || (language === 'th' ? 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' : 'Invalid username or password'));
+        setIsLoading(false);
       }
-    } else {
-      setError(language === 'th' ? 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' : 'Invalid username or password');
-      setIsLoading(false);
+    } catch (err) {
+        console.error('Login error:', err);
+        setError(language === 'th' ? 'เกิดข้อผิดพลาดในการเชื่อมต่อ' : 'Connection error');
+        setIsLoading(false);
     }
   };
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Plus, Search, Trash2, Edit, User, Mail, Phone, Save, X } from "lucide-react";
-import { Employee } from "@/utils/mockData";
+import { Employee } from "@/types";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/contexts/ToastContext";
@@ -154,7 +154,7 @@ export default function EmployeesPage() {
           <h1 className="text-2xl font-bold text-slate-900">{t('employees')}</h1>
           <p className="text-slate-500 text-sm">{t('manage_team')}</p>
         </div>
-        <button onClick={handleAdd} className="btn btn-primary bg-indigo-600 hover:bg-indigo-700 text-white">
+        <button onClick={handleAdd} className="btn btn-primary">
           <Plus size={18} />
           {t('add_employee')}
         </button>
@@ -264,7 +264,7 @@ export default function EmployeesPage() {
                  <button onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-medium hover:bg-slate-50 transition-colors">
                      {t('cancel')}
                  </button>
-                 <button onClick={handleSave} className="btn btn-primary px-6 bg-indigo-600 hover:bg-indigo-700 text-white">
+                 <button onClick={handleSave} className="btn btn-primary px-6">
                      <Save size={18} />
                      {t('save')}
                  </button>

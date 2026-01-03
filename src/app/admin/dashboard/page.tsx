@@ -398,7 +398,7 @@ export default function DashboardPage() {
                                         <span className={clsx(
                                             "badge border",
                                             visit.companyStatus === 'lead' ? "bg-blue-50 text-blue-600 border-blue-100" :
-                                            visit.companyStatus === 'existing' ? "bg-green-50 text-green-600 border-green-100" :
+                                            (visit.companyStatus === 'existing' || visit.companyStatus === 'active') ? "bg-green-50 text-green-600 border-green-100" :
                                             (visit.companyStatus === 'closed' || visit.companyStatus === 'inactive' || visit.companyStatus === 'terminate') ? "bg-red-50 text-red-600 border-red-100" :
                                             "bg-slate-50 text-slate-500 border-slate-200"
                                         )}>

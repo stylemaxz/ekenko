@@ -35,7 +35,16 @@ export async function POST(request: Request) {
         }
 
         const data = await request.json();
-        const activityLog = await activityLogService.createActivityLog(data);
+
+        // Force use of session user ID for security and integrity
+        // Cast session to any or define a type, knowing it has userId and name from login
+        const payload = session as any;
+
+        const activityLog = await activityLogService.createActivityLog({
+            ...data,
+            employeeId: payload.userId,
+            employeeName: payload.name || data.employeeName // Fallback to provided name or lookup in service
+        });
 
         return NextResponse.json(activityLog, { status: 201 });
     } catch (error: any) {

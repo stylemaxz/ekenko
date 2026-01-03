@@ -2,9 +2,9 @@
 
 export type Role = 'sales' | 'manager';
 
-export type CustomerStatus = 'lead' | 'existing' | 'inactive' | 'closed' | 'terminate';
+export type CustomerStatus = 'lead' | 'active' | 'existing' | 'inactive' | 'closed' | 'terminate';
 
-export type LocationStatus = 'lead' | 'existing' | 'inactive' | 'closed' | 'terminate';
+export type LocationStatus = 'lead' | 'active' | 'existing' | 'inactive' | 'closed' | 'terminate';
 
 export type LeaveType = 'sick' | 'personal' | 'annual' | 'vacation' | 'other';
 

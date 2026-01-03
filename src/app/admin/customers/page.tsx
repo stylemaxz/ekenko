@@ -17,10 +17,11 @@ import {
   Image as ImageIcon,
   X,
   FileText,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from "lucide-react";
-import { mockCompanies, Company, Location, ContactPerson, mockEmployees } from "@/utils/mockData";
-import { Employee } from "@/types";
+
+import { Company, Location, ContactPerson, Employee } from "@/types";
 import { clsx } from "clsx";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -139,6 +140,9 @@ export default function CustomersPage() {
 
   // Search State
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Saving State
+  const [isSaving, setIsSaving] = useState(false);
 
   const filteredCompanies = companies.filter(company => 
     company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -170,10 +174,14 @@ export default function CustomersPage() {
       const copy = JSON.parse(JSON.stringify(company));
       
       // Auto-calculate regions for all locations if missing
+      // AND MIGRATE EXISTING -> ACTIVE
+      if (copy.status === 'existing') copy.status = 'active';
+
       copy.locations.forEach((loc: any) => {
           if (!loc.region) {
               loc.region = getRegion(loc.province || '', loc.district || '');
           }
+          if (loc.status === 'existing') loc.status = 'active';
       });
 
       setEditingCompany(copy); 
@@ -234,6 +242,7 @@ export default function CustomersPage() {
       e.preventDefault();
       if (!editingCompany) return;
 
+      setIsSaving(true);
       try {
           const isExisting = companies.some(c => c.id === editingCompany.id);
           
@@ -303,6 +312,8 @@ export default function CustomersPage() {
       } catch (error: any) {
           console.error(error);
           showToast(error.message || 'Failed to save', 'error');
+      } finally {
+          setIsSaving(false);
       }
   };
 
@@ -506,7 +517,7 @@ export default function CustomersPage() {
                      <div className="flex items-start gap-3">
                          <div className={clsx(
                              "w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm overflow-hidden relative",
-                             company.status === 'existing' ? "bg-indigo-100 text-indigo-600" : "bg-teal-100 text-teal-600"
+                             (company.status === 'existing' || company.status === 'active') ? "bg-indigo-100 text-indigo-600" : "bg-teal-100 text-teal-600"
                          )}>
                              {company.logo ? (
                                  <Image 
@@ -534,7 +545,7 @@ export default function CustomersPage() {
                                  </span>
                                  <span className={clsx(
                                      "text-[10px] px-1.5 py-0.5 rounded border font-bold uppercase",
-                                     company.status === 'existing' ? "bg-green-50 text-green-700 border-green-200" :
+                                     (company.status === 'existing' || company.status === 'active') ? "bg-green-50 text-green-700 border-green-200" :
                                      company.status === 'lead' ? "bg-blue-50 text-blue-700 border-blue-200" :
                                      (company.status === 'closed' || company.status === 'inactive' || company.status === 'terminate') ? "bg-red-50 text-red-700 border-red-200" :
                                      "bg-slate-50 text-slate-600 border-slate-200"
@@ -615,9 +626,9 @@ export default function CustomersPage() {
                  <button onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-medium hover:bg-slate-100 transition-colors">
                      {t('cancel')}
                  </button>
-                 <button onClick={handleSave} className="btn btn-primary px-6">
-                     <Save size={18} />
-                     {t('save')}
+                 <button onClick={handleSave} disabled={isSaving} className="btn btn-primary px-6 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                     {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                     {isSaving ? (language === 'th' ? 'กำลังบันทึก...' : 'Saving...') : t('save')}
                  </button>
              </>
           }
@@ -712,7 +723,7 @@ export default function CustomersPage() {
                             className="input w-full"
                          >
                              <option value="lead">{t('status_lead')}</option>
-                             <option value="existing">{t('status_existing')}</option>
+                             <option value="active">{t('status_active')}</option>
                              <option value="closed">{t('status_closed')}</option>
                              <option value="inactive">{t('status_inactive')}</option>
                              <option value="terminate">{t('status_terminate')}</option>
@@ -758,13 +769,13 @@ export default function CustomersPage() {
                                                   onChange={(e) => updateBranch(idx, 'status', e.target.value)}
                                                   className={clsx(
                                                       "input w-full bg-white h-9 text-xs font-medium",
-                                                      loc.status === 'existing' ? "text-green-600 border-green-200 bg-green-50" :
+                                                      (loc.status === 'existing' || loc.status === 'active') ? "text-green-600 border-green-200 bg-green-50" :
                                                       loc.status === 'lead' ? "text-blue-600 border-blue-200 bg-blue-50" :
                                                       "text-slate-600"
                                                   )}
                                               >
                                                   <option value="lead">{t('status_lead')}</option>
-                                                  <option value="existing">{t('status_existing')}</option>
+                                                  <option value="active">{t('status_active')}</option>
                                                   <option value="closed">{t('status_closed')}</option>
                                                   <option value="inactive">{t('status_inactive')}</option>
                                                   <option value="terminate">{t('status_terminate')}</option>
@@ -783,7 +794,7 @@ export default function CustomersPage() {
                                       </div>
 
                                       {/* --- DETAILED FIELDS FOR ACTIVE CUSTOMERS --- */}
-                                      {loc.status === 'existing' && (
+                                      {(loc.status === 'existing' || loc.status === 'active') && (
                                           <div className="p-4 bg-green-50/50 rounded-lg border border-green-100 space-y-4">
                                               <div className="text-xs font-bold text-green-700 uppercase tracking-wider mb-2 border-b border-green-200 pb-2 flex items-center gap-2">
                                                   <CheckCircle2 size={14} />

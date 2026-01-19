@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { Trirong } from "next/font/google";
+import { IBM_Plex_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { ConfirmDialogProvider } from "@/contexts/ConfirmDialogContext";
 
-const trirong = Trirong({
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
+const ibmPlexSansThai = IBM_Plex_Sans_Thai({
+  weight: ['100', '200', '300', '400', '500', '600', '700'],
   subsets: ['thai', 'latin'],
-  variable: '--font-trirong',
+  variable: '--font-ibm-plex-sans-thai',
   display: 'swap',
 });
 
@@ -23,10 +23,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th">
+    <html lang="th" className={ibmPlexSansThai.variable}>
       <head>
       </head>
-      <body className={`${trirong.variable} font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <LanguageProvider>
           <ToastProvider>
             <ConfirmDialogProvider>

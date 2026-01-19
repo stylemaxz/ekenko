@@ -125,7 +125,7 @@ export default function CustomersPage() {
         setEmployees(employeesData);
       } catch (error) {
         console.error('Error fetching data:', error);
-        showToast('Failed to load data', 'error');
+        showToast(t('load_failed'), 'error');
       } finally {
         setLoading(false);
       }
@@ -213,7 +213,7 @@ export default function CustomersPage() {
                     body: JSON.stringify({
                         type: 'customer_status_changed', // Reuse status changed or create new type
                         employeeId: '4',
-                        description: language === 'th' ? `ลบลูกค้า: ${deletedCompany.name}` : `Deleted Customer: ${deletedCompany.name}`,
+                        description: `${t('log_delete_customer')}: ${deletedCompany.name}`,
                         metadata: {
                            companyName: deletedCompany.name,
                            action: 'delete'
@@ -233,7 +233,7 @@ export default function CustomersPage() {
               }
           } catch (error) {
               console.error(error);
-              showToast('Failed to delete company', 'error');
+              showToast(t('delete_failed'), 'error');
           }
       }
   };
@@ -256,7 +256,7 @@ export default function CustomersPage() {
               
               if (!res.ok) {
                   const error = await res.json();
-                  throw new Error(error.error || 'Failed to update');
+                  throw new Error(error.error || t('update_failed'));
               }
               
               // Log Activity: Customer Updated
@@ -266,7 +266,7 @@ export default function CustomersPage() {
                 body: JSON.stringify({
                     type: 'customer_status_changed',
                     employeeId: '4', // Mock Admin ID for now or fetch actual admin
-                    description: language === 'th' ? `อัปเดตข้อมูลลูกค้า: ${editingCompany.name}` : `Updated Customer Info: ${editingCompany.name}`,
+                    description: `${t('log_update_customer')}: ${editingCompany.name}`,
                     metadata: {
                        companyName: editingCompany.name
                     }
@@ -282,7 +282,7 @@ export default function CustomersPage() {
               
               if (!res.ok) {
                   const error = await res.json();
-                  throw new Error(error.error || 'Failed to create');
+                  throw new Error(error.error || t('create_failed'));
               }
 
               // Log Activity: Customer Created
@@ -292,7 +292,7 @@ export default function CustomersPage() {
                 body: JSON.stringify({
                     type: 'customer_created',
                     employeeId: '4', // Mock Admin ID
-                    description: language === 'th' ? `สร้างลูกค้าใหม่: ${editingCompany.name}` : `Created New Customer: ${editingCompany.name}`,
+                    description: `${t('log_create_customer')}: ${editingCompany.name}`,
                     metadata: {
                        companyName: editingCompany.name
                     }
@@ -311,7 +311,7 @@ export default function CustomersPage() {
           }
       } catch (error: any) {
           console.error(error);
-          showToast(error.message || 'Failed to save', 'error');
+          showToast(error.message || t('save_error'), 'error');
       } finally {
           setIsSaving(false);
       }
@@ -444,7 +444,7 @@ export default function CustomersPage() {
         const file = e.target.files[0];
         
         // Show loading via toast (simple approach first)
-        const toastId = showToast('Uploading logo...', 'info'); // Assuming showToast returns ID or we just fire standard toast
+        const toastId = showToast(t('uploading_logo'), 'info'); // Assuming showToast returns ID or we just fire standard toast
         // Actually our toast is simple, let's just show info
         
         try {
@@ -461,11 +461,11 @@ export default function CustomersPage() {
 
             const data = await res.json();
             setEditingCompany({ ...editingCompany, logo: data.url });
-            showToast('Logo uploaded successfully', 'success');
+            showToast(t('logo_upload_success'), 'success');
 
         } catch (error) {
             console.error(error);
-            showToast('Failed to upload logo', 'error');
+            showToast(t('logo_upload_failed'), 'error');
         }
     }
   };
@@ -565,7 +565,7 @@ export default function CustomersPage() {
 
                  <div className="space-y-3">
                      <div className="text-sm font-semibold text-slate-500 uppercase tracking-wider flex items-center justify-between">
-                         <span>Branches ({company.locations.length})</span>
+                         <span>{t('branches')} ({company.locations.length})</span>
                      </div>
                      
                      <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
@@ -634,7 +634,7 @@ export default function CustomersPage() {
                  </button>
                  <button onClick={handleSave} disabled={isSaving} className="btn btn-primary px-6 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
                      {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                     {isSaving ? (language === 'th' ? 'กำลังบันทึก...' : 'Saving...') : t('save')}
+                     {isSaving ? (t('saving')) : t('save')}
                  </button>
              </>
           }
@@ -695,7 +695,7 @@ export default function CustomersPage() {
                             value={editingCompany.name}
                             onChange={(e) => updateField('name', e.target.value)}
                             className="input w-full"
-                            placeholder="Company Name"
+                            placeholder={t('company_name_placeholder')}
                          />
                      </div>
                      <div className="grid grid-cols-2 gap-4">
@@ -705,7 +705,7 @@ export default function CustomersPage() {
                                 value={editingCompany.taxId ?? ''}
                                 onChange={(e) => updateField('taxId', e.target.value)}
                                 className="input w-full"
-                                placeholder="Tax ID"
+                                placeholder={t('tax_id')}
                              />
                          </div>
                          <div>
@@ -715,9 +715,9 @@ export default function CustomersPage() {
                                 onChange={(e) => updateField('grade', e.target.value)}
                                 className="input w-full"
                              >
-                                 <option value="A">Grade A</option>
-                                 <option value="B">Grade B</option>
-                                 <option value="C">Grade C</option>
+                                 <option value="A">{t('grade')} A</option>
+                                 <option value="B">{t('grade')} B</option>
+                                 <option value="C">{t('grade')} C</option>
                              </select>
                          </div>
                      </div>
@@ -795,7 +795,7 @@ export default function CustomersPage() {
                                               value={loc.name}
                                               onChange={(e) => updateBranch(idx, 'name', e.target.value)}
                                               className="input w-full bg-white h-9 text-sm"
-                                              placeholder="Branch Name (Internal)"
+                                              placeholder={t('branch_name_placeholder')}
                                           />
                                       </div>
 

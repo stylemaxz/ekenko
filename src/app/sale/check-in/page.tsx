@@ -253,17 +253,17 @@ export default function CheckInPage() {
   const handleSubmit = async () => {
     // Validation checks
     if (!selectedLocation) {
-      alert(language === 'th' ? 'กรุณาเลือกสถานที่' : 'Please select a location');
+      alert(t('select_location_required'));
       return;
     }
 
     if (!currentUserId) {
-      alert(language === 'th' ? 'ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่อีกครั้ง' : 'User not found. Please login again.');
+      alert(t('user_not_found'));
       return;
     }
 
     if (images.length === 0) {
-      alert(language === 'th' ? 'กรุณาถ่ายรูปยืนยันอย่างน้อย 1 รูป' : 'Please take at least 1 confirmation photo');
+      alert(t('photo_required'));
       return;
     }
 
@@ -317,7 +317,7 @@ export default function CheckInPage() {
       router.push('/sale/dashboard');
     } catch (error) {
       console.error('Error submitting check-in:', error);
-      alert(language === 'th' ? 'เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง' : 'Error saving data. Please try again.');
+      alert(t('save_error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -611,7 +611,7 @@ export default function CheckInPage() {
                       disabled={images.length === 0 || isSubmitting}
                       className="w-full py-3.5 rounded-xl bg-primary text-white font-bold shadow-lg shadow-black/20 disabled:opacity-50 disabled:shadow-none active:scale-[0.98] transition-transform"
                   >
-                      {isSubmitting ? (language === 'th' ? 'กำลังบันทึก...' : 'Saving...') : t('save')}
+                      {isSubmitting ? t('saving') : t('save')}
                   </button>
               </div>
           </div>

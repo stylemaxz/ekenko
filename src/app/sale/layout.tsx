@@ -18,7 +18,7 @@ export default function SalesLayout({
   const navItems = [
     { icon: Home, label: t('nav_dashboard'), path: '/sale/dashboard' },
     { icon: Users, label: t('nav_customers'), path: '/sale/customers' },
-    { icon: UserPlus, label: language === 'th' ? 'ลูกค้าใหม่' : 'New Client', path: '/sale/customers?status=lead' },
+    { icon: UserPlus, label: t('new_client'), path: '/sale/customers?status=lead' },
     { icon: User, label: t('profile'), path: '/sale/profile' },
   ];
 

@@ -118,7 +118,7 @@ export default function SaleDashboardClient({ initialData, currentUser }: SaleDa
             body: JSON.stringify({
                 employeeId: currentUserId,
                 type: 'clock_in',
-                description: t('language') === 'th' ? 'เข้างาน' : 'Clock In',
+                description: t('clock_in_action'),
                 metadata: {
                     userAgent: navigator.userAgent,
                     isWFH: isWorkFromHome
@@ -134,12 +134,13 @@ export default function SaleDashboardClient({ initialData, currentUser }: SaleDa
         
         if (hoursWorked < 8) {
             const confirmClockOut = await confirm({
-            title: language === 'th' ? 'ยังไม่ครบ 8 ชั่วโมง' : 'Less than 8 Hours',
-            message: language === 'th' 
-                ? `คุณทำงานไปเพียง ${elapsedTime.hours} ชั่วโมง ${elapsedTime.minutes} นาที\n(ยังไม่ครบ 8 ชั่วโมง)\n\nต้องการออกงานจริงหรือไม่?`
-                : `You have worked only ${elapsedTime.hours} hours ${elapsedTime.minutes} minutes\n(less than 8 hours)\n\nAre you sure you want to clock out?`,
-            confirmText: language === 'th' ? 'ออกงาน' : 'Clock Out',
-            cancelText: language === 'th' ? 'ยกเลิก' : 'Cancel',
+            title: t('confirm'),
+            message: t('work_hours_short_msg', { 
+                hours: elapsedTime.hours, 
+                minutes: elapsedTime.minutes 
+            }),
+            confirmText: t('clock_out_action'),
+            cancelText: t('cancel'),
             type: 'warning'
             });
             
@@ -162,9 +163,10 @@ export default function SaleDashboardClient({ initialData, currentUser }: SaleDa
             body: JSON.stringify({
                 employeeId: currentUserId,
                 type: 'clock_out',
-                description: t('language') === 'th' 
-                    ? `ออกงาน (ทำงาน ${elapsedTime.hours} ชม. ${elapsedTime.minutes} นาที)` 
-                    : `Clock Out (Worked ${elapsedTime.hours}h ${elapsedTime.minutes}m)`,
+                description: t('clock_out_desc', { 
+                    hours: elapsedTime.hours, 
+                    minutes: elapsedTime.minutes 
+                }),
                 metadata: { 
                     hoursWorked: elapsedTime.hours + (elapsedTime.minutes / 60),
                     userAgent: navigator.userAgent
@@ -221,7 +223,7 @@ export default function SaleDashboardClient({ initialData, currentUser }: SaleDa
           router.push("/sale/check-in");
         } else {
           // Show warning toast
-          alert(language === 'th' ? 'กรุณากดเข้างานก่อนเช็คอิน' : 'Please clock in before checking in');
+          alert(t('clock_in_required'));
         }
       },
       disabled: !isClockedIn,
@@ -279,7 +281,7 @@ export default function SaleDashboardClient({ initialData, currentUser }: SaleDa
           <div className="relative z-10 flex justify-between items-center">
             <div>
               <div className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">
-                {isClockedIn ? (language === 'th' ? 'กำลังทำงาน' : 'Currently Working') : (language === 'th' ? 'ยังไม่เข้างาน' : 'Off Duty')}
+                {isClockedIn ? t('currently_working') : t('off_duty')}
               </div>
               <div className="text-3xl font-bold font-mono tracking-tight">
                 {format(new Date(), "HH:mm")}
@@ -292,7 +294,7 @@ export default function SaleDashboardClient({ initialData, currentUser }: SaleDa
                     {String(elapsedTime.hours).padStart(2, '0')}:{String(elapsedTime.minutes).padStart(2, '0')}
                   </span>
                   <span className="text-xs text-slate-400">
-                    {language === 'th' ? 'ชม.' : 'hrs'}
+                    {t('hours_short')}
                   </span>
                 </div>
               )}
@@ -381,14 +383,13 @@ export default function SaleDashboardClient({ initialData, currentUser }: SaleDa
                             
                             // Clock In with WFH
                             if (log.type === 'clock_in' && log.metadata?.isWFH) {
-                                return 'เข้างาน (Work From Home)';
+                                return t('clock_in_wfh');
                             }
                             
                             // Thai Logic for Leave Requests
                             if (log.type === 'leave_requested' && log.metadata?.leaveType) {
-                                const typeMap: any = { sick: 'ลาป่วย', personal: 'ลากิจ', vacation: 'ลาพักร้อน', other: 'ลาอื่นๆ' };
-                                const typeLabel = typeMap[log.metadata.leaveType] || log.metadata.leaveType;
-                                return `ขอ${typeLabel} จำนวน ${log.metadata.days || '-'} วัน (เหตุผล: ${log.metadata.reason || '-'})`;
+                                // Fallback for now until we dynamicize logic or backend sends key
+                                return log.description; 
                             }
                             return log.description;
                         })()}
@@ -415,7 +416,7 @@ export default function SaleDashboardClient({ initialData, currentUser }: SaleDa
               ))
             ) : (
               <div className="text-center py-8 text-slate-400 text-sm bg-slate-50 rounded-xl border-dashed border border-slate-200">
-                {language === 'th' ? "ไม่พบกิจกรรมล่าสุด" : "No recent activity."}
+                {t('no_recent_activity')}
               </div>
             )}
           </div>

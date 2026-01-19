@@ -326,7 +326,7 @@ export default function TasksPage() {
                           className="input w-full" 
                           value={newTask.title}
                           onChange={e => setNewTask({...newTask, title: e.target.value})}
-                          placeholder="e.g. Monthly Stock Check"
+                          placeholder={t('task_example_title')}
                       />
                   </div>
                   <div>
@@ -335,7 +335,7 @@ export default function TasksPage() {
                           className="input w-full min-h-[100px]" 
                           value={newTask.description ?? ''}
                           onChange={e => setNewTask({...newTask, description: e.target.value})}
-                          placeholder="Enter detailed instructions..."
+                          placeholder={t('task_details_placeholder')}
                       />
                   </div>
 
@@ -376,7 +376,7 @@ export default function TasksPage() {
                               value={newTask.assigneeId}
                               onChange={e => setNewTask({...newTask, assigneeId: e.target.value})}
                           >
-                              <option value="">-- Select --</option>
+                              <option value="">{t('select_none')}</option>
                               {employees.map(e => (
                                   <option key={e.id} value={e.id}>{e.name}</option>
                               ))}
@@ -411,7 +411,7 @@ export default function TasksPage() {
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                       <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
                           <MapPin size={16} />
-                          Target Location (Optional)
+                          {t('target_location_optional')}
                       </h3>
                       <div className="grid grid-cols-1 gap-4">
                           <div>
@@ -421,7 +421,7 @@ export default function TasksPage() {
                                   value={newTask.customerId ?? ''}
                                   onChange={e => setNewTask({...newTask, customerId: e.target.value, locationId: ""})}
                               >
-                                  <option value="">-- None --</option>
+                                  <option value="">{t('select_none')}</option>
                                   {companies.map(c => (
                                       <option key={c.id} value={c.id}>{c.name}</option>
                                   ))}
@@ -435,7 +435,7 @@ export default function TasksPage() {
                                       value={newTask.locationId ?? ''}
                                       onChange={e => setNewTask({...newTask, locationId: e.target.value})}
                                   >
-                                      <option value="">-- All Locations / Head Office --</option>
+                                      <option value="">{t('select_all_locations')}</option>
                                       {locationOptions.map(l => (
                                           <option key={l.id} value={l.id}>{l.name}</option>
                                       ))}

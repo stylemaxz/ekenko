@@ -124,7 +124,7 @@ export default function SaleLeaveRequestsPage() {
     }
 
     if (!currentUser) {
-        showToast("User not loaded", "error");
+        showToast(t('user_not_found'), "error");
         return;
     }
 
@@ -165,7 +165,7 @@ export default function SaleLeaveRequestsPage() {
       }
     } catch (error) {
       console.error('Error creating leave request:', error);
-      showToast('Failed to create leave request', 'error');
+      showToast(t('create_failed'), 'error');
     }
   };
 
@@ -198,7 +198,7 @@ export default function SaleLeaveRequestsPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{t('my_leave_requests')}</h1>
           <p className="text-slate-500 text-sm mt-1">
-            {myRequests.length} {language === 'th' ? 'รายการ' : 'requests'}
+            {myRequests.length} {t('requests_count')}
           </p>
         </div>
         <button
@@ -215,13 +215,13 @@ export default function SaleLeaveRequestsPage() {
         {/* Vacation Card */}
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
           <div className="text-xs font-medium text-slate-500 mb-1">
-            {language === 'th' ? 'พักร้อน' : 'Vacation'}
+            {t('vacation_leave')}
           </div>
           <div className="text-3xl font-bold text-blue-600 mb-1">
             {remainingVacation}
           </div>
           <div className="text-xs text-slate-400 mb-2">
-            {usedVacation}/{leaveQuotas.vacation} {language === 'th' ? 'วันที่ใช้' : 'days used'}
+            {usedVacation}/{leaveQuotas.vacation} {t('days_used')}
           </div>
           <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
             <div 
@@ -234,13 +234,13 @@ export default function SaleLeaveRequestsPage() {
         {/* Sick Leave Card */}
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
           <div className="text-xs font-medium text-slate-500 mb-1">
-            {language === 'th' ? 'ลาป่วย' : 'Sick'}
+            {t('sick_leave')}
           </div>
           <div className="text-3xl font-bold text-green-600 mb-1">
             {remainingSick}
           </div>
           <div className="text-xs text-slate-400 mb-2">
-            {usedSick}/{leaveQuotas.sick} {language === 'th' ? 'วันที่ใช้' : 'days used'}
+            {usedSick}/{leaveQuotas.sick} {t('days_used')}
           </div>
           <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
             <div 
@@ -253,13 +253,13 @@ export default function SaleLeaveRequestsPage() {
         {/* Personal Leave Card */}
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
           <div className="text-xs font-medium text-slate-500 mb-1">
-            {language === 'th' ? 'ลากิจ' : 'Personal'}
+            {t('personal_leave')}
           </div>
           <div className="text-3xl font-bold text-purple-600 mb-1">
             {remainingPersonal}
           </div>
           <div className="text-xs text-slate-400 mb-2">
-            {usedPersonal}/{leaveQuotas.personal} {language === 'th' ? 'วันที่ใช้' : 'days used'}
+            {usedPersonal}/{leaveQuotas.personal} {t('days_used')}
           </div>
           <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
             <div 
@@ -300,7 +300,7 @@ export default function SaleLeaveRequestsPage() {
                         </span>
                         {request.isPaid === false && (
                           <span className="text-xs px-2 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-200 font-bold uppercase">
-                            {language === 'th' ? 'ไม่รับเงิน' : 'Unpaid'}
+                            {t('unpaid')}
                           </span>
                         )}
                       </div>
@@ -342,7 +342,7 @@ export default function SaleLeaveRequestsPage() {
 
                 {/* Created At */}
                 <div className="mt-3 pt-3 border-t border-slate-50 text-xs text-slate-400">
-                  {language === 'th' ? 'ขอเมื่อ' : 'Requested'}: {format(new Date(request.createdAt), "d MMM yyyy HH:mm", { locale })}
+                  {t('requested_on')}: {format(new Date(request.createdAt), "d MMM yyyy HH:mm", { locale })}
                 </div>
               </div>
             );
@@ -351,7 +351,7 @@ export default function SaleLeaveRequestsPage() {
           <div className="text-center py-16 bg-white rounded-xl border border-dashed border-slate-200">
             <FileText size={48} className="mx-auto mb-3 text-slate-300" />
             <p className="text-slate-500 font-medium">
-              {language === 'th' ? 'ยังไม่มีการขอลา' : 'No leave requests yet'}
+              {t('no_leave_requests')}
             </p>
           </div>
         )}
@@ -432,7 +432,7 @@ export default function SaleLeaveRequestsPage() {
             <label className="label">{t('reason')} <span className="text-red-500">*</span></label>
             <textarea
               className="input w-full h-24 resize-none"
-              placeholder={language === 'th' ? 'กรุณาระบุเหตุผล...' : 'Please specify reason...'}
+              placeholder={t('reason_placeholder')}
               value={newRequest.reason}
               onChange={(e) => setNewRequest({ ...newRequest, reason: e.target.value })}
             />
@@ -451,7 +451,7 @@ export default function SaleLeaveRequestsPage() {
               className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
             />
             <label htmlFor="unpaid-leave" className="text-sm font-medium text-slate-700 cursor-pointer">
-              {language === 'th' ? 'ลาโดยไม่รับเงินเดือน' : 'Unpaid leave'}
+              {t('unpaid_leave_label')}
             </label>
           </div>
         </div>

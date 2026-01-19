@@ -119,7 +119,7 @@ export default function SaleCustomersPage() {
 
   const getPageTitle = () => {
       if (statusFilter === 'lead') {
-          return language === 'th' ? 'ลูกค้าใหม่' : 'New Customers';
+          return t('new_customers_title');
       }
       return t('customers');
   };
@@ -176,26 +176,11 @@ export default function SaleCustomersPage() {
               
               // Show user-friendly error message based on error type
               if (error.code === 1) { // PERMISSION_DENIED
-                  showToast(
-                      language === 'th' 
-                          ? 'กรุณาอนุญาตการเข้าถึงตำแหน่งในเบราว์เซอร์เพื่อเพิ่มลูกค้า' 
-                          : 'Please allow location access to add customers',
-                      'error'
-                  );
+                  showToast(t('gps_permission_denied'), 'error');
               } else if (error.code === 3) { // TIMEOUT
-                  showToast(
-                      language === 'th' 
-                          ? 'หมดเวลารอ GPS กรุณาลองอีกครั้ง' 
-                          : 'GPS timeout. Please try again',
-                      'error'
-                  );
+                  showToast(t('gps_timeout'), 'error');
               } else {
-                  showToast(
-                      language === 'th' 
-                          ? 'ไม่สามารถรับตำแหน่ง GPS ได้ กรุณาเปิดใช้งานบริการตำแหน่งในอุปกรณ์' 
-                          : 'Cannot get GPS location. Please enable location services',
-                      'error'
-                  );
+                  showToast(t('gps_unavailable'), 'error');
               }
               throw error; // Re-throw to stop execution
           });
@@ -290,7 +275,7 @@ export default function SaleCustomersPage() {
                 body: JSON.stringify({
                     employeeId: currentUser?.id,
                     type: 'customer_created',
-                    description: language === 'th' ? `สร้างลูกค้าใหม่: ${newCustomer.companyName}` : `Created New Customer: ${newCustomer.companyName}`,
+                    description: t('log_created_customer', { company: newCustomer.companyName }),
                     metadata: {
                        companyName: newCustomer.companyName,
                        branchName: newCustomer.branchName,
@@ -303,9 +288,7 @@ export default function SaleCustomersPage() {
           setIsModalOpen(false);
           setLoading(false);
           showToast(
-              language === 'th' 
-                  ? `บันทึกเรียบร้อย (GPS: ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)})` 
-                  : `Saved successfully (GPS: ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)})`,
+              t('saved_with_gps', { lat: coords.lat.toFixed(5), lng: coords.lng.toFixed(5) }),
               'success'
           );
           
@@ -423,7 +406,7 @@ export default function SaleCustomersPage() {
             body: JSON.stringify({
                 employeeId: currentUser?.id,
                 type: 'customer_status_changed',
-                description: language === 'th' ? `เปลี่ยนสถานะลูกค้า: ${editingLocation.company.name}` : `Customer Status Changed: ${editingLocation.company.name}`,
+                description: t('log_status_changed_desc', { company: editingLocation.company.name }),
                 metadata: {
                    companyName: editingLocation.company.name,
                    oldStatus: editingLocation.location.status,
@@ -435,7 +418,7 @@ export default function SaleCustomersPage() {
 
         setIsEditModalOpen(false);
         showToast(
-            language === 'th' ? 'อัปเดตสถานะเรียบร้อย' : 'Status updated successfully',
+            t('status_updated'),
             'success'
         );
 
@@ -605,7 +588,7 @@ export default function SaleCustomersPage() {
           {filteredCompanies.length === 0 && (
               <div className="text-center py-12 text-slate-400">
                   <User size={40} className="mx-auto mb-2 opacity-20" />
-                  <p>No customers found.</p>
+                  <p>{t('no_customers_found')}</p>
               </div>
           )}
       </div>
@@ -615,7 +598,7 @@ export default function SaleCustomersPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={t('new_customer')}
-        subtitle="Quick Add - Sales Rep"
+        subtitle={t('quick_add_subtitle')}
         footer={
           <>
             <button 
@@ -645,7 +628,7 @@ export default function SaleCustomersPage() {
               <input
                 type="text"
                 className="input w-full"
-                placeholder="Company Name"
+                placeholder={t('company_name_placeholder')}
                 value={newCustomer.companyName}
                 onChange={(e) => {
                   setNewCustomer({ ...newCustomer, companyName: e.target.value });
@@ -664,7 +647,7 @@ export default function SaleCustomersPage() {
                     return (
                       <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                         <div className="p-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 font-medium">
-                          ⚠️ {t('language') === 'th' ? 'พบบริษัทที่คล้ายกัน' : 'Similar companies found'}:
+                          ⚠️ {t('similar_companies')}:
                         </div>
                         {matchingCompanies.map(company => {
                           const myBranchCount = company.locations.filter(loc => 
@@ -687,7 +670,7 @@ export default function SaleCustomersPage() {
                             >
                                 <div className="font-medium text-slate-900">{company.name}</div>
                                 <div className="text-xs text-slate-500 mt-1">
-                                {myBranchCount} {t('language') === 'th' ? 'สาขาที่คุณดูแล' : 'my branches'} • 
+                                {myBranchCount} {t('my_branches')} • 
                                 <span className={clsx(
                                     "ml-1",
                                     company.status === 'existing' ? "text-blue-600" : "text-teal-600"
@@ -717,7 +700,7 @@ export default function SaleCustomersPage() {
               <input
                 type="text"
                 className="input w-full"
-                placeholder="Branch Name"
+                placeholder={t('branch_name_placeholder')}
                 value={newCustomer.branchName}
                 onChange={(e) => {
                   setNewCustomer({ ...newCustomer, branchName: e.target.value });
@@ -743,7 +726,7 @@ export default function SaleCustomersPage() {
                       return (
                         <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                           <div className="p-2 bg-red-50 border-b border-red-100 text-xs text-red-700 font-medium">
-                            🚫 {t('language') === 'th' ? 'สาขานี้มีอยู่แล้วในระบบ' : 'This branch already exists'}!
+                            🚫 {t('branch_exists')}!
                           </div>
                           {matchingBranches.map(branch => (
                             <div
@@ -778,7 +761,7 @@ export default function SaleCustomersPage() {
                     return (
                       <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                         <div className="p-2 bg-blue-50 border-b border-blue-100 text-xs text-blue-700 font-medium">
-                          ℹ️ {t('language') === 'th' ? 'พบสาขาที่คล้ายกัน' : 'Similar branches found'}:
+                          ℹ️ {t('similar_branches')}:
                         </div>
                         {allMatchingBranches.map((item, idx) => (
                           <div
@@ -927,7 +910,7 @@ export default function SaleCustomersPage() {
             </label>
             <textarea
               className="input w-full h-24 resize-none"
-              placeholder={language === 'th' ? 'ระบุเหตุผล...' : 'Enter reason...'}
+              placeholder={t('status_note_placeholder')}
               value={editNote}
               onChange={(e) => setEditNote(e.target.value)}
             />
@@ -943,7 +926,7 @@ export default function SaleCustomersPage() {
           {editingLocation?.location.statusNote && (
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
               <p className="text-xs font-medium text-slate-600 mb-1">
-                {language === 'th' ? 'หมายเหตุก่อนหน้า:' : 'Previous note:'}
+                {t('previous_note')}
               </p>
               <p className="text-sm text-slate-700">{editingLocation.location.statusNote}</p>
             </div>

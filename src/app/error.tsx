@@ -26,18 +26,16 @@ export default function Error({
           <AlertCircle size={32} className="text-red-500" />
         </div>
         <h2 className="text-2xl font-bold text-slate-900 mb-2">
-          {language === 'th' ? 'เกิดข้อผิดพลาด' : 'Something went wrong!'}
+          {t('error_title')}
         </h2>
         <p className="text-slate-600 mb-6">
-            {language === 'th' 
-                ? 'ระบบเกิดข้อผิดพลาดบางประการ โปรดลองใหม่อีกครั้ง'
-                : 'An unexpected error occurred. Please try again.'}
+            {t('error_desc')}
         </p>
         <button
           onClick={reset}
           className="btn btn-primary w-full"
         >
-          {language === 'th' ? 'ลองใหม่' : 'Try again'}
+          {t('try_again')}
         </button>
       </div>
     </div>

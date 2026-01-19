@@ -110,9 +110,9 @@ export default function CalendarPage() {
       
       return {
           ...v,
-          customerName: company?.name || "Unknown Company",
-          employeeName: employee?.name || "Unknown",
-          province: location?.province || "Unknown",
+          customerName: company?.name || t('unknown_company'),
+          employeeName: employee?.name || t('unknown'),
+          province: location?.province || t('unknown'),
           startTime: new Date(v.checkInTime),
       };
   });
@@ -172,7 +172,7 @@ export default function CalendarPage() {
                   <svg className={clsx("w-4 h-4", loading && "animate-spin")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  {loading ? 'Loading...' : 'Refresh'}
+                  {loading ? t('loading') : t('refresh')}
               </button>
               <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-1 shadow-sm">
                   <button onClick={prev} className="p-1.5 hover:bg-slate-50 rounded-md text-slate-600">
@@ -334,7 +334,7 @@ export default function CalendarPage() {
                     ))}
                     {dayEvents.length === 0 && (
                         <div className="h-full flex items-center justify-center text-xs text-slate-300 italic">
-                            No visits
+                            {t('no_visits')}
                         </div>
                     )}
                 </div>
@@ -418,7 +418,7 @@ export default function CalendarPage() {
                  {dayEvents.length === 0 && (
                      <div className="flex flex-col items-center justify-center h-64 text-slate-400">
                          <CalendarIcon size={48} className="mb-2 opacity-50" />
-                         <p>No visits scheduled for this day</p>
+                         <p>{t('no_visits_day')}</p>
                      </div>
                  )}
              </div>
@@ -473,13 +473,13 @@ export default function CalendarPage() {
                             ))
                         ) : (
                             <div className="w-full h-32 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 text-sm">
-                                No images
+                                {t('no_images')}
                             </div>
                         )}
                         {/* Mock Add Image Button (Visual Only) */}
                         <div className="w-32 h-32 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 shrink-0 bg-white">
                             <Clock size={20} className="mb-1 opacity-50" /> 
-                            <span className="text-xs">Add Image</span>
+                            <span className="text-xs">{t('add_image')}</span>
                         </div>
                     </div>
                 </div>

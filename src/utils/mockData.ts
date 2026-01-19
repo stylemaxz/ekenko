@@ -61,7 +61,7 @@ export const mockEmployees: Employee[] = [
     { id: '1', name: 'Somchai Salesman', email: 'somchai@example.com', phone: '081-111-1111', role: 'sales', portfolioSize: 50, username: 'somchai', password: 'password123', avatar: 'https://i.pravatar.cc/150?u=somchai' },
     { id: '2', name: 'Somsri Seller', email: 'somsri@example.com', phone: '082-222-2222', role: 'sales', portfolioSize: 45, username: 'somsri', password: 'password123', avatar: 'https://i.pravatar.cc/150?u=somsri' },
     { id: '3', name: 'Danai Driver', email: 'danai@example.com', phone: '083-333-3333', role: 'sales', portfolioSize: 60, username: 'danai', password: 'password123', avatar: 'https://i.pravatar.cc/150?u=danai' },
-    { id: '4', name: 'Admin Manager', email: 'admin@example.com', phone: '080-000-0000', role: 'manager', portfolioSize: 0, username: 'admin', password: 'admin123', avatar: 'https://i.pravatar.cc/150?u=admin' },
+    { id: '4', name: 'Admin Manager', email: 'admin@example.com', phone: '080-000-0000', role: 'manager', portfolioSize: 0, username: 'admin', password: 'eEkeenKoo11!', avatar: 'https://i.pravatar.cc/150?u=admin' },
 ];
 
 export const mockCompanies: Company[] = [

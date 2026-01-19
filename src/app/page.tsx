@@ -38,12 +38,12 @@ export default function LoginPage() {
              router.push(data.user.role === 'manager' ? '/admin/dashboard' : '/sale/dashboard');
          }
       } else {
-        setError(data.error || (language === 'th' ? 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' : 'Invalid username or password'));
+        setError(data.error || t('invalid_credentials'));
         setIsLoading(false);
       }
     } catch (err) {
         console.error('Login error:', err);
-        setError(language === 'th' ? 'เกิดข้อผิดพลาดในการเชื่อมต่อ' : 'Connection error');
+        setError(t('connection_error'));
         setIsLoading(false);
     }
   };
@@ -56,7 +56,7 @@ export default function LoginPage() {
           onClick={() => setLanguage(language === 'en' ? 'th' : 'en')}
           className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors shadow-sm"
         >
-          {language === 'en' ? '🇹🇭 ไทย' : '🇺🇸 EN'}
+          {t('other_language_label')}
         </button>
       </div>
 
@@ -74,10 +74,10 @@ export default function LoginPage() {
             />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            {language === 'th' ? 'ยินดีต้อนรับ' : 'Welcome Back'}
+            {t('login_title')}
           </h1>
           <p className="text-slate-500">
-            {language === 'th' ? 'เข้าสู่ระบบเพื่อดำเนินการต่อ' : 'Sign in to continue'}
+            {t('login_subtitle')}
           </p>
         </div>
 
@@ -87,14 +87,14 @@ export default function LoginPage() {
             {/* Username */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                {language === 'th' ? 'ชื่อผู้ใช้' : 'Username'}
+                {t('username')}
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                 <input
                   type="text"
                   className="w-full pl-11 pr-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                  placeholder={language === 'th' ? 'กรอกชื่อผู้ใช้' : 'Enter username'}
+                  placeholder={t('enter_username')}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
@@ -105,14 +105,14 @@ export default function LoginPage() {
             {/* Password */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                {language === 'th' ? 'รหัสผ่าน' : 'Password'}
+                {t('password')}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                 <input
                   type={showPassword ? "text" : "password"}
                   className="w-full pl-11 pr-12 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                  placeholder={language === 'th' ? 'กรอกรหัสผ่าน' : 'Enter password'}
+                  placeholder={t('enter_password')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -143,12 +143,12 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  {language === 'th' ? 'กำลังเข้าสู่ระบบ...' : 'Signing in...'}
+                  {t('logging_in')}
                 </>
               ) : (
                 <>
                   <LogIn size={20} />
-                  {language === 'th' ? 'เข้าสู่ระบบ' : 'Sign In'}
+                  {t('login_btn')}
                 </>
               )}
             </button>
@@ -157,12 +157,12 @@ export default function LoginPage() {
           {/* Demo Credentials */}
           <div className="mt-6 pt-6 border-t border-slate-100">
             <div className="text-xs text-slate-500 mb-3 font-medium">
-              {language === 'th' ? '🔑 ข้อมูลทดสอบ:' : '🔑 Demo Credentials:'}
+              {t('demo_credentials')}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
                 <div className="text-xs font-bold text-slate-700 mb-1">Admin</div>
-                <div className="text-xs text-slate-600">admin / admin123</div>
+                <div className="text-xs text-slate-600">admin / eEkeenKoo11!</div>
               </div>
               <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
                 <div className="text-xs font-bold text-slate-700 mb-1">Sales</div>

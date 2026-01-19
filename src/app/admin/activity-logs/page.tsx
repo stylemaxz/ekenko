@@ -142,13 +142,13 @@ export default function ActivityLogsPage() {
   };
 
   const activityTypes: { value: ActivityType | 'all'; label: string }[] = [
-    { value: 'all', label: language === 'th' ? 'ทั้งหมด' : 'All' },
-    { value: 'clock_in', label: language === 'th' ? 'เข้างาน' : 'Clock In' },
-    { value: 'clock_out', label: language === 'th' ? 'ออกงาน' : 'Clock Out' },
-    { value: 'check_in', label: language === 'th' ? 'เช็คอิน' : 'Check-in' },
-    { value: 'customer_created', label: language === 'th' ? 'สร้างลูกค้า' : 'Customer Created' },
-    { value: 'customer_status_changed', label: language === 'th' ? 'เปลี่ยนสถานะ' : 'Status Changed' },
-    { value: 'leave_requested', label: language === 'th' ? 'ขอลา' : 'Leave Request' },
+    { value: 'all', label: t('all_tasks') },
+    { value: 'clock_in', label: t('clock_in') },
+    { value: 'clock_out', label: t('clock_out') },
+    { value: 'check_in', label: t('check_in') },
+    { value: 'customer_created', label: t('activity_customer_created') },
+    { value: 'customer_status_changed', label: t('activity_status_changed') },
+    { value: 'leave_requested', label: t('activity_leave_requested') },
   ];
 
   return (
@@ -156,10 +156,10 @@ export default function ActivityLogsPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900 mb-2">
-          {language === 'th' ? 'บันทึกกิจกรรม' : 'Activity Logs'}
+          {t('activity_logs_title')}
         </h1>
-        <p className="text-slate-600 text-sm">
-          {language === 'th' ? 'ติดตามความเคลื่อนไหวทั้งหมดในระบบ' : 'Track all system activities'}
+        <p className="text-slate-500">
+          {t('activity_logs_desc')}
         </p>
       </div>
 
@@ -168,7 +168,7 @@ export default function ActivityLogsPage() {
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
           <div className="text-2xl font-bold text-slate-900">{logs.length}</div>
           <div className="text-xs text-slate-600 mt-1">
-            {language === 'th' ? 'กิจกรรมทั้งหมด' : 'Total Activities'}
+            {t('total_activities')}
           </div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
@@ -176,7 +176,7 @@ export default function ActivityLogsPage() {
             {logs.filter(l => l.type === 'clock_in').length}
           </div>
           <div className="text-xs text-slate-600 mt-1">
-            {language === 'th' ? 'เข้างาน' : 'Clock Ins'}
+            {t('total_clock_ins')}
           </div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
@@ -184,42 +184,44 @@ export default function ActivityLogsPage() {
             {logs.filter(l => l.type === 'check_in').length}
           </div>
           <div className="text-xs text-slate-600 mt-1">
-            {language === 'th' ? 'เช็คอิน' : 'Check-ins'}
+            {t('total_check_ins')}
           </div>
         </div>
       </div>
 
       {/* Advanced Filter (Date & Employee) */}
       <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm mb-6">
-        <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2">
-            <Filter size={18} />
-            {language === 'th' ? 'ตัวกรอง' : 'Filters'}
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-             <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{language === 'th' ? 'พนักงาน' : 'Employee'}</label>
+            <div className="flex items-center gap-2 mb-4 font-bold text-slate-700">
+              <Filter size={20} />
+              {t('filters')}
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{t('employee')}</label>
                 <select 
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     value={selectedEmployee}
                     onChange={(e) => { setSelectedEmployee(e.target.value); setCurrentPage(1); }}
                 >
-                    <option value="all">{language === 'th' ? 'พนักงานทั้งหมด' : 'All Employees'}</option>
+                    <option value="all">{t('all_employees')}</option>
                     {employees.map(e => (
                         <option key={e.id} value={e.id}>{e.name}</option>
                     ))}
                 </select>
              </div>
              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{language === 'th' ? 'วันที่เริ่มต้น' : 'Start Date'}</label>
-                <input 
-                    type="date" 
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                    value={startDate}
-                    onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
+                <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{t('start_date')}</label>
+                <input
+                  type="date"
+                  className="input w-full"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
                 />
-             </div>
-             <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{language === 'th' ? 'วันที่สิ้นสุด' : 'End Date'}</label>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{t('end_date')}</label>
                  <input 
                     type="date" 
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -235,7 +237,7 @@ export default function ActivityLogsPage() {
         <div className="flex items-center gap-2 mb-3">
           <Filter size={16} className="text-slate-600" />
           <span className="text-sm font-medium text-slate-700">
-            {language === 'th' ? 'กรองตามประเภท' : 'Filter by Type'}
+            {t('filter_by_type')}
           </span>
         </div>
         <div className="flex gap-2 overflow-x-auto pb-2">
@@ -264,7 +266,7 @@ export default function ActivityLogsPage() {
         {paginatedLogs.length === 0 ? (
           <div className="text-center py-12 text-slate-400">
             <Activity size={40} className="mx-auto mb-2 opacity-20" />
-            <p>{language === 'th' ? 'ไม่พบกิจกรรม' : 'No activities found'}</p>
+            <p>{t('no_activities_found')}</p>
           </div>
         ) : (
           paginatedLogs.map((log, index) => (
@@ -327,7 +329,7 @@ export default function ActivityLogsPage() {
                         {log.metadata.note && (
                           <div>
                             <span className="font-medium text-slate-700">
-                              {language === 'th' ? 'หมายเหตุ: ' : 'Note: '}
+                              {t('note_label')}
                             </span>
                             <span className="text-slate-600">{log.metadata.note}</span>
                           </div>
@@ -353,10 +355,11 @@ export default function ActivityLogsPage() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
           <div className="text-sm text-slate-600">
-            {language === 'th' 
-              ? `แสดง ${startIndex + 1}-${Math.min(endIndex, filteredLogs.length)} จาก ${filteredLogs.length} รายการ`
-              : `Showing ${startIndex + 1}-${Math.min(endIndex, filteredLogs.length)} of ${filteredLogs.length} items`
-            }
+            {t('pagination_showing', { 
+                start: (startIndex + 1).toString(), 
+                end: Math.min(endIndex, filteredLogs.length).toString(), 
+                total: filteredLogs.length.toString() 
+            })}
           </div>
           <div className="flex items-center gap-2">
             <button

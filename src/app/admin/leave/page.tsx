@@ -113,7 +113,7 @@ export default function AdminLeaveManagementPage() {
     const success = await updateRequestStatus(request.id, 'approved');
     if (success) {
         showToast(
-        language === 'th' ? 'อนุมัติการลาเรียบร้อย' : 'Leave approved successfully', 
+        t('leave_approved'), 
         'success'
         );
     }
@@ -123,7 +123,7 @@ export default function AdminLeaveManagementPage() {
     const success = await updateRequestStatus(request.id, 'rejected');
     if (success) {
         showToast(
-        language === 'th' ? 'ไม่อนุมัติการลาเรียบร้อย' : 'Leave rejected successfully', 
+        t('leave_rejected'), 
         'success'
         );
     }
@@ -172,7 +172,7 @@ export default function AdminLeaveManagementPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">{t('leave_management')}</h1>
         <p className="text-slate-500 text-sm mt-1">
-          {filteredRequests.length} {language === 'th' ? 'รายการ' : 'requests'}
+          {filteredRequests.length} {t('requests_count')}
         </p>
       </div>
 
@@ -182,7 +182,7 @@ export default function AdminLeaveManagementPage() {
           { key: "pending", label: t('leave_status_pending'), count: statusCounts.pending },
           { key: "approved", label: t('leave_status_approved'), count: statusCounts.approved },
           { key: "rejected", label: t('leave_status_rejected'), count: statusCounts.rejected },
-          { key: "all", label: language === 'th' ? 'ทั้งหมด' : 'All', count: statusCounts.all },
+          { key: "all", label: t('all_filter'), count: statusCounts.all },
         ].map((filter) => (
           <button
             key={filter.key}
@@ -227,7 +227,7 @@ export default function AdminLeaveManagementPage() {
                       </span>
                       {request.isPaid === false && (
                         <span className="text-xs px-2 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-200 font-bold uppercase">
-                          {language === 'th' ? 'ไม่รับเงิน' : 'Unpaid'}
+                          {t('unpaid')}
                         </span>
                       )}
                     </div>
@@ -279,7 +279,7 @@ export default function AdminLeaveManagementPage() {
                   onClick={() => handleViewDetails(request)}
                   className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
                 >
-                  {language === 'th' ? 'ดูรายละเอียด' : 'View Details'}
+                  {t('view_details')}
                 </button>
                 
                 {request.status === 'pending' && (
@@ -308,7 +308,7 @@ export default function AdminLeaveManagementPage() {
         <div className="text-center py-16 bg-white rounded-xl border border-dashed border-slate-200">
           <Clock size={48} className="mx-auto mb-3 text-slate-300" />
           <p className="text-slate-500 font-medium">
-            {language === 'th' ? 'ไม่มีรายการในสถานะนี้' : 'No requests in this status'}
+            {t('no_requests_status')}
           </p>
         </div>
       )}
@@ -317,7 +317,7 @@ export default function AdminLeaveManagementPage() {
       <Modal
         isOpen={reviewModalOpen}
         onClose={() => setReviewModalOpen(false)}
-        title={language === 'th' ? 'พิจารณาการลา' : 'Review Leave Request'}
+        title={t('review_leave_request')}
         footer={
           <>
             <button 
@@ -359,7 +359,7 @@ export default function AdminLeaveManagementPage() {
                 {selectedRequest.isPaid === false && (
                   <div className="pt-2">
                     <span className="inline-block text-xs px-2 py-1 rounded-full bg-red-50 text-red-700 border border-red-200 font-bold">
-                      {language === 'th' ? '⚠️ ลาโดยไม่รับเงินเดือน' : '⚠️ Unpaid Leave'}
+                      {t('unpaid_leave_warning')}
                     </span>
                   </div>
                 )}
@@ -370,11 +370,11 @@ export default function AdminLeaveManagementPage() {
             <div>
               <label className="label flex items-center gap-2">
                 <MessageSquare size={16} className="text-indigo-600" />
-                {t('review_note')} ({language === 'th' ? 'ไม่บังคับ' : 'Optional'})
+                {t('review_note')} ({t('optional')})
               </label>
               <textarea
                 className="input w-full h-24 resize-none"
-                placeholder={language === 'th' ? 'เพิ่มหมายเหตุ...' : 'Add note...'}
+                placeholder={t('add_note_placeholder')}
                 value={reviewNote}
                 onChange={(e) => setReviewNote(e.target.value)}
               />

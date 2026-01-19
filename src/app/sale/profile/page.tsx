@@ -50,14 +50,14 @@ export default function SaleProfilePage() {
       });
 
       if (res.ok) {
-        showToast('Logged out successfully', 'success');
+        showToast(t('logout_success'), 'success');
         router.push('/login');
       } else {
         throw new Error('Logout failed');
       }
     } catch (error) {
       console.error('Logout error:', error);
-      showToast('Failed to logout', 'error');
+      showToast(t('logout_failed'), 'error');
     }
   };
 
@@ -154,8 +154,8 @@ export default function SaleProfilePage() {
            <div className="flex justify-between items-start mb-6">
                <h2 className="text-lg font-bold text-slate-900">
                   {isEditing 
-                    ? (language === 'th' ? 'แก้ไขข้อมูล' : 'Edit Profile')
-                    : (language === 'th' ? 'โปรไฟล์ของฉัน' : 'My Profile')
+                    ? t('edit_profile')
+                    : t('my_profile')
                   }
                 </h2>
                <button 
@@ -179,7 +179,7 @@ export default function SaleProfilePage() {
               </div>
             ) : !profileData ? (
               <div className="text-center py-12">
-                <p className="text-red-500">Failed to load profile data</p>
+                <p className="text-red-500">{t('load_failed')}</p>
               </div>
             ) : (
               <>
@@ -204,7 +204,7 @@ export default function SaleProfilePage() {
                    </div>
                    {isEditing && (
                      <>
-                        <p className="text-xs text-center text-slate-400 mt-2">Tap to change</p>
+                        <p className="text-xs text-center text-slate-400 mt-2">{t('tap_to_change')}</p>
                         <input 
                             type="file" 
                             ref={fileInputRef} 
@@ -306,7 +306,7 @@ export default function SaleProfilePage() {
                                    <input 
                                        type="password"
                                        className="input w-full pl-9"
-                                       placeholder="New Password"
+                                       placeholder={t('new_password_placeholder')}
                                        value={formData.password || ''}
                                        onChange={(e) => setFormData({...formData, password: e.target.value})}
                                    />
@@ -319,7 +319,7 @@ export default function SaleProfilePage() {
                        onClick={toggleEdit}
                        className="w-full py-3 mt-4 text-slate-500 font-medium hover:text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
                    >
-                       Cancel
+                       {t('cancel')}
                    </button>
                </div>
            )}

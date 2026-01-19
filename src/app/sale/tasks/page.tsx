@@ -184,7 +184,7 @@ export default function SaleTasksPage() {
         const createdTask = await res.json();
         setMyTasks([createdTask, ...myTasks]);
         setIsCreateModalOpen(false);
-        showToast(language === 'th' ? 'เพิ่มงานสำเร็จ' : 'Task created successfully', 'success');
+        showToast(t('task_created_success'), 'success');
         
         // Reset form
         setNewTask({
@@ -225,7 +225,7 @@ export default function SaleTasksPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{t('my_tasks')}</h1>
           <p className="text-slate-500 text-sm mt-1">
-            {myTasks.length} {language === 'th' ? 'งานทั้งหมด' : 'tasks total'}
+            {myTasks.length} {t('tasks_total')}
           </p>
         </div>
         <button
@@ -233,14 +233,14 @@ export default function SaleTasksPage() {
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20 hover:bg-primary-hover active:scale-95 transition-all"
         >
           <Plus size={20} />
-          {language === 'th' ? 'เพิ่มงาน' : 'Add Task'}
+          {t('add_new_task')}
         </button>
       </div>
 
       {/* Status Filter Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide">
         {[
-          { key: "all", label: language === 'th' ? 'ทั้งหมด' : 'All', count: statusCounts.all },
+          { key: "all", label: t('all_tasks'), count: statusCounts.all },
           { key: "pending", label: t('status_pending'), count: statusCounts.pending },
           { key: "in_progress", label: t('status_in_progress'), count: statusCounts.in_progress },
           { key: "completed", label: t('status_completed'), count: statusCounts.completed },
@@ -322,7 +322,7 @@ export default function SaleTasksPage() {
                   <div className="flex items-center gap-2 text-sm text-slate-600">
                     <CalendarIcon size={14} className="text-slate-400" />
                     <span>
-                      {language === 'th' ? 'ครบกำหนด: ' : 'Due: '}
+                      {t('due_label')}
                       {format(new Date(task.dueDate), "d MMM yyyy", { locale })}
                     </span>
                   </div>
@@ -364,7 +364,7 @@ export default function SaleTasksPage() {
                         onClick={(e) => { e.stopPropagation(); handleUpdateClick(task); }}
                         className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary-hover shadow-sm transition-all shadow-primary/20"
                     >
-                      {language === 'th' ? 'อัปเดตสถานะ' : 'Update Status'}
+                      {t('update_task_status')}
                     </button>
                   )}
                 </div>
@@ -375,7 +375,7 @@ export default function SaleTasksPage() {
           <div className="text-center py-16 bg-white rounded-xl border border-dashed border-slate-200">
             <Circle size={48} className="mx-auto mb-3 text-slate-300" />
             <p className="text-slate-500 font-medium">
-              {language === 'th' ? 'ไม่มีงานในสถานะนี้' : 'No tasks in this status'}
+              {t('no_tasks_status')}
             </p>
           </div>
         )}
@@ -385,7 +385,7 @@ export default function SaleTasksPage() {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={t('language') === 'th' ? 'อัปเดตงาน' : 'Update Task'}
+        title={t('update_task')}
         width="max-w-md"
         footer={
            <>
@@ -400,7 +400,7 @@ export default function SaleTasksPage() {
                   className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary-hover flex items-center gap-2"
               >
                   <Save size={16} />
-                  {t('language') === 'th' ? 'บันทึก' : 'Save'}
+                  {t('save')}
               </button>
            </>
         }
@@ -408,7 +408,7 @@ export default function SaleTasksPage() {
          <div className="space-y-4">
             <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                    {t('language') === 'th' ? 'สถานะ' : 'Status'}
+                    {t('status')}
                 </label>
                 <select
                     className="w-full rounded-lg border-slate-200 text-sm p-2.5"
@@ -422,11 +422,11 @@ export default function SaleTasksPage() {
             </div>
             <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                    {t('language') === 'th' ? 'ความคืบหน้า / หมายเหตุ' : 'Progress / Note'}
+                    {t('progress_note')}
                 </label>
                 <textarea
                     className="w-full rounded-lg border-slate-200 text-sm p-3 min-h-[100px]"
-                    placeholder={t('language') === 'th' ? 'รายละเอียดการทำงาน...' : 'Task execution details...'}
+                    placeholder={t('task_execution_details')}
                     value={updateNote}
                     onChange={(e) => setUpdateNote(e.target.value)}
                 />
@@ -450,7 +450,7 @@ export default function SaleTasksPage() {
                 className="input w-full" 
                 value={newTask.title}
                 onChange={e => setNewTask({...newTask, title: e.target.value})}
-                placeholder={language === 'th' ? 'ตัวอย่าง: ตรวจสต็อกประจำเดือน' : 'e.g. Monthly Stock Check'}
+                placeholder={t('task_example_title')}
               />
             </div>
 
@@ -461,7 +461,7 @@ export default function SaleTasksPage() {
                 className="input w-full min-h-[100px]" 
                 value={newTask.description ?? ''}
                 onChange={e => setNewTask({...newTask, description: e.target.value})}
-                placeholder={language === 'th' ? 'รายละเอียดงาน...' : 'Enter detailed instructions...'}
+                placeholder={t('task_details_placeholder')}
               />
             </div>
 
@@ -522,7 +522,7 @@ export default function SaleTasksPage() {
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
               <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
                 <MapPin size={16} />
-                {language === 'th' ? 'สถานที่เป้าหมาย (ไม่บังคับ)' : 'Target Location (Optional)'}
+                {t('target_location_optional')}
               </h3>
               <div className="grid grid-cols-1 gap-4">
                 <div>
@@ -532,7 +532,7 @@ export default function SaleTasksPage() {
                     value={newTask.customerId ?? ''}
                     onChange={e => setNewTask({...newTask, customerId: e.target.value, locationId: ""})}
                   >
-                    <option value="">{language === 'th' ? '-- ไม่ระบุ --' : '-- None --'}</option>
+                    <option value="">{t('select_none')}</option>
                     {companies.map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
@@ -546,7 +546,7 @@ export default function SaleTasksPage() {
                       value={newTask.locationId ?? ''}
                       onChange={e => setNewTask({...newTask, locationId: e.target.value})}
                     >
-                      <option value="">{language === 'th' ? '-- ทุกสาขา / สำนักงานใหญ่ --' : '-- All Locations / Head Office --'}</option>
+                      <option value="">{t('select_all_locations')}</option>
                       {locationOptions.map(l => (
                         <option key={l.id} value={l.id}>{l.name}</option>
                       ))}
@@ -569,7 +569,7 @@ export default function SaleTasksPage() {
                 className="flex-1 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-bold hover:bg-primary-hover transition-colors flex items-center justify-center gap-2"
               >
                 <Save size={18} />
-                {language === 'th' ? 'สร้างงาน' : 'Create Task'}
+                {t('create_new_task')}
               </button>
             </div>
             </div>

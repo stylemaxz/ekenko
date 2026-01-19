@@ -50,7 +50,7 @@ async function main() {
     console.log('  - Creating Super Admin (admin)');
     await prisma.employee.create({
         data: {
-            id: 'admin_super_user',
+            id: '4',
             name: 'Super Administrator',
             email: 'admin@ekenko.com',
             phone: '000-000-0000',

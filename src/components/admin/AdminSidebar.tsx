@@ -35,14 +35,14 @@ export default function AdminSidebar() {
       });
 
       if (res.ok) {
-        showToast('Logged out successfully', 'success');
+        showToast(t('logout_success'), 'success');
         router.push('/login');
       } else {
         throw new Error('Logout failed');
       }
     } catch (error) {
       console.error('Logout error:', error);
-      showToast('Failed to logout', 'error');
+      showToast(t('logout_failed'), 'error');
     }
   };
 
@@ -54,7 +54,7 @@ export default function AdminSidebar() {
     { label: t('customers'), href: '/admin/customers', icon: Building2 },
     { label: t('tasks'), href: '/admin/tasks', icon: Briefcase },
     { label: t('leave_management'), href: '/admin/leave', icon: FileCheck },
-    { label: language === 'th' ? 'บันทึกกิจกรรม' : 'Activity Logs', href: '/admin/activity-logs', icon: Activity },
+    { label: t('activity_logs_title'), href: '/admin/activity-logs', icon: Activity },
     { label: t('reports'), href: '/admin/reports', icon: FileText },
   ];
 

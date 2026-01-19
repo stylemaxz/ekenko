@@ -26,12 +26,10 @@ export default function NotFound() {
 
         {/* Message */}
         <h1 className="text-3xl font-bold text-slate-900 mb-3">
-          {t('language') === 'th' ? 'ไม่พบหน้าที่คุณค้นหา' : 'Page Not Found'}
+          {t('page_not_found_title')}
         </h1>
         <p className="text-slate-500 mb-8 leading-relaxed">
-          {t('language') === 'th' 
-            ? 'ขออภัย หน้าที่คุณกำลังมองหาอาจถูกย้าย ลบ หรือไม่เคยมีอยู่จริง' 
-            : 'Sorry, the page you are looking for might have been moved, deleted, or never existed.'}
+          {t('page_not_found_desc')}
         </p>
 
         {/* Actions */}
@@ -41,14 +39,14 @@ export default function NotFound() {
             className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl border-2 border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-all active:scale-95"
           >
             <ArrowLeft size={20} />
-            {t('language') === 'th' ? 'ย้อนกลับ' : 'Go Back'}
+            {t('go_back')}
           </button>
           <button
             onClick={() => router.push('/')}
             className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 transition-all active:scale-95"
           >
             <Home size={20} />
-            {t('language') === 'th' ? 'กลับหน้าหลัก' : 'Go Home'}
+            {t('go_home')}
           </button>
         </div>
 

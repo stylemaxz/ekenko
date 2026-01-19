@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { AlertTriangle, X } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ConfirmDialogOptions {
   title: string;
@@ -18,6 +19,7 @@ interface ConfirmDialogContextType {
 const ConfirmDialogContext = createContext<ConfirmDialogContextType | undefined>(undefined);
 
 export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [options, setOptions] = useState<ConfirmDialogOptions | null>(null);
   const [resolver, setResolver] = useState<((value: boolean) => void) | null>(null);
@@ -94,7 +96,7 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
                 onClick={handleCancel}
                 className="flex-1 px-4 py-3 rounded-xl border-2 border-slate-200 text-slate-700 font-bold hover:bg-slate-50 active:scale-95 transition-all"
               >
-                {options.cancelText || 'ยกเลิก'}
+                {options.cancelText || t('cancel')}
               </button>
               <button
                 onClick={handleConfirm}
@@ -104,7 +106,7 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
                     : 'bg-amber-600 hover:bg-amber-700'
                 }`}
               >
-                {options.confirmText || 'ตกลง'}
+                {options.confirmText || t('confirm')}
               </button>
             </div>
           </div>

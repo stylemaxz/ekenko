@@ -202,8 +202,8 @@ export default function DashboardPage() {
   // Enrich visits with related data for the feed
   const enrichedVisits = visits.map(visit => {
     const employee = employees.find(e => e.id === visit.employeeId);
-    let locationName = "Unknown Location";
-    let companyName = "Unknown Company";
+    let locationName = t('unknown_location');
+    let companyName = t('unknown_company');
     let locationStatus = "active";
     
     companies.forEach(c => {
@@ -217,7 +217,7 @@ export default function DashboardPage() {
 
     return {
       ...visit,
-      employeeName: employee?.name || "Unknown",
+      employeeName: employee?.name || t('unknown'),
       locationName,
       companyName,
       companyStatus: locationStatus
@@ -328,7 +328,7 @@ export default function DashboardPage() {
                 
                 <div className="space-y-4">
                     <div>
-                        <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">Employee</label>
+                        <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{t('employee')}</label>
                         <select 
                             className="input appearance-none w-full"
                             value={selectedEmployee}
@@ -343,7 +343,7 @@ export default function DashboardPage() {
                     
                      <div className="pt-4 border-t border-slate-100 space-y-3">
                          <div>
-                            <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{t('start_date') || "Start Date"}</label>
+                            <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{t('start_date')}</label>
                             <input 
                                 type="date" 
                                 className="input w-full text-sm"
@@ -352,7 +352,7 @@ export default function DashboardPage() {
                             />
                          </div>
                          <div>
-                            <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{t('end_date') || "End Date"}</label>
+                            <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">{t('end_date')}</label>
                             <input 
                                 type="date" 
                                 className="input w-full text-sm"

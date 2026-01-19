@@ -297,7 +297,7 @@ export default function CheckInPage() {
         body: JSON.stringify({
           employeeId: currentUserId,
           type: 'check_in',
-          description: `เช็คอินที่ ${selectedLocation.location.name}`,
+          description: `เช็คอิน ${selectedLocation.location.name}`,
           metadata: {
             visitId: visit.id,
             locationId: selectedLocation.location.id,

@@ -215,26 +215,37 @@ export default function SaleDashboardClient({ initialData, currentUser }: SaleDa
     {
       icon: MapPin,
       label: t("check_in"),
-      color: "bg-primary",
-      onClick: () => router.push("/sale/check-in"),
+      color: isClockedIn ? "bg-primary" : "bg-slate-400",
+      onClick: () => {
+        if (isClockedIn) {
+          router.push("/sale/check-in");
+        } else {
+          // Show warning toast
+          alert(language === 'th' ? 'กรุณากดเข้างานก่อนเช็คอิน' : 'Please clock in before checking in');
+        }
+      },
+      disabled: !isClockedIn,
     },
     {
       icon: UserPlus,
       label: t("new_customer"),
       color: "bg-teal-600",
       onClick: () => router.push("/sale/customers?action=new"),
+      disabled: false,
     },
     {
       icon: FileText,
       label: t("leave_request"),
       color: "bg-purple-600",
       onClick: () => router.push("/sale/leave"),
+      disabled: false,
     },
     {
       icon: ClipboardList,
       label: t("my_tasks"),
       color: "bg-amber-500",
-      onClick: () => router.push("/sale/tasks"), // To be implemented
+      onClick: () => router.push("/sale/tasks"),
+      disabled: false,
     },
   ];
 
@@ -326,10 +337,11 @@ export default function SaleDashboardClient({ initialData, currentUser }: SaleDa
             <button
               key={idx}
               onClick={action.onClick}
-              className="flex flex-col items-center gap-3 group"
+              disabled={action.disabled}
+              className={`flex flex-col items-center gap-3 group ${action.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <div
-                className={`${action.color} w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-md shadow-slate-200 group-active:scale-95 transition-transform`}
+                className={`${action.color} w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-md shadow-slate-200 ${action.disabled ? '' : 'group-active:scale-95'} transition-transform`}
               >
                 <action.icon size={24} />
               </div>

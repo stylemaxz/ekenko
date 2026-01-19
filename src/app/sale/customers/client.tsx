@@ -150,33 +150,71 @@ export default function SaleCustomersPage() {
       }
 
       try {
-          // If the company already exists (selected from dropdown), we should probably use its ID.
-          // BUT, companyService.createCompany creates a NEW company.
-          // If the company name matches an existing one, the backend/db might create a duplicate or we should handle it.
-          // For now, let's assume we are sending a structure that the backend can handle.
-          // Ideally, we should check if company exists: if so, add location to it. If not, create everything.
-          // However, the current backend `createCompany` creates a whole new structure.
-          // Let's optimize: Check if company name matches existing company in `companies` state.
-          
+          // Get GPS coordinates first - MANDATORY
+          setLoading(true);
+          const coords = await new Promise<{lat: number, lng: number}>((resolve, reject) => {
+              if (!navigator.geolocation) {
+                  reject(new Error('GPS not supported'));
+                  return;
+              }
+              
+              navigator.geolocation.getCurrentPosition(
+                  (position) => {
+                      resolve({
+                          lat: position.coords.latitude,
+                          lng: position.coords.longitude
+                      });
+                  },
+                  (error) => {
+                      reject(error);
+                  },
+                  { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+              );
+          }).catch((error) => {
+              console.error('GPS Error:', error);
+              setLoading(false);
+              
+              // Show user-friendly error message based on error type
+              if (error.code === 1) { // PERMISSION_DENIED
+                  showToast(
+                      language === 'th' 
+                          ? 'กรุณาอนุญาตการเข้าถึงตำแหน่งในเบราว์เซอร์เพื่อเพิ่มลูกค้า' 
+                          : 'Please allow location access to add customers',
+                      'error'
+                  );
+              } else if (error.code === 3) { // TIMEOUT
+                  showToast(
+                      language === 'th' 
+                          ? 'หมดเวลารอ GPS กรุณาลองอีกครั้ง' 
+                          : 'GPS timeout. Please try again',
+                      'error'
+                  );
+              } else {
+                  showToast(
+                      language === 'th' 
+                          ? 'ไม่สามารถรับตำแหน่ง GPS ได้ กรุณาเปิดใช้งานบริการตำแหน่งในอุปกรณ์' 
+                          : 'Cannot get GPS location. Please enable location services',
+                      'error'
+                  );
+              }
+              throw error; // Re-throw to stop execution
+          });
+
+          // If we got here, GPS was successful
           const existingCompany = companies.find(c => c.name.toLowerCase() === newCustomer.companyName.toLowerCase());
 
           if (existingCompany) {
               // Add location to existing company
-              // We need an endpoint for adding location or use UPDATE company.
-              // companyService.updateCompany uses "upsert" for locations.
-              // So we can send the existing company ID with the new location appended.
-              
               const newLocation = {
-                  // No ID or starts with loc_ tells backend it's new
                   name: newCustomer.branchName,
                   address: newCustomer.address,
-                  lat: 13.75, // Default or use GPS if we had it
-                  lng: 100.50,
+                  lat: coords.lat,  // Use real GPS
+                  lng: coords.lng,  // Use real GPS
                   status: "lead",
                   createdBy: currentUser?.id,
                   contacts: newCustomer.contactName ? [{
                       name: newCustomer.contactName,
-                      role: "Owner", // Default role
+                      role: "Owner",
                       phone: newCustomer.contactPhone
                   }] : []
               };
@@ -195,9 +233,7 @@ export default function SaleCustomersPage() {
               if (!res.ok) throw new Error('Failed to update company');
               
               const data = await res.json();
-               // Update local state with returning data from server to ensure sync
-               // We should probably re-fetch or replace the item in the list
-               setCompanies(prev => prev.map(c => c.id === data.id ? data : c));
+              setCompanies(prev => prev.map(c => c.id === data.id ? data : c));
 
               // Log Activity: New Branch Added
               await fetch('/api/activity-logs', {
@@ -205,11 +241,12 @@ export default function SaleCustomersPage() {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                       employeeId: currentUser?.id,
-                      type: 'customer_created', // Or create a new type 'branch_created' if preferred, but customer_created fits generic 'new customer'
+                      type: 'customer_created',
                       description: language === 'th' ? `เพิ่มสาขาใหม่: ${newCustomer.companyName} (${newCustomer.branchName})` : `Added New Branch: ${newCustomer.companyName} (${newCustomer.branchName})`,
                       metadata: {
                          companyName: newCustomer.companyName,
-                         branchName: newCustomer.branchName
+                         branchName: newCustomer.branchName,
+                         gps: coords
                       }
                   })
               });
@@ -223,8 +260,8 @@ export default function SaleCustomersPage() {
                 locations: [{
                     name: newCustomer.branchName,
                     address: newCustomer.address,
-                    lat: 13.75,
-                    lng: 100.50,
+                    lat: coords.lat,  // Use real GPS
+                    lng: coords.lng,  // Use real GPS
                     status: "lead",
                     createdBy: currentUser?.id,
                     contacts: newCustomer.contactName ? [{
@@ -256,18 +293,30 @@ export default function SaleCustomersPage() {
                     description: language === 'th' ? `สร้างลูกค้าใหม่: ${newCustomer.companyName}` : `Created New Customer: ${newCustomer.companyName}`,
                     metadata: {
                        companyName: newCustomer.companyName,
-                       branchName: newCustomer.branchName
+                       branchName: newCustomer.branchName,
+                       gps: coords
                     }
                 })
             });
           }
 
           setIsModalOpen(false);
-          showToast(t('save_success'), 'success');
+          setLoading(false);
+          showToast(
+              language === 'th' 
+                  ? `บันทึกเรียบร้อย (GPS: ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)})` 
+                  : `Saved successfully (GPS: ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)})`,
+              'success'
+          );
           
       } catch (error) {
           console.error("Error saving customer:", error);
-          showToast('Failed to save customer', 'error');
+          setLoading(false);
+          // Error already shown in GPS catch block
+          // Only show generic error if it's not a GPS error
+          if (!(error instanceof GeolocationPositionError)) {
+              showToast('Failed to save customer', 'error');
+          }
       }
   };
 

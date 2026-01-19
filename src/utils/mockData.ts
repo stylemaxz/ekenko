@@ -326,7 +326,7 @@ export const mockActivityLogs: ActivityLog[] = [
         type: 'check_in',
         employeeId: '2',
         employeeName: 'Nida Somjai',
-        description: 'เช็คอินที่: Starbucks - Central World',
+        description: 'เช็คอิน: Starbucks - Central World',
         metadata: { locationName: 'Starbucks - Central World' },
         timestamp: new Date(now.getTime() - 10800000).toISOString()
     },

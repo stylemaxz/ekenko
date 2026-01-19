@@ -259,7 +259,6 @@ export default function SaleLeaveRequestsPage() {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={t('request_leave')}
         footer={
           <>
             <button 

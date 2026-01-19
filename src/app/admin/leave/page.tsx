@@ -225,6 +225,11 @@ export default function AdminLeaveManagementPage() {
                       )}>
                         {t(`leave_status_${request.status}` as any)}
                       </span>
+                      {request.isPaid === false && (
+                        <span className="text-xs px-2 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-200 font-bold uppercase">
+                          {language === 'th' ? 'ไม่รับเงิน' : 'Unpaid'}
+                        </span>
+                      )}
                     </div>
                     <div className="text-sm text-indigo-600 font-medium">
                       {t(`leave_${request.type}` as any)}
@@ -351,6 +356,13 @@ export default function AdminLeaveManagementPage() {
                   <strong>{t('date')}:</strong> {format(new Date(selectedRequest.startDate), "d MMM", { locale })} - {format(new Date(selectedRequest.endDate), "d MMM yyyy", { locale })} ({calculateDays(selectedRequest.startDate, selectedRequest.endDate)} {t('days')})
                 </div>
                 <div><strong>{t('reason')}:</strong> {selectedRequest.reason}</div>
+                {selectedRequest.isPaid === false && (
+                  <div className="pt-2">
+                    <span className="inline-block text-xs px-2 py-1 rounded-full bg-red-50 text-red-700 border border-red-200 font-bold">
+                      {language === 'th' ? '⚠️ ลาโดยไม่รับเงินเดือน' : '⚠️ Unpaid Leave'}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 

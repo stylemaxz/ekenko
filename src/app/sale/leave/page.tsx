@@ -60,7 +60,8 @@ export default function SaleLeaveRequestsPage() {
     leaveType: 'sick' as LeaveType,
     startDate: '',
     endDate: '',
-    reason: ''
+    reason: '',
+    isPaid: true
   });
 
   // Filter for current user
@@ -68,12 +69,46 @@ export default function SaleLeaveRequestsPage() {
     .filter(req => req.employeeId === currentUser?.id)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+  // Leave Quotas (Annual)
+  const leaveQuotas = {
+    vacation: 6,
+    sick: 30,
+    personal: 3
+  };
+
+  // Calculate used days from approved requests only
+  const calculateUsedDays = (type: LeaveType) => {
+    return leaveRequests
+      .filter(req => 
+        req.employeeId === currentUser?.id && 
+        req.type === type &&
+        req.status === 'approved'
+      )
+      .reduce((sum, req) => sum + (req.days || 0), 0);
+  };
+
+  const usedVacation = calculateUsedDays('vacation');
+  const usedSick = calculateUsedDays('sick');
+  const usedPersonal = calculateUsedDays('personal');
+
+  const remainingVacation = leaveQuotas.vacation - usedVacation;
+  const remainingSick = leaveQuotas.sick - usedSick;
+  const remainingPersonal = leaveQuotas.personal - usedPersonal;
+
+  const getProgressColor = (used: number, total: number) => {
+    const percentage = (used / total) * 100;
+    if (percentage <= 50) return 'bg-green-500';
+    if (percentage <= 80) return 'bg-amber-500';
+    return 'bg-red-500';
+  };
+
   const handleRequestLeave = () => {
     setNewRequest({
       leaveType: 'sick',
       startDate: '',
       endDate: '',
-      reason: ''
+      reason: '',
+      isPaid: true
     });
     setIsModalOpen(true);
   };
@@ -106,6 +141,7 @@ export default function SaleLeaveRequestsPage() {
           endDate: newRequest.endDate,
           days: calculateDays(newRequest.startDate, newRequest.endDate),
           reason: newRequest.reason,
+          isPaid: newRequest.isPaid,
         }),
       });
 
@@ -120,7 +156,8 @@ export default function SaleLeaveRequestsPage() {
           leaveType: 'sick',
           startDate: '',
           endDate: '',
-          reason: ''
+          reason: '',
+          isPaid: true
         });
       } else {
         const errorData = await res.json();
@@ -173,6 +210,66 @@ export default function SaleLeaveRequestsPage() {
         </button>
       </div>
 
+      {/* Leave Balance Cards */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        {/* Vacation Card */}
+        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 mb-1">
+            {language === 'th' ? 'พักร้อน' : 'Vacation'}
+          </div>
+          <div className="text-3xl font-bold text-blue-600 mb-1">
+            {remainingVacation}
+          </div>
+          <div className="text-xs text-slate-400 mb-2">
+            {usedVacation}/{leaveQuotas.vacation} {language === 'th' ? 'วันที่ใช้' : 'days used'}
+          </div>
+          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div 
+              className={`h-full ${getProgressColor(usedVacation, leaveQuotas.vacation)} transition-all`}
+              style={{ width: `${Math.min((usedVacation / leaveQuotas.vacation) * 100, 100)}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Sick Leave Card */}
+        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 mb-1">
+            {language === 'th' ? 'ลาป่วย' : 'Sick'}
+          </div>
+          <div className="text-3xl font-bold text-green-600 mb-1">
+            {remainingSick}
+          </div>
+          <div className="text-xs text-slate-400 mb-2">
+            {usedSick}/{leaveQuotas.sick} {language === 'th' ? 'วันที่ใช้' : 'days used'}
+          </div>
+          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div 
+              className={`h-full ${getProgressColor(usedSick, leaveQuotas.sick)} transition-all`}
+              style={{ width: `${Math.min((usedSick / leaveQuotas.sick) * 100, 100)}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Personal Leave Card */}
+        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 mb-1">
+            {language === 'th' ? 'ลากิจ' : 'Personal'}
+          </div>
+          <div className="text-3xl font-bold text-purple-600 mb-1">
+            {remainingPersonal}
+          </div>
+          <div className="text-xs text-slate-400 mb-2">
+            {usedPersonal}/{leaveQuotas.personal} {language === 'th' ? 'วันที่ใช้' : 'days used'}
+          </div>
+          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div 
+              className={`h-full ${getProgressColor(usedPersonal, leaveQuotas.personal)} transition-all`}
+              style={{ width: `${Math.min((usedPersonal / leaveQuotas.personal) * 100, 100)}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Leave Requests List */}
       <div className="space-y-3">
         {myRequests.length > 0 ? (
@@ -201,6 +298,11 @@ export default function SaleLeaveRequestsPage() {
                         )}>
                           {t(`leave_status_${request.status}` as any)}
                         </span>
+                        {request.isPaid === false && (
+                          <span className="text-xs px-2 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-200 font-bold uppercase">
+                            {language === 'th' ? 'ไม่รับเงิน' : 'Unpaid'}
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-slate-600">{request.reason}</p>
                     </div>
@@ -334,6 +436,23 @@ export default function SaleLeaveRequestsPage() {
               value={newRequest.reason}
               onChange={(e) => setNewRequest({ ...newRequest, reason: e.target.value })}
             />
+          </div>
+
+          {/* Unpaid Leave Checkbox */}
+          <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+            <input
+              type="checkbox"
+              id="unpaid-leave"
+              checked={!newRequest.isPaid}
+              onChange={(e) => setNewRequest({ 
+                ...newRequest, 
+                isPaid: !e.target.checked 
+              })}
+              className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+            />
+            <label htmlFor="unpaid-leave" className="text-sm font-medium text-slate-700 cursor-pointer">
+              {language === 'th' ? 'ลาโดยไม่รับเงินเดือน' : 'Unpaid leave'}
+            </label>
           </div>
         </div>
       </Modal>

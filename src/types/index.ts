@@ -170,6 +170,7 @@ export interface LeaveRequest {
     endDate: string;
     days?: number;
     reason?: string | null;
+    isPaid?: boolean;
     status: LeaveStatus;
     reviewedBy?: string | null;
     reviewedAt?: string | null;

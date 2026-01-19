@@ -61,7 +61,9 @@ export default function SaleLeaveRequestsPage() {
     startDate: '',
     endDate: '',
     reason: '',
-    isPaid: true
+    isPaid: true,
+    isHalfDay: false,
+    halfDayPeriod: 'morning' as 'morning' | 'afternoon'
   });
 
   // Filter for current user
@@ -108,12 +110,16 @@ export default function SaleLeaveRequestsPage() {
       startDate: '',
       endDate: '',
       reason: '',
-      isPaid: true
+      isPaid: true,
+      isHalfDay: false,
+      halfDayPeriod: 'morning'
     });
     setIsModalOpen(true);
   };
 
   const calculateDays = (start: string, end: string) => {
+    if (newRequest.isHalfDay) return 0.5;
+    if (!start || !end) return 0;
     return differenceInDays(new Date(end), new Date(start)) + 1;
   };
 
@@ -128,6 +134,20 @@ export default function SaleLeaveRequestsPage() {
         return;
     }
 
+    const requestedDays = calculateDays(newRequest.startDate, newRequest.endDate);
+    
+    // Check Quota
+    let remaining = 0;
+    if (newRequest.leaveType === 'vacation') remaining = remainingVacation;
+    else if (newRequest.leaveType === 'sick') remaining = remainingSick;
+    else if (newRequest.leaveType === 'personal') remaining = remainingPersonal;
+    else remaining = 999; // Other has no strict limit in this requirement
+
+    if (requestedDays > remaining) {
+       showToast(t('quota_exceeded', { days: remaining }), 'error');
+       return;
+    }
+
     try {
       const res = await fetch('/api/leave-requests', {
         method: 'POST',
@@ -140,7 +160,9 @@ export default function SaleLeaveRequestsPage() {
           startDate: newRequest.startDate,
           endDate: newRequest.endDate,
           days: calculateDays(newRequest.startDate, newRequest.endDate),
-          reason: newRequest.reason,
+          reason: newRequest.isHalfDay 
+            ? `${t('half_day_reason_prefix', { period: t(newRequest.halfDayPeriod) })} ${newRequest.reason}`
+            : newRequest.reason,
           isPaid: newRequest.isPaid,
         }),
       });
@@ -157,7 +179,9 @@ export default function SaleLeaveRequestsPage() {
           startDate: '',
           endDate: '',
           reason: '',
-          isPaid: true
+          isPaid: true,
+          isHalfDay: false,
+          halfDayPeriod: 'morning'
         });
       } else {
         const errorData = await res.json();
@@ -274,7 +298,7 @@ export default function SaleLeaveRequestsPage() {
       <div className="space-y-3">
         {myRequests.length > 0 ? (
           myRequests.map((request) => {
-            const days = calculateDays(request.startDate, request.endDate);
+            const days = request.days; // Use stored days directly
             
             return (
               <div
@@ -394,7 +418,70 @@ export default function SaleLeaveRequestsPage() {
             </select>
           </div>
 
+          {/* Half Day Option - Only for Sick and Personal */}
+          {(newRequest.leaveType === 'sick' || newRequest.leaveType === 'personal') && (
+            <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                        type="radio" 
+                        name="duration_type"
+                        className="w-4 h-4 text-primary"
+                        checked={!newRequest.isHalfDay}
+                        onChange={() => setNewRequest({ ...newRequest, isHalfDay: false })}
+                    />
+                    <span className="text-sm font-medium text-slate-700">{t('full_day')}</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                        type="radio" 
+                        name="duration_type"
+                        className="w-4 h-4 text-primary"
+                        checked={newRequest.isHalfDay}
+                        onChange={() => setNewRequest({ 
+                            ...newRequest, 
+                            isHalfDay: true, 
+                            endDate: newRequest.startDate // Auto-sync end date
+                        })}
+                    />
+                    <span className="text-sm font-medium text-slate-700">{t('half_day')}</span>
+                </label>
+            </div>
+          )}
+
+          {/* Half Day Period Selection */}
+          {newRequest.isHalfDay && (
+             <div className="flex gap-4">
+                 <label className={clsx(
+                     "flex-1 p-3 rounded-lg border cursor-pointer text-center transition-colors",
+                     newRequest.halfDayPeriod === 'morning' ? "bg-primary/10 border-primary text-primary font-bold" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                 )}>
+                     <input 
+                        type="radio" 
+                        name="period" 
+                        className="hidden"
+                        checked={newRequest.halfDayPeriod === 'morning'}
+                        onChange={() => setNewRequest({ ...newRequest, halfDayPeriod: 'morning' })}
+                     />
+                     {t('morning')}
+                 </label>
+                 <label className={clsx(
+                     "flex-1 p-3 rounded-lg border cursor-pointer text-center transition-colors",
+                     newRequest.halfDayPeriod === 'afternoon' ? "bg-primary/10 border-primary text-primary font-bold" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                 )}>
+                     <input 
+                        type="radio" 
+                        name="period" 
+                        className="hidden"
+                        checked={newRequest.halfDayPeriod === 'afternoon'}
+                        onChange={() => setNewRequest({ ...newRequest, halfDayPeriod: 'afternoon' })}
+                     />
+                     {t('afternoon')}
+                 </label>
+             </div>
+          )}
+
           {/* Date Range */}
+          
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">{t('start_date')} <span className="text-red-500">*</span></label>
@@ -402,19 +489,26 @@ export default function SaleLeaveRequestsPage() {
                 type="date"
                 className="input w-full"
                 value={newRequest.startDate}
-                onChange={(e) => setNewRequest({ ...newRequest, startDate: e.target.value })}
+                onChange={(e) => {
+                    const updates: any = { startDate: e.target.value };
+                    // If half day, sync end date
+                    if (newRequest.isHalfDay) updates.endDate = e.target.value;
+                    setNewRequest({ ...newRequest, ...updates });
+                }}
               />
             </div>
-            <div>
-              <label className="label">{t('end_date')} <span className="text-red-500">*</span></label>
-              <input
-                type="date"
-                className="input w-full"
-                value={newRequest.endDate}
-                min={newRequest.startDate}
-                onChange={(e) => setNewRequest({ ...newRequest, endDate: e.target.value })}
-              />
-            </div>
+            {!newRequest.isHalfDay && (
+                <div>
+                <label className="label">{t('end_date')} <span className="text-red-500">*</span></label>
+                <input
+                    type="date"
+                    className="input w-full"
+                    value={newRequest.endDate}
+                    min={newRequest.startDate}
+                    onChange={(e) => setNewRequest({ ...newRequest, endDate: e.target.value })}
+                />
+                </div>
+            )}
           </div>
 
           {/* Days Count */}

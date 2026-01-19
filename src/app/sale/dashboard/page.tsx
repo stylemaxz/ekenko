@@ -37,7 +37,7 @@ export default async function SaleDashboardPage() {
   }
 
   // Fetch data for this specific employee
-  const [visits, companies, activityLogs] = await Promise.all([
+  const [visits, companies, activityLogs, lastClockAction] = await Promise.all([
     prisma.visit.findMany({
       where: { employeeId: currentUserId },
       include: {
@@ -58,13 +58,37 @@ export default async function SaleDashboardPage() {
       where: { employeeId: currentUserId },
       orderBy: { timestamp: 'desc' },
       take: 50
+    }),
+    prisma.activityLog.findFirst({
+      where: {
+        employeeId: currentUserId,
+        type: { in: ['clock_in', 'clock_out'] }
+      },
+      orderBy: { timestamp: 'desc' }
     })
   ]);
+
+  // Determine Clock In State
+  let isClockedIn = false;
+  let clockInTime = null;
+
+  if (lastClockAction && lastClockAction.type === 'clock_in') {
+    // Check if it's from today (optional, but good practice to allow auto-logout functionality conceptually)
+    // For now, simple check: if last action was clock_in, they are clocked in.
+    // Ideally we check if it was effectively "today" or within reasonable shift hours.
+    // Let's assume strict last action for now to fix the sync issue first.
+    isClockedIn = true;
+    clockInTime = lastClockAction.timestamp;
+  }
 
   const initialData = {
     visits,
     companies,
-    activityLogs
+    activityLogs,
+    clockState: {
+        isClockedIn,
+        clockInTime
+    }
   };
 
   return <SaleDashboardClient initialData={initialData} currentUser={currentUser} />;

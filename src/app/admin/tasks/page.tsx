@@ -105,42 +105,55 @@ export default function TasksPage() {
   });
 
   // --- Create Task Logic ---
-  const handleSave = () => {
+  const handleSave = async () => {
       if (!newTask.title || !newTask.assigneeId || !newTask.dueDate) {
           showToast(t('fill_required'), 'error');
           return;
       }
 
-      const task: Task = {
-          id: `t_${Date.now()}`,
-          title: newTask.title || "",
-          description: newTask.description,
-          objectives: newTask.objectives,
-          assigneeId: newTask.assigneeId!,
-          customerId: newTask.customerId,
-          locationId: newTask.locationId,
-          dueDate: new Date(newTask.dueDate!).toISOString(),
-          priority: newTask.priority || 'medium',
-          status: 'pending',
-          createdAt: new Date().toISOString()
-      };
+      setLoading(true);
+      try {
+        const res = await fetch('/api/tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: newTask.title,
+                description: newTask.description,
+                objectives: newTask.objectives,
+                assigneeId: newTask.assigneeId,
+                customerId: newTask.customerId,
+                locationId: newTask.locationId,
+                dueDate: new Date(newTask.dueDate!).toISOString(),
+                priority: newTask.priority || 'medium',
+                status: 'pending'
+            })
+        });
 
-      setTasks([task, ...tasks]);
-      setIsModalOpen(false);
-      showToast(t('task_assigned'), 'success');
-      
-      // Reset form
-      setNewTask({
-          title: "",
-          description: "",
-          objectives: [],
-          assigneeId: "",
-          customerId: "",
-          locationId: "",
-          dueDate: new Date().toISOString().split('T')[0],
-          priority: 'medium',
-          status: 'pending'
-      });
+        if (!res.ok) throw new Error('Failed to create task');
+
+        const createdTask = await res.json();
+        setTasks([createdTask, ...tasks]);
+        setIsModalOpen(false);
+        showToast(t('task_assigned'), 'success');
+        
+        // Reset form
+        setNewTask({
+            title: "",
+            description: "",
+            objectives: [],
+            assigneeId: "",
+            customerId: "",
+            locationId: "",
+            dueDate: new Date().toISOString().split('T')[0],
+            priority: 'medium',
+            status: 'pending'
+        });
+      } catch (error) {
+        console.error('Error creating task:', error);
+        showToast(t('create_failed'), 'error');
+      } finally {
+        setLoading(false);
+      }
   };
 
   const toggleObjective = (obj: VisitObjective) => {

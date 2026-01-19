@@ -203,7 +203,7 @@ export default function AdminLeaveManagementPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {filteredRequests.map((request) => {
           const employee = employees.find(e => e.id === request.employeeId);
-          const days = calculateDays(request.startDate, request.endDate);
+          const days = request.days; 
           
           return (
             <div
@@ -353,7 +353,7 @@ export default function AdminLeaveManagementPage() {
               <div className="text-sm text-slate-600 space-y-1">
                 <div><strong>{t('leave_type')}:</strong> {t(`leave_${selectedRequest.type}` as any)}</div>
                 <div>
-                  <strong>{t('date')}:</strong> {format(new Date(selectedRequest.startDate), "d MMM", { locale })} - {format(new Date(selectedRequest.endDate), "d MMM yyyy", { locale })} ({calculateDays(selectedRequest.startDate, selectedRequest.endDate)} {t('days')})
+                  <strong>{t('date')}:</strong> {format(new Date(selectedRequest.startDate), "d MMM", { locale })} - {format(new Date(selectedRequest.endDate), "d MMM yyyy", { locale })} ({selectedRequest.days} {t('days')})
                 </div>
                 <div><strong>{t('reason')}:</strong> {selectedRequest.reason}</div>
                 {selectedRequest.isPaid === false && (

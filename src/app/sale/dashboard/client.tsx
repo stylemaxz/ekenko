@@ -30,6 +30,10 @@ interface SaleDashboardClientProps {
     visits: any[];
     companies: any[];
     activityLogs: any[];
+    clockState?: {
+        isClockedIn: boolean;
+        clockInTime: Date | string | null;
+    };
   };
   currentUser: {
     id: string;
@@ -46,8 +50,12 @@ export default function SaleDashboardClient({ initialData, currentUser }: SaleDa
   const BANGKOK_TZ = "Asia/Bangkok";
 
   // Mock State for Clock In/Out (In a real app, this would be global state/context)
-  const [isClockedIn, setIsClockedIn] = useState(false);
-  const [clockInTime, setClockInTime] = useState<Date | null>(null);
+  // Mock State for Clock In/Out (In a real app, this would be global state/context)
+  // Initialize from server state if available
+  const [isClockedIn, setIsClockedIn] = useState(initialData.clockState?.isClockedIn || false);
+  const [clockInTime, setClockInTime] = useState<Date | null>(
+    initialData.clockState?.clockInTime ? new Date(initialData.clockState.clockInTime) : null
+  );
   const [elapsedTime, setElapsedTime] = useState({ hours: 0, minutes: 0 });
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -56,12 +64,14 @@ export default function SaleDashboardClient({ initialData, currentUser }: SaleDa
 
   // Load clock-in state and WFH from localStorage on mount
   useEffect(() => {
-    const savedClockIn = localStorage.getItem('clockInTime');
-    if (savedClockIn) {
-      const savedTime = new Date(savedClockIn);
-      setClockInTime(savedTime);
-      setIsClockedIn(true);
-    }
+    // We prioritize server state now, but can fallback or sync with local if needed.
+    // If server says NOT clocked in, but local says YES? 
+    // Usually Server is source of truth. Let's trust server.
+    // But if we want to be safe, we can check if local is clearer.
+    // For this fix: Trust Server.
+    
+    // Legacy support: clear local if server says false? 
+    // Or just ignore local for clock state and use it only for WFH.
     
     // Load WFH Setting
     const savedWFH = localStorage.getItem('isWorkFromHome') === 'true';

@@ -50,6 +50,7 @@ export const leaveRequestService = {
                 status: data.status || 'pending',
                 reviewedBy: data.reviewedBy,
                 reviewNote: data.reviewNote,
+                isPaid: data.isPaid,
             },
             include: {
                 employee: true,

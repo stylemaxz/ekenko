@@ -65,6 +65,6 @@ export async function POST(request: Request) {
         return NextResponse.json(leaveRequest, { status: 201 });
     } catch (error: any) {
         console.error('Error creating leave request:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ error: `Error: ${error?.message || 'Internal server error'}` }, { status: 500 });
     }
 }

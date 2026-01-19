@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Modal } from "@/components/ui/Modal";
-import { Visit, VisitObjective, VisitObjectives, Employee, Company } from "@/types";
+import { Visit, VisitObjective, VisitObjectives, Employee, Company, LeaveRequest } from "@/types";
 import { 
   format, 
   startOfMonth, 
@@ -21,22 +21,30 @@ import {
   isSameDay, 
 } from "date-fns";
 import { enUS, th } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, CheckCircle, XCircle } from "lucide-react";
 import clsx from "clsx";
 
 type ViewType = 'month' | 'week' | 'day';
 
 export default function CalendarPage() {
   const { t, language } = useLanguage();
+  const dateInputRef = useRef<HTMLInputElement>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<ViewType>('month');
   const [selectedVisit, setSelectedVisit] = useState<any | null>(null);
 
   // Data State
   const [visits, setVisits] = useState<Visit[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Filters State
+  const [filters, setFilters] = useState({
+      showCheckins: true,
+      showLeaves: true,
+  });
 
   const locale = language === 'th' ? th : enUS;
 
@@ -45,15 +53,19 @@ export default function CalendarPage() {
     async function fetchData() {
       setLoading(true);
       try {
-        const [visitsRes, empRes, compRes] = await Promise.all([
+        const [visitsRes, empRes, compRes, leavesRes] = await Promise.all([
           fetch('/api/visits'),
           fetch('/api/employees'),
           fetch('/api/companies'),
+          fetch('/api/leave-requests'),
         ]);
         if (visitsRes.ok) {
           const visitsData = await visitsRes.json();
-          console.log('Loaded visits:', visitsData.length);
           setVisits(visitsData);
+        }
+        if (leavesRes.ok) {
+           const leavesData = await leavesRes.json();
+           setLeaveRequests(leavesData);
         }
         if (empRes.ok) {
           const empData = await empRes.json();
@@ -72,11 +84,18 @@ export default function CalendarPage() {
   const refreshData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/visits');
-      if (res.ok) {
-        const visitsData = await res.json();
-        console.log('Refreshed visits:', visitsData.length);
+      const [visitsRes, leavesRes] = await Promise.all([
+          fetch('/api/visits'),
+          fetch('/api/leave-requests')
+      ]);
+      
+      if (visitsRes.ok) {
+        const visitsData = await visitsRes.json();
         setVisits(visitsData);
+      }
+      if (leavesRes.ok) {
+          const leavesData = await leavesRes.json();
+          setLeaveRequests(leavesData);
       }
     } catch (error) {
       console.error('Error refreshing data:', error);
@@ -103,19 +122,50 @@ export default function CalendarPage() {
   const today = () => setCurrentDate(new Date());
 
   // --- Data Preparation ---
-  const events = visits.map(v => {
+  const events = [
+    ...(filters.showCheckins ? visits.map(v => {
       const company = companies.find(c => c.locations.some(l => l.id === v.locationId));
       const location = company?.locations.find(l => l.id === v.locationId);
       const employee = employees.find(e => e.id === v.employeeId);
       
       return {
-          ...v,
+          id: v.id,
+          type: 'visit',
           customerName: company?.name || t('unknown_company'),
           employeeName: employee?.name || t('unknown'),
           province: location?.province || t('unknown'),
           startTime: new Date(v.checkInTime),
+          objectives: v.objectives,
+          images: v.images,
+          metOwner: v.metOwner,
+          notes: v.notes,
+          locationId: v.locationId,
       };
-  });
+    }) : []),
+    ...(filters.showLeaves ? leaveRequests.filter(l => l.status === 'approved').flatMap(l => {
+        const employee = employees.find(e => e.id === l.employeeId);
+        const start = new Date(l.startDate);
+        const end = new Date(l.endDate);
+        const days = [];
+        let current = start;
+
+        while (current <= end) {
+            days.push({
+                id: l.id,
+                type: 'leave',
+                leaveType: l.type,
+                employeeName: employee?.name || t('unknown'),
+                startTime: new Date(current), // Clone for specific day
+                notes: l.reason,
+                days: l.days,
+                customerName: t('leave'), // For sorting/display consistency
+                province: 'Leave', // For grouping
+            });
+            current = addDays(current, 1);
+        }
+        return days;
+    }) : [])
+  ];
 
   const getEventsForDay = (date: Date) => {
       return events.filter(e => isSameDay(e.startTime, date));
@@ -125,6 +175,12 @@ export default function CalendarPage() {
   const getObjectiveLabel = (obj: string) => {
       return t(`obj_${obj}` as any) || obj;
   };
+    // Helper to get formatted leave type
+  const getLeaveTypeLabel = (type: string) => {
+      const key = `leave_type_${type}`; // Make sure these keys exist in translation
+      return t(key as any) || type;
+  };
+
 
   // --- Renderers ---
 
@@ -133,7 +189,8 @@ export default function CalendarPage() {
     if (view === 'day') dateFormat = "d MMMM yyyy";
     
     return (
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
              <h1 className="text-2xl font-bold text-slate-900">{t('calendar_title')}</h1>
              <p className="text-slate-500 text-sm">{t('calendar_subtitle')}</p>
@@ -178,14 +235,57 @@ export default function CalendarPage() {
                   <button onClick={prev} className="p-1.5 hover:bg-slate-50 rounded-md text-slate-600">
                       <ChevronLeft size={20} />
                   </button>
-                  <span className="min-w-[140px] text-center font-bold text-slate-700 text-sm">
+                  
+                  <div 
+                    onClick={() => dateInputRef.current?.showPicker()}
+                    className="min-w-[140px] text-center font-bold text-slate-700 text-sm cursor-pointer hover:bg-slate-50 py-1.5 rounded-md transition-colors relative"
+                  >
                       {format(currentDate, dateFormat, { locale })}
-                  </span>
+                      <input 
+                        ref={dateInputRef}
+                        type="date"
+                        className="opacity-0 absolute inset-0 w-full h-full pointer-events-none"
+                        value={format(currentDate, 'yyyy-MM-dd')}
+                        onChange={(e) => {
+                            if (e.target.value) {
+                                setCurrentDate(new Date(e.target.value));
+                            }
+                        }}
+                      />
+                  </div>
+
                   <button onClick={next} className="p-1.5 hover:bg-slate-50 rounded-md text-slate-600">
                       <ChevronRight size={20} />
                   </button>
               </div>
           </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex items-center gap-4 bg-white p-2 rounded-lg border border-slate-200 shadow-sm w-fit">
+            <span className="text-xs font-bold text-slate-500 px-2 uppercase tracking-wide">{t('filters') || 'FILTERS'}</span>
+            <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 px-2 py-1 rounded transition-colors">
+                <input 
+                    type="checkbox" 
+                    checked={filters.showCheckins}
+                    onChange={(e) => setFilters(prev => ({ ...prev, showCheckins: e.target.checked }))}
+                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                <span className="text-sm font-medium text-slate-700">{t('check_ins') || 'Check-ins'}</span>
+            </label>
+            <div className="w-px h-4 bg-slate-200"></div>
+            <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 px-2 py-1 rounded transition-colors">
+                <input 
+                    type="checkbox" 
+                    checked={filters.showLeaves}
+                    onChange={(e) => setFilters(prev => ({ ...prev, showLeaves: e.target.checked }))}
+                    className="rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                />
+                <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                <span className="text-sm font-medium text-slate-700">{t('leaves') || 'Leaves'}</span>
+            </label>
+        </div>
       </div>
     );
   };
@@ -250,12 +350,26 @@ export default function CalendarPage() {
                                 return (
                                     <>
                                         {sortedProvs.slice(0, 4).map(([prov, count], idx) => (
-                                            <div key={idx} className="bg-indigo-50 text-indigo-700 text-[10px] px-1.5 py-1 rounded border border-indigo-100 font-medium truncate flex items-center gap-1 justify-between">
+                                            <div 
+                                                key={idx} 
+                                                className={clsx(
+                                                    "text-[10px] px-1.5 py-1 rounded border font-medium truncate flex items-center gap-1 justify-between",
+                                                    prov === 'Leave' 
+                                                        ? "bg-amber-50 text-amber-700 border-amber-100" 
+                                                        : "bg-indigo-50 text-indigo-700 border-indigo-100"
+                                                )}
+                                            >
                                                 <div className="flex items-center gap-1 truncate">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0"></div>
-                                                    <span className="truncate">{prov}</span>
+                                                    <div className={clsx(
+                                                        "w-1.5 h-1.5 rounded-full shrink-0",
+                                                        prov === 'Leave' ? "bg-amber-400" : "bg-indigo-400"
+                                                    )}></div>
+                                                    <span className="truncate">{prov === 'Leave' ? t('leaves') : prov}</span>
                                                 </div>
-                                                <span className="font-bold bg-indigo-100 text-indigo-800 px-1 rounded text-[9px]">{count}</span>
+                                                <span className={clsx(
+                                                    "font-bold px-1 rounded text-[9px]",
+                                                    prov === 'Leave' ? "bg-amber-100 text-amber-800" : "bg-indigo-100 text-indigo-800"
+                                                )}>{count}</span>
                                             </div>
                                         ))}
                                         {sortedProvs.length > 4 && (
@@ -316,16 +430,27 @@ export default function CalendarPage() {
                         <div 
                           key={idx} 
                           onClick={() => setSelectedVisit(event)}
-                          className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer group hover:border-indigo-300"
+                          className={clsx(
+                              "p-3 rounded-lg border shadow-sm hover:shadow-md transition-shadow cursor-pointer group",
+                              event.type === 'leave' 
+                                ? "bg-amber-50 border-amber-100 hover:border-amber-300" 
+                                : "bg-white border-slate-200 hover:border-indigo-300"
+                          )}
                         >
-                            <div className="text-xs text-indigo-600 font-bold mb-1">
+                            <div className={clsx(
+                                "text-xs font-bold mb-1",
+                                event.type === 'leave' ? "text-amber-600" : "text-indigo-600"
+                            )}>
                                 {format(event.startTime, "HH:mm")}
                             </div>
-                            <div className="text-xs font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-700">
-                                {event.customerName}
+                            <div className="text-xs font-bold text-slate-800 line-clamp-1 group-hover:text-amber-700">
+                                {event.type === 'leave' ? getLeaveTypeLabel((event as any).leaveType) : event.customerName}
                             </div>
                             <div className="text-[10px] text-slate-500 flex items-center gap-1 mt-1">
-                                <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-600">
+                                <div className={clsx(
+                                    "w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold",
+                                    event.type === 'leave' ? "bg-amber-100 text-amber-600" : "bg-slate-100 text-slate-600"
+                                )}>
                                     {event.employeeName.charAt(0)}
                                 </div>
                                 <span className="truncate">{event.employeeName}</span>
@@ -372,39 +497,61 @@ export default function CalendarPage() {
                      <div 
                         key={idx} 
                         onClick={() => setSelectedVisit(event)}
-                        className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer group flex gap-4"
+                        className={clsx(
+                            "rounded-xl border p-4 shadow-sm hover:shadow-md transition-all cursor-pointer group flex gap-4",
+                            event.type === 'leave' 
+                                ? "bg-amber-50/60 border-amber-200 hover:border-amber-300" 
+                                : "bg-white border-slate-200 hover:border-indigo-200"
+                        )}
                      >
                          <div className="flex flex-col items-center">
                              <div className="text-sm font-bold text-slate-500 mb-2 whitespace-nowrap">
                                  {format(event.startTime, "HH:mm")}
                              </div>
-                             <div className="w-0.5 h-full bg-slate-100 group-hover:bg-indigo-100 transition-colors relative min-h-[40px]">
-                                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-indigo-500 ring-4 ring-white"></div>
+                             <div className={clsx(
+                                 "w-0.5 h-full transition-colors relative min-h-[40px]",
+                                 event.type === 'leave' ? "bg-amber-200" : "bg-slate-100 group-hover:bg-indigo-100"
+                             )}>
+                                 <div className={clsx(
+                                     "absolute top-0 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full ring-4 ring-white",
+                                     event.type === 'leave' ? "bg-amber-500" : "bg-indigo-500"
+                                 )}></div>
                              </div>
                          </div>
                          
                          <div className="flex-1 pb-2">
-                             <h3 className="text-lg font-bold text-slate-800 mb-1 group-hover:text-indigo-700 transition-colors">
+                             <h3 className={clsx(
+                                 "text-lg font-bold text-slate-800 mb-1 transition-colors",
+                                 event.type === 'leave' ? "group-hover:text-amber-700" : "group-hover:text-indigo-700"
+                             )}>
                                  {event.customerName}
                              </h3>
                              <div className="flex flex-wrap items-center gap-2 mb-3">
-                                 <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-0.5 rounded-full">
-                                    <div className="w-4 h-4 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[9px] font-bold">
+                                 <div className={clsx(
+                                     "flex items-center gap-1.5 px-2 py-0.5 rounded-full",
+                                     event.type === 'leave' ? "bg-amber-100" : "bg-slate-100"
+                                 )}>
+                                    <div className={clsx(
+                                        "w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold",
+                                        event.type === 'leave' ? "bg-amber-200 text-amber-700" : "bg-indigo-100 text-indigo-600"
+                                    )}>
                                         {event.employeeName.charAt(0)}
                                     </div>
                                     <span className="text-xs text-slate-600 font-medium">{event.employeeName}</span>
                                  </div>
                                  <span className="text-slate-300">•</span>
-                                 <div className="flex gap-1 flex-wrap">
-                                     {event.objectives?.slice(0, 3).map((obj: string, i: number) => (
-                                         <span key={i} className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-100">
-                                            {getObjectiveLabel(obj)}
-                                         </span>
-                                     ))}
-                                     {(event.objectives?.length || 0) > 3 && (
-                                         <span className="text-xs text-slate-400 pl-1">+{event.objectives.length - 3}</span>
-                                     )}
-                                 </div>
+                                 {event.type === 'visit' && (
+                                     <div className="flex gap-1 flex-wrap">
+                                         {(event as any).objectives?.slice(0, 3).map((obj: string, i: number) => (
+                                             <span key={i} className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-100">
+                                                {getObjectiveLabel(obj)}
+                                             </span>
+                                         ))}
+                                         {((event as any).objectives?.length || 0) > 3 && (
+                                             <span className="text-xs text-slate-400 pl-1">+{(event as any).objectives.length - 3}</span>
+                                         )}
+                                     </div>
+                                 )}
                              </div>
                              
                              {event.notes && (
@@ -453,90 +600,98 @@ export default function CalendarPage() {
       >
         {selectedVisit && (
             <div className="space-y-6">
-                {/* Images */}
-                <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700">
-                        {t('confirmation_images')} <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                        {selectedVisit.images && selectedVisit.images.length > 0 ? (
-                            selectedVisit.images.map((img: string, idx: number) => (
-                                <div key={idx} className="relative w-32 h-32 rounded-lg overflow-hidden border border-slate-200 shrink-0 shadow-sm">
-                                    <Image 
-                                        src={img} 
-                                        alt={`Visit ${idx + 1}`} 
-                                        fill
-                                        className="object-cover"
-                                        unoptimized
-                                    />
+                {selectedVisit.type === 'leave' ? (
+                     <div className="space-y-4">
+                        <div>
+                            <span className="text-xs text-slate-500 block mb-1">{t('leave_type')}</span>
+                            <div className="font-medium text-slate-800 flex items-center gap-2">
+                                {getLeaveTypeLabel((selectedVisit as any).leaveType)}
+                                 {/* Days count */}
+                                {(selectedVisit as any).days && (
+                                    <span className="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                                        {(selectedVisit as any).days} {t('days')}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                         <div>
+                            <span className="text-xs text-slate-500 block mb-1">{t('reason')}</span>
+                            <div className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                {(selectedVisit as any).notes || "-"}
+                            </div>
+                        </div>
+                     </div>
+                ) : (
+                    <>
+                        {/* Images */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-700">
+                                {t('confirmation_images')} <span className="text-red-500">*</span>
+                            </label>
+                            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                {(selectedVisit as any).images && (selectedVisit as any).images.length > 0 ? (
+                                    (selectedVisit as any).images.map((img: string, idx: number) => (
+                                        <div key={idx} className="relative w-32 h-32 rounded-lg overflow-hidden border border-slate-200 shrink-0 shadow-sm">
+                                            <Image 
+                                                src={img} 
+                                                alt={`Visit ${idx + 1}`} 
+                                                fill
+                                                className="object-cover"
+                                                unoptimized
+                                            />
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="w-full h-32 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 text-sm">
+                                        {t('no_images')}
+                                    </div>
+                                )}
+                                {/* Mock Add Image Button (Visual Only) */}
+                                <div className="w-32 h-32 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 shrink-0 bg-white">
+                                    <Clock size={20} className="mb-1 opacity-50" /> 
+                                    <span className="text-xs">{t('add_image')}</span>
                                 </div>
-                            ))
-                        ) : (
-                            <div className="w-full h-32 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 text-sm">
-                                {t('no_images')}
+                            </div>
+                        </div>
+
+                        {/* Objectives */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-700">{t('visit_objectives')}</label>
+                            <div className="flex flex-wrap gap-2">
+                                {(selectedVisit as any).objectives?.map((obj: string) => (
+                                    <span key={obj} className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-sm border border-indigo-100">
+                                        {t(`obj_${obj}` as any)}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Met Owner Status */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-700">{t('met_owner')}</label>
+                            <div className={clsx(
+                                "flex items-center gap-2 p-3 rounded-lg border",
+                                (selectedVisit as any).metOwner 
+                                    ? "bg-emerald-50 border-emerald-100 text-emerald-700" 
+                                    : "bg-rose-50 border-rose-100 text-rose-700"
+                            )}>
+                                {(selectedVisit as any).metOwner ? <CheckCircle size={20} /> : <XCircle size={20} />}
+                                <span className="font-medium">
+                                    {(selectedVisit as any).metOwner ? t('met_owner_yes') : t('met_owner_no')}
+                                </span>
+                            </div>
+                        </div>
+
+                         {(selectedVisit as any).notes && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700">{t('notes_label')}</label>
+                                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-slate-600 text-sm">
+                                    {(selectedVisit as any).notes}
+                                </div>
                             </div>
                         )}
-                        {/* Mock Add Image Button (Visual Only) */}
-                        <div className="w-32 h-32 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 shrink-0 bg-white">
-                            <Clock size={20} className="mb-1 opacity-50" /> 
-                            <span className="text-xs">{t('add_image')}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Objectives */}
-                <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700">
-                        {t('visit_objectives')} <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex flex-col gap-2">
-                         {VisitObjectives.map((obj) => (
-                             <label key={obj} className={clsx(
-                                 "flex items-center gap-3 p-3 border rounded-lg transition-colors",
-                                 selectedVisit.objectives?.includes(obj) ? "bg-indigo-50 border-indigo-200" : "bg-white border-slate-200 opacity-60"
-                             )}>
-                                 <input 
-                                    type="checkbox" 
-                                    checked={selectedVisit.objectives?.includes(obj) || false} 
-                                    readOnly
-                                    disabled
-                                    className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 accent-indigo-600"
-                                 />
-                                 <span className={clsx(
-                                     "text-sm font-medium",
-                                     selectedVisit.objectives?.includes(obj) ? "text-indigo-900" : "text-slate-500"
-                                 )}>{getObjectiveLabel(obj)}</span>
-                             </label>
-                         ))}
-                    </div>
-                </div>
-
-                {/* Met Owner */}
-                <div className="space-y-2">
-                     <label className="text-sm font-bold text-slate-700">
-                        {t('met_owner')} <span className="text-red-500">*</span>
-                     </label>
-                     <div className="flex gap-6">
-                         <label className="flex items-center gap-2">
-                             <input type="radio" checked={selectedVisit.metOwner === true} readOnly disabled className="w-5 h-5 text-indigo-600 border-slate-300 focus:ring-indigo-500 accent-indigo-600" />
-                             <span className="text-slate-700 text-sm font-medium">{t('met_owner_yes')}</span>
-                         </label>
-                         <label className="flex items-center gap-2">
-                             <input type="radio" checked={selectedVisit.metOwner === false} readOnly disabled className="w-5 h-5 text-indigo-600 border-slate-300 focus:ring-indigo-500 accent-indigo-600" />
-                             <span className="text-slate-700 text-sm font-medium">{t('met_owner_no')}</span>
-                         </label>
-                     </div>
-                </div>
-
-                {/* Notes */}
-                <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700">
-                        {t('notes_label')} <span className="text-red-500">*</span>
-                    </label>
-                    <div className="w-full text-sm text-slate-700 bg-white border border-slate-200 rounded-lg p-4 min-h-[100px] shadow-sm">
-                        {selectedVisit.notes || "-"}
-                    </div>
-                </div>
+                    </>
+                )}
             </div>
         )}
       </Modal>

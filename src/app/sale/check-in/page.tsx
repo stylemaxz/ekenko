@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
-import { MapPin, Camera, X, Check, Search, Navigation, SwitchCamera, Briefcase } from "lucide-react";
+import { MapPin, Camera, X, Check, Search, Navigation, SwitchCamera, Briefcase, Plus } from "lucide-react";
 import { Company, Location, VisitObjective, VisitObjectives } from "@/types";
 import { clsx } from "clsx";
 
@@ -411,6 +411,14 @@ export default function CheckInPage() {
                           </div>
                           <h3 className="text-slate-900 font-bold mb-1">No Stores Nearby</h3>
                           <p className="text-slate-500 text-sm mb-4">We couldn't find any registered stores within 500m of your location.</p>
+                          
+                          <button 
+                              onClick={() => router.push('/sale/customers')}
+                              className="px-6 py-2 bg-primary text-white rounded-lg font-bold text-sm shadow-lg shadow-black/10 active:scale-95 transition-transform flex items-center gap-2 mx-auto"
+                          >
+                              <Plus size={18} />
+                              {t('add_customer')}
+                          </button>
                       </div>
                   )}
               </div>

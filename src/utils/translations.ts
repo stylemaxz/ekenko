@@ -128,6 +128,14 @@ export const translations = {
         view_week: "Week",
         view_day: "Day",
         today: "Today",
+        filters: "Filters",
+        check_ins: "Check-ins",
+        leaves: "Leaves",
+        leave: "Leave",
+        leave_type_sick: "Sick Leave",
+        leave_type_personal: "Personal Leave",
+        leave_type_vacation: "Vacation",
+        leave_type_other: "Other",
         visit_at: "Visit at",
 
         // Tasks
@@ -200,7 +208,6 @@ export const translations = {
         activity_customer_created: "Customer Created",
         activity_status_changed: "Status Changed",
         activity_leave_requested: "Leave Request",
-        filters: "Filters",
 
         // Errors / Status
         uploading_logo: "Uploading logo...",
@@ -396,6 +403,7 @@ export const translations = {
         log_added_branch: "Added New Branch: {company} ({branch})",
         log_created_customer: "Created New Customer: {company}",
         log_status_changed_desc: "Customer Status Changed: {company}",
+        head_office: "Head Office",
     },
     th: {
         // Menu
@@ -572,6 +580,7 @@ export const translations = {
         manage_clients: "จัดการฐานข้อมูลลูกค้าและสาขา",
         registered_locations: "สถานที่ที่ลงทะเบียน",
         no_locations: "ยังไม่มีสถานที่",
+        head_office: "สำนักงานใหญ่",
 
 
         // Employees Page
@@ -612,6 +621,14 @@ export const translations = {
         view_week: "สัปดาห์",
         view_day: "วัน",
         today: "วันนี้",
+        filters: "ตัวกรอง",
+        check_ins: "การเข้าเยี่ยม",
+        leaves: "การลา",
+        leave: "ลางาน",
+        leave_type_sick: "ลาป่วย",
+        leave_type_personal: "ลากิจ",
+        leave_type_vacation: "ลาพักร้อน",
+        leave_type_other: "ลาอื่นๆ",
         visit_at: "เยี่ยมที่",
 
         // Tasks
@@ -684,7 +701,6 @@ export const translations = {
         activity_customer_created: "สร้างลูกค้า",
         activity_status_changed: "เปลี่ยนสถานะ",
         activity_leave_requested: "ขอลา",
-        filters: "ตัวกรอง",
 
         // Errors / Status
         uploading_logo: "กำลังอัปโหลดโลโก้...",

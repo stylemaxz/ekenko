@@ -132,7 +132,7 @@ export default function SaleCustomersPage() {
   const handleAddCustomer = () => {
       setNewCustomer({
         companyName: "",
-        branchName: "",
+        branchName: t('head_office'),
         address: "",
         contactName: "",
         contactPhone: "",
@@ -144,7 +144,7 @@ export default function SaleCustomersPage() {
 
   const handleSaveCustomer = async () => {
       // Validation
-      if (!newCustomer.companyName || !newCustomer.branchName || !newCustomer.address) {
+      if (!newCustomer.companyName || !newCustomer.branchName) {
           showToast(t('fill_required'), 'error');
           return;
       }
@@ -786,7 +786,7 @@ export default function SaleCustomersPage() {
           {/* Address */}
           <div>
             <label className="label">
-              {t('address')} <span className="text-red-500">*</span>
+              {t('address')}
             </label>
             <textarea
               className="input w-full h-20 resize-none"

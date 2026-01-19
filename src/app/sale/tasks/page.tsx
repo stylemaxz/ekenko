@@ -10,46 +10,69 @@ import {
   MapPin,
   Building2,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Plus,
+  Save,
+  X,
+  Target
 } from "lucide-react";
-import { Task, Company } from "@/types";
+import { Task, Company, Employee, VisitObjectives, VisitObjective } from "@/types";
 import { clsx } from "clsx";
 import { format } from "date-fns";
 import { enUS, th } from "date-fns/locale";
 import { Modal } from "@/components/ui/Modal";
-import { Save, X } from "lucide-react";
+import { useToast } from "@/contexts/ToastContext";
 
 export default function SaleTasksPage() {
   const { t, language } = useLanguage();
   const locale = language === "th" ? th : enUS;
-
-  // Mock Current User (Sales Rep)
-  const currentUserId = "1"; // In reality, get from Auth Context
+  const { showToast } = useToast();
 
   // State
   const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [currentUser, setCurrentUser] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Create Task Modal State
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newTask, setNewTask] = useState<Partial<Task>>({
+    title: "",
+    description: "",
+    objectives: [],
+    customerId: "",
+    locationId: "",
+    dueDate: new Date().toISOString().split('T')[0],
+    priority: 'medium',
+  });
 
   // Fetch data from API
   useEffect(() => {
     async function fetchData() {
       try {
-        const [tasksRes, companiesRes] = await Promise.all([
-          fetch(`/api/tasks?assigneeId=${currentUserId}`),
+        const [userRes, companiesRes] = await Promise.all([
+          fetch('/api/auth/me'),
           fetch('/api/companies'),
         ]);
         
-        if (tasksRes.ok) setMyTasks(await tasksRes.json());
+        if (userRes.ok) {
+          const user = await userRes.json();
+          setCurrentUser(user);
+          
+          // Fetch tasks for current user
+          const tasksRes = await fetch(`/api/tasks?assigneeId=${user.id}`);
+          if (tasksRes.ok) setMyTasks(await tasksRes.json());
+        }
         if (companiesRes.ok) setCompanies(await companiesRes.json());
       } catch (error) {
         console.error('Error fetching data:', error);
+        showToast('Failed to load data', 'error');
       } finally {
         setLoading(false);
       }
     }
     fetchData();
-  }, [currentUserId]);
+  }, []);
 
 
   // Update Modal State
@@ -131,14 +154,87 @@ export default function SaleTasksPage() {
     }
   };
 
+  // Create Task Logic
+  const handleCreateTask = async () => {
+    if (!newTask.title || !newTask.dueDate || !currentUser) {
+      showToast(t('fill_required'), 'error');
+      return;
+    }
+
+    try {
+      const taskPayload = {
+        title: newTask.title,
+        description: newTask.description,
+        objectives: newTask.objectives,
+        assigneeId: currentUser.id, // Auto-assign to self
+        customerId: newTask.customerId,
+        locationId: newTask.locationId,
+        dueDate: new Date(newTask.dueDate).toISOString(),
+        priority: newTask.priority || 'medium',
+        status: 'pending'
+      };
+
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(taskPayload)
+      });
+
+      if (res.ok) {
+        const createdTask = await res.json();
+        setMyTasks([createdTask, ...myTasks]);
+        setIsCreateModalOpen(false);
+        showToast(language === 'th' ? 'เพิ่มงานสำเร็จ' : 'Task created successfully', 'success');
+        
+        // Reset form
+        setNewTask({
+          title: "",
+          description: "",
+          objectives: [],
+          customerId: "",
+          locationId: "",
+          dueDate: new Date().toISOString().split('T')[0],
+          priority: 'medium',
+        });
+      } else {
+        throw new Error('Failed to create task');
+      }
+    } catch (error) {
+      console.error('Error creating task:', error);
+      showToast('Failed to create task', 'error');
+    }
+  };
+
+  const toggleObjective = (obj: VisitObjective) => {
+    const current = newTask.objectives || [];
+    if (current.includes(obj)) {
+      setNewTask({ ...newTask, objectives: current.filter(o => o !== obj) });
+    } else {
+      setNewTask({ ...newTask, objectives: [...current, obj] });
+    }
+  };
+
+  const locationOptions = newTask.customerId 
+    ? companies.find(c => c.id === newTask.customerId)?.locations || []
+    : [];
+
   return (
     <div className="pb-24 pt-6 px-4 bg-slate-50 min-h-screen">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">{t('my_tasks')}</h1>
-        <p className="text-slate-500 text-sm mt-1">
-          {myTasks.length} {language === 'th' ? 'งานทั้งหมด' : 'tasks total'}
-        </p>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">{t('my_tasks')}</h1>
+          <p className="text-slate-500 text-sm mt-1">
+            {myTasks.length} {language === 'th' ? 'งานทั้งหมด' : 'tasks total'}
+          </p>
+        </div>
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20 hover:bg-primary-hover active:scale-95 transition-all"
+        >
+          <Plus size={20} />
+          {language === 'th' ? 'เพิ่มงาน' : 'Add Task'}
+        </button>
       </div>
 
       {/* Status Filter Tabs */}
@@ -335,7 +431,150 @@ export default function SaleTasksPage() {
                     onChange={(e) => setUpdateNote(e.target.value)}
                 />
             </div>
-         </div>
+          </div>
+       </Modal>
+
+      {/* Create Task Modal */}
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        width="max-w-md md:max-w-lg"
+      >
+        <div className="max-h-[calc(100vh-280px)] overflow-y-auto pb-24">
+          <div className="space-y-6">
+            <div className="space-y-4">
+            {/* Title */}
+            <div>
+              <label className="label">{t('task_title')} <span className="text-red-500">*</span></label>
+              <input 
+                className="input w-full" 
+                value={newTask.title}
+                onChange={e => setNewTask({...newTask, title: e.target.value})}
+                placeholder={language === 'th' ? 'ตัวอย่าง: ตรวจสต็อกประจำเดือน' : 'e.g. Monthly Stock Check'}
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="label">{t('task_detail')}</label>
+              <textarea 
+                className="input w-full min-h-[100px]" 
+                value={newTask.description ?? ''}
+                onChange={e => setNewTask({...newTask, description: e.target.value})}
+                placeholder={language === 'th' ? 'รายละเอียดงาน...' : 'Enter detailed instructions...'}
+              />
+            </div>
+
+            {/* Visit Objectives */}
+            <div>
+              <label className="label flex items-center gap-1">
+                {t('visit_objectives')}
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                {VisitObjectives.map((obj) => (
+                  <label key={obj} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors">
+                    <div className={clsx(
+                      "w-5 h-5 rounded border flex items-center justify-center transition-colors",
+                      newTask.objectives?.includes(obj) 
+                        ? "bg-primary border-primary text-white" 
+                        : "bg-white border-slate-300"
+                    )}>
+                      {newTask.objectives?.includes(obj) && <CheckCircle2 size={14} />}
+                      <input 
+                        type="checkbox" 
+                        className="hidden"
+                        checked={newTask.objectives?.includes(obj)}
+                        onChange={() => toggleObjective(obj)}
+                      />
+                    </div>
+                    <span className="text-sm text-slate-700">{t(`obj_${obj}`)}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Priority & Due Date */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="label">{t('priority')}</label>
+                <select 
+                  className="input w-full"
+                  value={newTask.priority}
+                  onChange={e => setNewTask({...newTask, priority: e.target.value as any})}
+                >
+                  <option value="low">{t('priority_low')}</option>
+                  <option value="medium">{t('priority_medium')}</option>
+                  <option value="high">{t('priority_high')}</option>
+                </select>
+              </div>
+              <div>
+                <label className="label">{t('due_date')} <span className="text-red-500">*</span></label>
+                <input 
+                  type="date"
+                  className="input w-full"
+                  value={newTask.dueDate}
+                  onChange={e => setNewTask({...newTask, dueDate: e.target.value})}
+                />
+              </div>
+            </div>
+
+            {/* Customer & Location */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                <MapPin size={16} />
+                {language === 'th' ? 'สถานที่เป้าหมาย (ไม่บังคับ)' : 'Target Location (Optional)'}
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="label text-xs uppercase">{t('select_customer')}</label>
+                  <select 
+                    className="input w-full text-sm"
+                    value={newTask.customerId ?? ''}
+                    onChange={e => setNewTask({...newTask, customerId: e.target.value, locationId: ""})}
+                  >
+                    <option value="">{language === 'th' ? '-- ไม่ระบุ --' : '-- None --'}</option>
+                    {companies.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                {locationOptions.length > 0 && (
+                  <div>
+                    <label className="label text-xs uppercase">{t('select_location')}</label>
+                    <select 
+                      className="input w-full text-sm"
+                      value={newTask.locationId ?? ''}
+                      onChange={e => setNewTask({...newTask, locationId: e.target.value})}
+                    >
+                      <option value="">{language === 'th' ? '-- ทุกสาขา / สำนักงานใหญ่ --' : '-- All Locations / Head Office --'}</option>
+                      {locationOptions.map(l => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Buttons at Bottom */}
+            <div className="flex gap-3 pt-4 border-t border-slate-200">
+              <button 
+                onClick={() => setIsCreateModalOpen(false)} 
+                className="flex-1 px-5 py-3 rounded-lg border border-slate-300 text-slate-600 font-medium hover:bg-slate-50 transition-colors"
+              >
+                {t('cancel')}
+              </button>
+              <button 
+                onClick={handleCreateTask} 
+                className="flex-1 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-bold hover:bg-primary-hover transition-colors flex items-center justify-center gap-2"
+              >
+                <Save size={18} />
+                {language === 'th' ? 'สร้างงาน' : 'Create Task'}
+              </button>
+            </div>
+            </div>
+          </div>
+        </div>
       </Modal>
     </div>
   );

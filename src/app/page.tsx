@@ -65,7 +65,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <div className="w-48 h-16 relative mx-auto mb-6">
             <Image 
-              src="/ekenko_logo.png" 
+              src="/logo_login.png" 
               alt="Ekenko Logo" 
               fill
               className="object-contain"

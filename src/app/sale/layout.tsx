@@ -31,7 +31,7 @@ export default function SalesLayout({
           </div>
           <div className="w-32 h-8 relative">
             <Image 
-              src="/ekenko_logo.png" 
+              src="/logo_2026.png" 
               alt="Ekenko Logo" 
               fill
               sizes="128px"

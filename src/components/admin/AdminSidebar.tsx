@@ -63,7 +63,7 @@ export default function AdminSidebar() {
       <div className="p-6 border-b border-slate-200 flex items-center justify-center">
         <div className="w-40 h-10 relative">
           <Image 
-            src="/ekenko_logo.png" 
+            src="/logo_2026.png" 
             alt="Ekenko Logo" 
             fill
             className="object-contain"

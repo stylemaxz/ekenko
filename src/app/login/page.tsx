@@ -52,7 +52,7 @@ export default function LoginPage() {
           <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
           
           <div className="relative bg-white w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl ring-4 ring-white/30">
-             <Image src="/ekenko_logo.png" alt="Logo" width={80} height={80} className="object-contain" priority />
+             <Image src="/logo_2026.png" alt="Logo" width={80} height={80} className="object-contain" priority />
           </div>
           <h1 className="text-2xl font-bold text-white mb-2 relative">Welcome Back</h1>
           <p className="text-white/90 text-sm relative">Sign in to access your dashboard</p>

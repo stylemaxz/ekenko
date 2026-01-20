@@ -86,6 +86,7 @@ export const translations = {
         manage_clients: "Manage client database and their branch locations",
         registered_locations: "Registered Locations",
         no_locations: "No locations added yet",
+        all_filter: "All",
         view_details: "View Details",
 
         // Employees Page

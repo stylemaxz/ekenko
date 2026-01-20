@@ -105,20 +105,32 @@ export default function CheckInPage() {
   };
 
   // Find nearby locations (within 500m i.e., 0.5km) OR All locations if WFH
-  const nearbyLocations = companies.flatMap(c => 
+  const nearbyLocations = companies.flatMap(c =>
       c.locations.map(l => {
-          const distance = userLocation 
-              ? calculateDistance(userLocation.lat, userLocation.lng, l.lat || 0, l.lng || 0) 
-              : Infinity;
-          return { company: c, location: l, distance };
+          // Check if location has no GPS coordinates set (both lat and lng are 0 or null)
+          const hasNoGPS = (!l.lat || l.lat === 0) && (!l.lng || l.lng === 0);
+          const distance = userLocation && !hasNoGPS
+              ? calculateDistance(userLocation.lat, userLocation.lng, l.lat || 0, l.lng || 0)
+              : hasNoGPS ? 999 : Infinity; // 999 = no GPS, will be shown at the end
+          return { company: c, location: l, distance, hasNoGPS };
       })
   ).filter(item => {
-      // 1. If WFH, ignore distance check. Else, must be within 500m (0.5km)
+      // 1. Always show locations without GPS coordinates (so users can check in at new customers)
+      if (item.hasNoGPS) {
+          // Still apply search filter if exists
+          if (searchQuery) {
+              return item.company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                     item.location.name.toLowerCase().includes(searchQuery.toLowerCase());
+          }
+          return true;
+      }
+
+      // 2. If WFH, ignore distance check. Else, must be within 500m (0.5km)
       if (!isWorkFromHome && item.distance > 0.5) return false;
-      
-      // 2. Filter by search query if exists
+
+      // 3. Filter by search query if exists
       if (searchQuery) {
-          return item.company.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+          return item.company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                  item.location.name.toLowerCase().includes(searchQuery.toLowerCase());
       }
       return true;

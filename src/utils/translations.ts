@@ -87,6 +87,10 @@ export const translations = {
         registered_locations: "Registered Locations",
         no_locations: "No locations added yet",
         all_filter: "All",
+        no_requests_status: "No requests found for this status",
+        optional: "Optional",
+        yes: "Yes",
+        no: "No",
         view_details: "View Details",
 
         // Employees Page
@@ -528,8 +532,9 @@ export const translations = {
         leave_approved: "อนุมัติการลาเรียบร้อย",
         leave_rejected: "ไม่อนุมัติการลาเรียบร้อย",
         all_filter: "ทั้งหมด",
+        no_requests_status: "ไม่พบคำขอสำหรับสถานะนี้",
         view_details: "ดูรายละเอียด",
-        no_requests_status: "ไม่มีรายการในสถานะนี้",
+
         review_leave_request: "พิจารณาการลา",
         unpaid_leave_warning: "⚠️ ลาโดยไม่รับเงินเดือน",
         optional: "ไม่บังคับ",

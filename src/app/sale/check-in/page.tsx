@@ -46,7 +46,7 @@ export default function CheckInPage() {
   }, []);
   
   // Location State
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>({ lat: 13.7563, lng: 100.5018 }); // Default for demo
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null); // No default - force GPS request
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
 
@@ -104,35 +104,36 @@ export default function CheckInPage() {
       }
   };
 
-  // Find nearby locations (within 500m i.e., 0.5km) OR All locations if WFH
+  // Find nearby locations (within 500m i.e., 0.5km) - STRICT GPS REQUIRED
   const nearbyLocations = companies.flatMap(c =>
       c.locations.map(l => {
-          // Check if location has no GPS coordinates set (both lat and lng are 0 or null)
-          const hasNoGPS = (!l.lat || l.lat === 0) && (!l.lng || l.lng === 0);
-          const distance = userLocation && !hasNoGPS
-              ? calculateDistance(userLocation.lat, userLocation.lng, l.lat || 0, l.lng || 0)
-              : hasNoGPS ? 999 : Infinity; // 999 = no GPS, will be shown at the end
-          return { company: c, location: l, distance, hasNoGPS };
+          // Check if location has valid GPS coordinates
+          const hasValidGPS = l.lat && l.lng && l.lat !== 0 && l.lng !== 0;
+          
+          // Calculate distance only if BOTH user location AND location GPS exist
+          const distance = userLocation && hasValidGPS
+              ? calculateDistance(userLocation.lat, userLocation.lng, l.lat as number, l.lng as number)
+              : Infinity; // No GPS = infinite distance (will be filtered out)
+          
+          return { company: c, location: l, distance, hasValidGPS };
       })
   ).filter(item => {
-      // 1. Always show locations without GPS coordinates (so users can check in at new customers)
-      if (item.hasNoGPS) {
-          // Still apply search filter if exists
-          if (searchQuery) {
-              return item.company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                     item.location.name.toLowerCase().includes(searchQuery.toLowerCase());
-          }
-          return true;
+      // CRITICAL: Only show locations if we have user's GPS location
+      if (!userLocation) return false;
+      
+      // CRITICAL: Only show locations with valid GPS coordinates (prevent fake check-ins)
+      if (!item.hasValidGPS) return false;
+
+      // Apply search filter if exists
+      if (searchQuery) {
+          const matchesSearch = item.company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                               item.location.name.toLowerCase().includes(searchQuery.toLowerCase());
+          if (!matchesSearch) return false;
       }
 
-      // 2. If WFH, ignore distance check. Else, must be within 500m (0.5km)
+      // If WFH mode, ignore distance check. Otherwise, must be within 500m (0.5km)
       if (!isWorkFromHome && item.distance > 0.5) return false;
 
-      // 3. Filter by search query if exists
-      if (searchQuery) {
-          return item.company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                 item.location.name.toLowerCase().includes(searchQuery.toLowerCase());
-      }
       return true;
   }).sort((a, b) => a.distance - b.distance);
 
@@ -243,6 +244,11 @@ export default function CheckInPage() {
   const removeImage = (idx: number) => {
       setImages(images.filter((_, i) => i !== idx));
   };
+
+  // Auto-request GPS on mount
+  useEffect(() => {
+    handleUpdateLocation();
+  }, []);
 
   // Fetch current user ID
   useEffect(() => {

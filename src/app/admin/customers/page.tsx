@@ -347,7 +347,7 @@ export default function CustomersPage() {
     }
   };
 
-  const updateBranch = (index: number, field: keyof Location, value: any) => {
+  const updateBranch = async (index: number, field: keyof Location, value: any) => {
       if (editingCompany) {
           const newLocs = [...editingCompany.locations];
           newLocs[index] = { ...newLocs[index], [field]: value };
@@ -376,6 +376,25 @@ export default function CustomersPage() {
                           finalProvince = matches[0].province;
                       }
                   }
+              }
+          }
+          
+          // Auto-extract GPS coordinates from Google Maps Link
+          if (field === 'googleMapLink' && value) {
+              try {
+                  const { extractCoordinatesFromUrl } = await import('@/utils/googleMapsUrlParser');
+                  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+                  const coords = await extractCoordinatesFromUrl(value, apiKey);
+                  
+                  if (coords) {
+                      newLocs[index].lat = coords.lat;
+                      newLocs[index].lng = coords.lng;
+                      showToast('GPS coordinates extracted successfully!', 'success');
+                  } else {
+                      showToast('Could not extract coordinates from URL', 'error');
+                  }
+              } catch (error) {
+                  console.error('Error extracting coordinates:', error);
               }
           }
           

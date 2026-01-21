@@ -55,6 +55,7 @@ export default function SaleCustomersPage() {
     companyName: "",
     branchName: "",
     address: "",
+    googleMapLink: "",
     contactName: "",
     contactPhone: "",
   });
@@ -134,6 +135,7 @@ export default function SaleCustomersPage() {
         companyName: "",
         branchName: t('head_office'),
         address: "",
+        googleMapLink: "",
         contactName: "",
         contactPhone: "",
       });
@@ -193,6 +195,7 @@ export default function SaleCustomersPage() {
               const newLocation = {
                   name: newCustomer.branchName,
                   address: newCustomer.address,
+                  googleMapLink: newCustomer.googleMapLink,
                   lat: coords.lat,  // Use real GPS
                   lng: coords.lng,  // Use real GPS
                   status: "lead",
@@ -245,6 +248,7 @@ export default function SaleCustomersPage() {
                 locations: [{
                     name: newCustomer.branchName,
                     address: newCustomer.address,
+                    googleMapLink: newCustomer.googleMapLink,
                     lat: coords.lat,  // Use real GPS
                     lng: coords.lng,  // Use real GPS
                     status: "lead",
@@ -781,6 +785,21 @@ export default function SaleCustomersPage() {
                 })()
               )}
             </div>
+          </div>
+
+          {/* Google Maps Link */}
+          <div>
+            <label className="label flex items-center gap-2">
+              <Navigation size={16} className="text-primary" />
+              {t('google_maps_link')}
+            </label>
+            <input
+              type="text"
+              className="input w-full text-blue-600"
+              placeholder="https://maps.app.goo.gl/..."
+              value={newCustomer.googleMapLink}
+              onChange={(e) => setNewCustomer({ ...newCustomer, googleMapLink: e.target.value })}
+            />
           </div>
 
           {/* Address */}

@@ -648,7 +648,7 @@ export const translations = {
         select_customer: "ลูกค้า",
         select_location: "สาขา (ไม่ระบุได้)",
         due_date: "กำหนดส่ง",
-        status_pending: "รอเริ่ม",
+        status_pending: "แฟ้มงาน",
         status_in_progress: "กำลังทำ",
         status_completed: "เสร็จสิ้น",
         status_overdue: "เลยกำหนด",

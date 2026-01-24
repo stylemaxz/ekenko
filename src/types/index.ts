@@ -42,20 +42,17 @@ export type VisitObjective =
     | 'propose_new_products'
     | 'check_assets'
     | 'collect_debt'
+    | 'delivery_asset'
     | 'other';
 
 export const VisitObjectives: VisitObjective[] = [
     'sales',
-    'delivery',
-    'collect_payment',
-    'survey',
-    'support',
-    'promotion',
     'relationship',
-    'propose_new_products',
-    'check_assets',
+    'delivery',
+    'delivery_asset',
     'collect_debt',
-    'other'
+    'check_assets',
+    'survey'
 ];
 
 export type VatType = 'ex-vat' | 'in-vat' | 'non-vat';

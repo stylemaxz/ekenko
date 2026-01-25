@@ -730,7 +730,7 @@ export const translations = {
 
         // Placeholders
         company_name_placeholder: "ชื่อบริษัท",
-        branch_name_placeholder: "ชื่อสาขา (ภายใน)",
+        branch_name_placeholder: "ชื่อร้าน (ภายใน)",
 
         // Customer Management
         company_info: "ข้อมูลบริษัท",
@@ -739,7 +739,7 @@ export const translations = {
         branches: "สาขา / Locations",
         add_branch: "เพิ่มสาขา",
         branch: "สาขา",
-        branch_name: "ชื่อสาขา",
+        branch_name: "ชื่อร้าน",
         address: "ที่อยู่",
         postal_code: "รหัสไปรษณีย์",
         district: "อำเภอ/เขต",
@@ -764,7 +764,7 @@ export const translations = {
         receiver_phone: "เบอร์ผู้รับ",
         credit_term: "เครดิต (วัน)",
         vat_type: "ประเภทภาษี",
-        vat_ex: "แยกภาษี (Ex-VAT)",
+        vat_ex: "ไม่รวมภาษี (Ex-VAT)",
         vat_in: "รวมภาษี (In-VAT)",
         vat_non: "บิลเงินสด (Non-VAT)",
         promotion_notes: "โปรโมชั่นและราคา",

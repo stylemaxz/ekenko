@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Search, MapPin, Plus, User, X, Save, Building2, Edit, AlertCircle, CheckCircle2, FileText, Image as ImageIcon, Navigation, Eye } from "lucide-react";
+import { Search, MapPin, Plus, User, X, Save, Building2, Edit, AlertCircle, CheckCircle2, FileText, Image as ImageIcon, Navigation, Eye, Pencil, ListChecks } from "lucide-react";
 import Image from "next/image";
 import { Company, Location, LocationStatus } from "@/types";
-import { thaiAddressDatabase } from "@/utils/thaiAddressData";
+import { thaiAddressDatabase, searchAddressByPostalCode } from '@/utils/thaiAddressData';
+import { getRegion } from '@/utils/regionMapping';
 import { clsx } from "clsx";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
@@ -58,10 +59,13 @@ export default function SaleCustomersPage() {
     googleMapLink: "",
     contactName: "",
     contactPhone: "",
+    taxId: "",
+    grade: "C",
   });
   
   // Edit Modal State
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Used for Status Editing
+  const [isEditInfoModalOpen, setIsEditInfoModalOpen] = useState(false); // Used for Info Editing
   const [editingLocation, setEditingLocation] = useState<{
     company: Company;
     location: Location;
@@ -125,22 +129,20 @@ export default function SaleCustomersPage() {
       return t('customers');
   };
 
-  const searchAddressByPostalCode = (code: string) => {
-    if (!code || code.length < 5) return [];
-    return thaiAddressDatabase[code] || [];
-  };
-
   const handleAddCustomer = () => {
       setNewCustomer({
         companyName: "",
-        branchName: t('head_office'),
+        branchName: "",
         address: "",
         googleMapLink: "",
         contactName: "",
         contactPhone: "",
+        taxId: "",
+        grade: "C",
       });
       setShowCompanyDropdown(true);
-      setShowBranchDropdown(true);
+      setShowCompanyDropdown(true);
+      setShowBranchDropdown(false);
       setIsModalOpen(true);
   };
 
@@ -148,6 +150,11 @@ export default function SaleCustomersPage() {
       // Validation
       if (!newCustomer.companyName || !newCustomer.branchName) {
           showToast(t('fill_required'), 'error');
+          return;
+      }
+
+      if (newCustomer.taxId && newCustomer.taxId.length !== 13) {
+          showToast('Tax ID must be 13 digits', 'error');
           return;
       }
 
@@ -200,6 +207,7 @@ export default function SaleCustomersPage() {
                   lng: coords.lng,  // Use real GPS
                   status: "lead",
                   createdBy: currentUser?.id,
+                  assignedEmployeeIds: [currentUser?.id], // Auto-assign creator
                   contacts: newCustomer.contactName ? [{
                       name: newCustomer.contactName,
                       role: "Owner",
@@ -243,7 +251,8 @@ export default function SaleCustomersPage() {
             // Create New Company
             const newCompanyPayload = {
                 name: newCustomer.companyName,
-                grade: "C",
+                taxId: newCustomer.taxId,
+                grade: newCustomer.grade,
                 status: "lead",
                 locations: [{
                     name: newCustomer.branchName,
@@ -253,6 +262,7 @@ export default function SaleCustomersPage() {
                     lng: coords.lng,  // Use real GPS
                     status: "lead",
                     createdBy: currentUser?.id,
+                    assignedEmployeeIds: [currentUser?.id], // Auto-assign creator
                     contacts: newCustomer.contactName ? [{
                         name: newCustomer.contactName,
                         role: "Owner",
@@ -307,10 +317,15 @@ export default function SaleCustomersPage() {
       }
   };
 
-  const handleEditCustomer = (company: Company, location: Location) => {
+  const handleEditStatus = (company: Company, location: Location) => {
     setEditingLocation({ company, location });
     setEditStatus(location.status || "lead");
     setEditNote(location.statusNote || "");
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditInfo = (company: Company, location: Location) => {
+    setEditingLocation({ company, location });
     
     // Load existing customer details
     setEditOfficialName(location.officialName || "");
@@ -334,7 +349,71 @@ export default function SaleCustomersPage() {
     setEditGoogleMapLink(location.googleMapLink || "");
     setEditRegion(location.region || "");
     
-    setIsEditModalOpen(true);
+    setIsEditInfoModalOpen(true);
+  };
+
+  const handleSaveInfo = async () => {
+    if (!editingLocation) return;
+
+    if (editingLocation.company.taxId && editingLocation.company.taxId.length !== 13) {
+      showToast(t('tax_id_invalid' as any) || 'Invalid Tax ID (Must be 13 digits)', 'error');
+      return;
+    }
+
+    try {
+        const companyToUpdate = companies.find(c => c.id === editingLocation.company.id);
+        if (!companyToUpdate) return;
+
+        const updatedLocations = companyToUpdate.locations.map(loc => {
+            if (loc.id === editingLocation.location.id) {
+                return {
+                    ...loc,
+                    officialName: editOfficialName,
+                    customerType: editCustomerType,
+                    ownerName: editOwnerName,
+                    ownerPhone: editOwnerPhone,
+                    documents: editDocuments,
+                    shippingAddress: editShippingAddress,
+                    receiverName: editReceiverName,
+                    receiverPhone: editReceiverPhone,
+                    creditTerm: editCreditTerm,
+                    vatType: editVatType,
+                    promotionNotes: editPromotionNotes,
+                    code: editCode,
+                    address: editAddress,
+                    postalCode: editPostalCode,
+                    district: editDistrict,
+                    province: editProvince,
+                    googleMapLink: editGoogleMapLink,
+                    region: editRegion
+                };
+            }
+            return loc;
+        });
+
+        const updatedCompany = {
+            ...companyToUpdate,
+            locations: updatedLocations
+        };
+
+        const res = await fetch(`/api/companies/${editingLocation.company.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedCompany)
+        });
+
+        if (!res.ok) throw new Error('Failed to update info');
+
+        const data = await res.json();
+        setCompanies(prev => prev.map(c => c.id === data.id ? data : c));
+        
+        setIsEditInfoModalOpen(false);
+        showToast(t('saved_success' as any) || 'Saved successfully', 'success');
+
+    } catch (error) {
+        console.error("Error updating info:", error);
+        showToast('Failed to update info', 'error');
+    }
   };
 
   const handleSaveStatus = async () => {
@@ -457,12 +536,6 @@ export default function SaleCustomersPage() {
     <div className="pb-24 pt-6 px-4">
       <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-slate-900">{getPageTitle()}</h1>
-          <button 
-            onClick={handleAddCustomer}
-            className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-lg shadow-black/20 active:scale-95 transition-transform"
-          >
-              <Plus size={24} />
-          </button>
       </div>
 
       {/* Search Bar */}
@@ -476,6 +549,14 @@ export default function SaleCustomersPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
           />
       </div>
+
+      <button 
+          onClick={handleAddCustomer}
+          className="w-full mb-6 bg-primary text-white py-3 rounded-xl font-bold shadow-lg shadow-primary/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+      >
+          <Plus size={20} />
+          {t('add_customer')}
+      </button>
 
       {/* Customer List */}
       <div className="space-y-4">
@@ -543,10 +624,23 @@ export default function SaleCustomersPage() {
                                             <Navigation size={14} />
                                        </a>
                                        <button
-                                           onClick={() => handleEditCustomer(company, loc)}
+                                           onClick={() => handleEditInfo(company, loc)}
                                            className="w-8 h-8 flex items-center justify-center text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 rounded-full transition-colors"
+                                           title="Edit Info"
                                        >
-                                           <Edit size={14} />
+                                           <Pencil size={14} />
+                                       </button>
+                                       <button
+                                           onClick={() => handleEditStatus(company, loc)}
+                                           className={clsx(
+                                               "w-8 h-8 flex items-center justify-center rounded-full transition-colors border",
+                                               loc.status === 'existing' 
+                                                 ? "text-green-600 bg-green-50 border-green-200 hover:bg-green-100" 
+                                                 : "text-slate-500 bg-white border-slate-200 hover:bg-slate-50"
+                                           )}
+                                           title="Edit Status"
+                                       >
+                                           <ListChecks size={14} />
                                        </button>
                                     </div>
                                </div>
@@ -635,7 +729,7 @@ export default function SaleCustomersPage() {
                 placeholder={t('company_name_placeholder')}
                 value={newCustomer.companyName}
                 onChange={(e) => {
-                  setNewCustomer({ ...newCustomer, companyName: e.target.value });
+                  setNewCustomer({ ...newCustomer, companyName: e.target.value, branchName: e.target.value });
                   setShowCompanyDropdown(true);
                 }}
               />
@@ -666,7 +760,8 @@ export default function SaleCustomersPage() {
                                 onClick={() => {
                                 setNewCustomer({ 
                                     ...newCustomer, 
-                                    companyName: company.name 
+                                    companyName: company.name,
+                                    branchName: company.name 
                                 });
                                 setShowCompanyDropdown(false);
                                 }}
@@ -691,7 +786,45 @@ export default function SaleCustomersPage() {
                   return null;
                 })()
               )}
-            </div>
+          </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+              {/* Tax ID */}
+              <div>
+                  <label className="label flex items-center gap-2">
+                      <FileText size={16} className="text-primary" />
+                      {t('tax_id')}
+                  </label>
+                  <input
+                      type="text"
+                      className="input w-full"
+                      placeholder={t('tax_id')}
+                      value={newCustomer.taxId}
+                      maxLength={13}
+                      onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9]/g, '');
+                          setNewCustomer({ ...newCustomer, taxId: value });
+                      }}
+                  />
+              </div>
+
+               {/* Grade */}
+               <div>
+                  <label className="label flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-primary" />
+                      {t('grade')}
+                  </label>
+                  <select
+                      className="input w-full"
+                      value={newCustomer.grade}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, grade: e.target.value })}
+                  >
+                      <option value="A">Grade A</option>
+                      <option value="B">Grade B</option>
+                      <option value="C">Grade C</option>
+                  </select>
+               </div>
           </div>
 
           {/* Branch Name with Autocomplete */}
@@ -710,6 +843,7 @@ export default function SaleCustomersPage() {
                   setNewCustomer({ ...newCustomer, branchName: e.target.value });
                   setShowBranchDropdown(true);
                 }}
+                onFocus={() => setShowBranchDropdown(true)}
               />
               
               {/* Branch Suggestions Dropdown */}
@@ -933,6 +1067,7 @@ export default function SaleCustomersPage() {
               value={editNote}
               onChange={(e) => setEditNote(e.target.value)}
             />
+            {/* Note required warning */}
             {(editStatus === 'closed' || editStatus === 'inactive') && (
               <div className="flex items-start gap-2 mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <AlertCircle size={16} className="text-amber-600 mt-0.5 shrink-0" />
@@ -950,12 +1085,241 @@ export default function SaleCustomersPage() {
               <p className="text-sm text-slate-700">{editingLocation.location.statusNote}</p>
             </div>
           )}
-          {/* Existing Customer Details Form */}
+
+          {/* Active Customer Details Form (Restored for Status Modal) */}
           {editStatus === 'existing' && (
             <div className="p-4 bg-green-50/50 rounded-lg border border-green-100 space-y-4">
                <div className="text-xs font-bold text-green-700 uppercase tracking-wider mb-2 border-b border-green-200 pb-2 flex items-center gap-2">
                    <CheckCircle2 size={14} />
                    Active Customer Details
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div>
+                       <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('official_name')}</label>
+                       <input 
+                           value={editOfficialName}
+                           onChange={(e) => setEditOfficialName(e.target.value)}
+                           className="input w-full bg-white h-8 text-xs"
+                           placeholder="Official Registered Name"
+                       />
+                   </div>
+                   <div>
+                       <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('customer_type')}</label>
+                       <div className="flex gap-4 pt-1">
+                           <label className="flex items-center gap-2 cursor-pointer">
+                               <input 
+                                   type="radio" 
+                                   name="edit_ctype"
+                                   checked={editCustomerType === 'individual'} 
+                                   onChange={() => setEditCustomerType('individual')}
+                                   className="text-green-600 focus:ring-green-500"
+                               />
+                               <span className="text-xs text-slate-700">{t('cust_individual')}</span>
+                           </label>
+                           <label className="flex items-center gap-2 cursor-pointer">
+                               <input 
+                                   type="radio" 
+                                   name="edit_ctype"
+                                   checked={editCustomerType === 'juristic'}
+                                   onChange={() => setEditCustomerType('juristic')}
+                                   className="text-green-600 focus:ring-green-500"
+                               />
+                               <span className="text-xs text-slate-700">{t('cust_juristic')}</span>
+                           </label>
+                       </div>
+                   </div>
+               </div>
+
+               <div className="grid grid-cols-2 gap-4">
+                   <div>
+                       <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('owner_name')}</label>
+                       <input 
+                           value={editOwnerName}
+                           onChange={(e) => setEditOwnerName(e.target.value)}
+                           className="input w-full bg-white h-8 text-xs"
+                       />
+                   </div>
+                   <div>
+                       <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('owner_phone')}</label>
+                       <input 
+                           value={editOwnerPhone}
+                           onChange={(e) => setEditOwnerPhone(e.target.value)}
+                           className="input w-full bg-white h-8 text-xs"
+                       />
+                   </div>
+               </div>
+
+               {/* Documents Upload */}
+               <div>
+                   <label className="text-[10px] font-semibold text-slate-500 uppercase mb-2 block">{t('documents_upload')} (Max 6)</label>
+                   <div className="flex flex-wrap gap-2">
+                       {editDocuments.map((doc, docIdx) => (
+                           <div key={docIdx} className="relative w-16 h-16 bg-white border border-slate-200 rounded flex items-center justify-center group overflow-hidden">
+                               {doc.startsWith('data:image') ? (
+                                   <Image src={doc} alt="Doc" fill className="object-cover" unoptimized />
+                               ) : (
+                                   <div className="text-center p-1">
+                                       <FileText size={20} className="mx-auto text-slate-400" />
+                                       <span className="text-[8px] text-slate-400 block truncate w-14">File {docIdx+1}</span>
+                                   </div>
+                               )}
+                               <button 
+                                   onClick={() => setEditDocuments(prev => prev.filter((_, i) => i !== docIdx))}
+                                   className="absolute top-0 right-0 p-0.5 bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                               >
+                                   <X size={10} />
+                               </button>
+                           </div>
+                       ))}
+                       
+                       {editDocuments.length < 6 && (
+                           <label className="w-16 h-16 border-2 border-dashed border-green-200 rounded flex flex-col items-center justify-center text-green-400 hover:text-green-600 hover:border-green-400 hover:bg-green-50 cursor-pointer transition-all">
+                               <Plus size={16} />
+                               <span className="text-[8px] font-bold">ADD</span>
+                               <input 
+                                   type="file" 
+                                   accept="image/*,application/pdf"
+                                   className="hidden"
+                                   onChange={(e) => {
+                                       if (e.target.files && e.target.files[0]) {
+                                           const file = e.target.files[0];
+                                           const reader = new FileReader();
+                                           reader.onloadend = () => {
+                                               setEditDocuments(prev => [...prev, reader.result as string]);
+                                           };
+                                           reader.readAsDataURL(file);
+                                       }
+                                   }}
+                               />
+                           </label>
+                       )}
+                   </div>
+               </div>
+
+               {/* Shipping Info */}
+               <div>
+                   <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('shipping_address')}</label>
+                   <input 
+                       value={editShippingAddress}
+                       onChange={(e) => setEditShippingAddress(e.target.value)}
+                       className="input w-full bg-white h-8 text-xs"
+                   />
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                   <div>
+                       <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('receiver_name')}</label>
+                       <input 
+                           value={editReceiverName}
+                           onChange={(e) => setEditReceiverName(e.target.value)}
+                           className="input w-full bg-white h-8 text-xs"
+                       />
+                   </div>
+                   <div>
+                       <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('receiver_phone')}</label>
+                       <input 
+                           value={editReceiverPhone}
+                           onChange={(e) => setEditReceiverPhone(e.target.value)}
+                           className="input w-full bg-white h-8 text-xs"
+                       />
+                   </div>
+               </div>
+
+               {/* Financials */}
+               <div className="grid grid-cols-2 gap-4">
+                   <div>
+                       <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('credit_term')}</label>
+                       <select 
+                           value={editCreditTerm} 
+                           onChange={(e) => setEditCreditTerm(parseInt(e.target.value))}
+                           className="input w-full bg-white h-8 text-xs"
+                       >
+                           {[0, 5, 15, 30, 45, 60, 90].map(d => (
+                               <option key={d} value={d}>{d} {t('days')}</option>
+                           ))}
+                       </select>
+                   </div>
+                   <div>
+                       <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('vat_type')}</label>
+                       <select 
+                           value={editVatType} 
+                           onChange={(e) => setEditVatType(e.target.value as any)}
+                           className="input w-full bg-white h-8 text-xs"
+                       >
+                           <option value="ex-vat">{t('vat_ex')}</option>
+                           <option value="in-vat">{t('vat_in')}</option>
+                           <option value="non-vat">{t('vat_non')}</option>
+                       </select>
+                   </div>
+               </div>
+               
+               {/* Promotion Notes */}
+               <div>
+                   <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('promotion_notes')}</label>
+                   <textarea
+                       value={editPromotionNotes}
+                       onChange={(e) => setEditPromotionNotes(e.target.value)}
+                       className="input w-full bg-white h-20 text-xs resize-none"
+                       placeholder="Promotion / Price details..."
+                   />
+               </div>
+            </div>
+          )}
+          
+          <div className="flex gap-3 pt-4 border-t border-slate-100 mt-4">
+             <button 
+               onClick={() => setIsEditModalOpen(false)} 
+               className="flex-1 px-5 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-medium hover:bg-slate-100 transition-colors"
+             >
+               {t('cancel')}
+             </button>
+             <button 
+               onClick={handleSaveStatus} 
+               className="flex-1 btn btn-primary px-6 flex items-center justify-center gap-2"
+             >
+               <Save size={18} />
+               {t('save')}
+             </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Edit Customer Info Modal */}
+      <Modal
+        isOpen={isEditInfoModalOpen}
+        onClose={() => setIsEditInfoModalOpen(false)}
+        width="max-w-2xl"
+        title="Edit Customer Info"
+      >
+        <div className="space-y-6">
+            <div className="flex items-center gap-4 border-b border-slate-100 pb-4">
+               <div className="relative w-16 h-16 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden shrink-0">
+                   {editingLocation?.company.logo ? (
+                       <Image 
+                           src={editingLocation.company.logo} 
+                           alt="Logo" 
+                           fill 
+                           className="object-cover" 
+                           unoptimized
+                       />
+                   ) : (
+                       <div className="flex items-center justify-center w-full h-full text-slate-300">
+                           <Building2 size={24} />
+                       </div>
+                   )}
+               </div>
+               <div>
+                   <h3 className="font-bold text-slate-900 text-lg">{editingLocation?.company.name}</h3>
+                   <div className="text-sm text-slate-500">
+                        {editingLocation?.location.name}
+                   </div>
+               </div>
+            </div>
+
+            <div className="space-y-4">
+               <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 border-b border-slate-200 pb-2 flex items-center gap-2">
+                   <CheckCircle2 size={14} />
+                   Customer Details
                </div>
                
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1048,13 +1412,32 @@ export default function SaleCustomersPage() {
                    <div className="grid grid-cols-3 gap-3">
                        <div>
                            <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('postal_code')}</label>
-                           <input 
-                               value={editPostalCode}
-                               onChange={(e) => setEditPostalCode(e.target.value)}
-                               className="input w-full bg-white h-8 text-xs"
-                               placeholder="Postal Code"
-                               maxLength={5}
-                           />
+                           <input                                value={editPostalCode}
+                                onChange={(e) => {
+                                    const code = e.target.value.replace(/[^0-9]/g, '');
+                                    if (code.length <= 5) {
+                                        setEditPostalCode(code);
+                                        if (code.length === 5) {
+                                            const matches = searchAddressByPostalCode(code);
+                                            if (matches.length > 0) {
+                                                const match = matches[0];
+                                                const district = language === 'th' ? match.districtTH : match.district;
+                                                const province = language === 'th' ? match.provinceTH : match.province;
+                                                
+                                                setEditDistrict(district);
+                                                setEditProvince(province);
+                                                
+                                                // Auto-set region
+                                                const region = getRegion(province, district);
+                                                if (region) setEditRegion(region);
+                                            }
+                                        }
+                                    }
+                                }}
+                                className="input w-full bg-white h-8 text-xs"
+                                placeholder="Postal Code"
+                                maxLength={5}
+                            />
                        </div>
                        <div>
                            <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">{t('district')}</label>
@@ -1224,24 +1607,22 @@ export default function SaleCustomersPage() {
                    />
                </div>
             </div>
-          )}
 
-          {/* Action Buttons moved inside body */}
-          <div className="flex gap-3 pt-4 border-t border-slate-100 mt-4">
-             <button 
-               onClick={() => setIsEditModalOpen(false)} 
-               className="flex-1 px-5 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-medium hover:bg-slate-100 transition-colors"
-             >
-               {t('cancel')}
-             </button>
-             <button 
-               onClick={handleSaveStatus} 
-               className="flex-1 btn btn-primary px-6 flex items-center justify-center gap-2"
-             >
-               <Save size={18} />
-               {t('save')}
-             </button>
-          </div>
+            <div className="flex gap-3 pt-4 border-t border-slate-100 mt-4">
+                <button 
+                  onClick={() => setIsEditInfoModalOpen(false)} 
+                  className="flex-1 px-5 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-medium hover:bg-slate-100 transition-colors"
+                >
+                  {t('cancel')}
+                </button>
+                <button 
+                  onClick={handleSaveInfo} 
+                  className="flex-1 btn btn-primary px-6 flex items-center justify-center gap-2"
+                >
+                  <Save size={18} />
+                  {t('save')}
+                </button>
+            </div>
         </div>
       </Modal>
     </div>

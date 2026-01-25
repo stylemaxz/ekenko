@@ -400,6 +400,14 @@ export default function CheckInPage() {
                   />
               </div>
 
+              <button 
+                  onClick={() => router.push('/sale/customers')}
+                  className="w-full mb-4 px-6 py-3 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 active:scale-95 transition-transform flex items-center justify-center gap-2"
+              >
+                  <Plus size={18} />
+                  {t('add_customer')}
+              </button>
+
               {/* List */}
               <div className="space-y-3">
                   {nearbyLocations.length > 0 ? (
@@ -429,14 +437,6 @@ export default function CheckInPage() {
                           </div>
                           <h3 className="text-slate-900 font-bold mb-1">No Stores Nearby</h3>
                           <p className="text-slate-500 text-sm mb-4">We couldn't find any registered stores within 500m of your location.</p>
-                          
-                          <button 
-                              onClick={() => router.push('/sale/customers')}
-                              className="px-6 py-2 bg-primary text-white rounded-lg font-bold text-sm shadow-lg shadow-black/10 active:scale-95 transition-transform flex items-center gap-2 mx-auto"
-                          >
-                              <Plus size={18} />
-                              {t('add_customer')}
-                          </button>
                       </div>
                   )}
               </div>

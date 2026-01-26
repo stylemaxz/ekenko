@@ -3,6 +3,11 @@ export type Language = 'en' | 'th';
 export const translations = {
     en: {
         // Menu
+        menu_main: "Main",
+        menu_sales_projects: "Sales & Projects",
+        menu_rnd: "R&D",
+        menu_maintenance: "Maintenance & Assets",
+        menu_hr_admin: "HR & Admin",
         // Auth
         login_title: "Welcome Back",
         other_language_label: "🇹🇭 ไทย",
@@ -803,6 +808,11 @@ export const translations = {
     },
     th: {
         // Menu
+        menu_main: "เมนูหลัก",
+        menu_sales_projects: "การขายและโปรเจ็กต์",
+        menu_rnd: "วิจัยและพัฒนา",
+        menu_maintenance: "การซ่อมบำรุงและทรัพย์สิน",
+        menu_hr_admin: "บุคคลและธุรการ",
         // Auth
         login_title: "ยินดีต้อนรับ",
         other_language_label: "🇺🇸 EN",

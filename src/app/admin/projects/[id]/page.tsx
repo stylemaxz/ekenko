@@ -234,6 +234,7 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
         switch (status) {
             case 'active': case 'approved': case 'production': return 'bg-green-100 text-green-700';
             case 'completed': case 'feedback_received': return 'bg-blue-100 text-blue-700';
+            case 'completed': case 'feedback_received': return 'bg-blue-100 text-blue-700';
             case 'on_hold': case 'pending_feedback': case 'sent': return 'bg-yellow-100 text-yellow-700';
             case 'cancelled': case 'rejected': return 'bg-red-100 text-red-700';
             case 'development': case 'sampling': return 'bg-purple-100 text-purple-700';
@@ -273,7 +274,7 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
                     </div>
 
                     <div className="flex gap-2">
-                        <button onClick={() => setShowEditProjectModal(true)} className="btn btn-outline">
+                        <button onClick={() => setShowEditProjectModal(true)} className="btn btn-outline hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]">
                             <Edit2 size={18} />
                             {t('edit')}
                         </button>
@@ -302,7 +303,7 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
                     <h2 className="text-lg font-semibold text-slate-900">
                         {t('products')} ({project.products.length})
                     </h2>
-                    <button onClick={() => setShowAddProductModal(true)} className="btn btn-primary btn-sm">
+                    <button onClick={() => setShowAddProductModal(true)} className="btn bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] btn-sm">
                         <Plus size={18} />
                         {t('add_product')}
                     </button>
@@ -319,8 +320,8 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
                                     onClick={() => toggleProductExpand(product.id)}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                                            <FlaskConical size={20} className="text-blue-600" />
+                                        <div className="w-10 h-10 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center">
+                                            <FlaskConical size={20} className="text-[var(--color-primary)]" />
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-2">
@@ -340,7 +341,7 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
                                                 setSelectedProductId(product.id);
                                                 setShowSendSampleModal(true);
                                             }}
-                                            className="btn btn-outline btn-sm"
+                                            className="btn btn-outline btn-sm hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
                                         >
                                             <Send size={16} />
                                             {t('send_sample')}
@@ -500,7 +501,7 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
                             <button onClick={() => setShowEditProjectModal(false)} className="btn btn-outline flex-1">
                                 {t('cancel')}
                             </button>
-                            <button onClick={handleUpdateProject} className="btn btn-primary flex-1">
+                            <button onClick={handleUpdateProject} className="btn bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] flex-1">
                                 {t('save')}
                             </button>
                         </div>
@@ -555,7 +556,7 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
                             <button onClick={() => setShowAddProductModal(false)} className="btn btn-outline flex-1">
                                 {t('cancel')}
                             </button>
-                            <button onClick={handleAddProduct} disabled={!newProduct.name} className="btn btn-primary flex-1">
+                            <button onClick={handleAddProduct} disabled={!newProduct.name} className="btn bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] flex-1">
                                 {t('add')}
                             </button>
                         </div>
@@ -641,7 +642,7 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
                             <button
                                 onClick={handleSendSample}
                                 disabled={!newSample.sampleNumber || !newSample.dueDate || !newSample.assigneeId}
-                                className="btn btn-primary flex-1"
+                                className="btn bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] flex-1"
                             >
                                 <Send size={18} />
                                 {t('send')}

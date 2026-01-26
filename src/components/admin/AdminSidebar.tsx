@@ -52,25 +52,50 @@ export default function AdminSidebar() {
   };
 
 
-  const navItems = [
-    { href: "/admin/dashboard", label: t('dashboard'), icon: LayoutDashboard },
-    { href: "/admin/calendar", label: t('calendar_title'), icon: Calendar },
-    { href: "/admin/employees", label: t('employees'), icon: Users },
-    { label: t('assets'), href: '/admin/assets', icon: Box },
-    { label: t('maintenance_management'), href: '/admin/maintenance', icon: Wrench },
-    { label: t('spare_parts_management'), href: '/admin/spare-parts', icon: Package },
-    { label: t('projects'), href: '/admin/projects', icon: FolderOpen },
-    { label: t('rnd_tasks'), href: '/admin/rnd-tasks', icon: FlaskConical },
-    { label: t('customers'), href: '/admin/customers', icon: Building2 },
-    { label: t('tasks'), href: '/admin/tasks', icon: Briefcase },
-    { label: t('leave_management'), href: '/admin/leave', icon: FileCheck },
-    { label: t('activity_logs_title'), href: '/admin/activity-logs', icon: Activity },
-    { label: t('reports'), href: '/admin/reports', icon: FileText },
+  const navGroups = [
+    {
+      title: t('menu_main'),
+      items: [
+        { href: "/admin/dashboard", label: t('dashboard'), icon: LayoutDashboard },
+        { href: "/admin/calendar", label: t('calendar_title'), icon: Calendar },
+      ]
+    },
+    {
+      title: t('menu_sales_projects'),
+      items: [
+        { label: t('customers'), href: '/admin/customers', icon: Building2 },
+        { label: t('projects'), href: '/admin/projects', icon: FolderOpen },
+        { label: t('tasks'), href: '/admin/tasks', icon: Briefcase },
+      ]
+    },
+    {
+      title: t('menu_rnd'),
+      items: [
+        { label: t('rnd_tasks'), href: '/admin/rnd-tasks', icon: FlaskConical },
+      ]
+    },
+    {
+      title: t('menu_maintenance'),
+      items: [
+        { label: t('assets'), href: '/admin/assets', icon: Box },
+        { label: t('maintenance_management'), href: '/admin/maintenance', icon: Wrench },
+        { label: t('spare_parts_management'), href: '/admin/spare-parts', icon: Package },
+      ]
+    },
+    {
+      title: t('menu_hr_admin'),
+      items: [
+        { href: "/admin/employees", label: t('employees'), icon: Users },
+        { label: t('leave_management'), href: '/admin/leave', icon: FileCheck },
+        { label: t('activity_logs_title'), href: '/admin/activity-logs', icon: Activity },
+        { label: t('reports'), href: '/admin/reports', icon: FileText },
+      ]
+    },
   ];
 
   return (
-    <aside className="sidebar">
-      <div className="p-6 border-b border-slate-200 flex items-center justify-center">
+    <aside className="sidebar flex flex-col h-screen fixed left-0 top-0 bottom-0 z-50 bg-white border-r border-slate-200 w-64">
+      <div className="p-6 border-b border-slate-200 flex items-center justify-center bg-white/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="w-40 h-10 relative">
           <Image 
             src="/logo_2026.png" 
@@ -82,29 +107,33 @@ export default function AdminSidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 p-4 flex flex-col gap-1.5">
-        <div className="text-xs font-bold text-slate-400 uppercase tracking-wider px-3 py-2 mb-1">
-          Menu
-        </div>
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={clsx(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium",
-                isActive
-                  ? "bg-primary text-white shadow-sm shadow-indigo-200"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              )}
-            >
-              <Icon size={18} className={clsx(isActive ? "text-white" : "text-slate-400 group-hover:text-slate-600")} />
-              {item.label}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 p-4 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+        {navGroups.map((group, index) => (
+          <div key={index} className="flex flex-col gap-1.5">
+            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider px-3 mb-1">
+              {group.title}
+            </div>
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={clsx(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium",
+                    isActive
+                      ? "bg-primary text-white shadow-sm shadow-indigo-200"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  )}
+                >
+                  <Icon size={18} className={clsx(isActive ? "text-white" : "text-slate-400 group-hover:text-slate-600")} />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
 
         <div className="mt-auto pt-4 border-t border-slate-200">
           <Link

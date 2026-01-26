@@ -19,7 +19,7 @@ export async function GET(request: Request) {
         } else {
             // Filter by role
             tasks = await rndTaskService.getTasksByRole(
-                session.id as string,
+                session.userId as string,
                 session.role as Role
             );
         }
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
         const data = await request.json();
         const task = await rndTaskService.createTask({
             ...data,
-            createdBy: session.id as string,
+            createdBy: session.userId as string,
         });
 
         return NextResponse.json(task, { status: 201 });

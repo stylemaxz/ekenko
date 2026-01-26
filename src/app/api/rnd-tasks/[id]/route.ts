@@ -20,7 +20,7 @@ export async function GET(
         }
 
         // Sales can only view their own tasks
-        if (session.role === 'sales' && task.assigneeId !== session.id) {
+        if (session.role === 'sales' && task.assigneeId !== session.userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -52,7 +52,7 @@ export async function PUT(
 
         // Sales can only update status of their own tasks
         if (session.role === 'sales') {
-            if (currentTask.assigneeId !== session.id) {
+            if (currentTask.assigneeId !== session.userId) {
                 return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
             }
             // Sales can only update status and completionNote

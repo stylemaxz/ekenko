@@ -6,22 +6,18 @@ export const projectService = {
     getAllProjects: async () => {
         return await prisma.project.findMany({
             include: {
-                customer: true,
-                location: true,
+                customer: {
+                    select: { id: true, name: true }
+                },
+                location: {
+                    select: { id: true, name: true }
+                },
                 products: {
-                    include: {
-                        samples: {
-                            include: {
-                                feedback: true,
-                            }
-                        }
-                    }
+                    select: { id: true } // Only fetch IDs to count length in frontend or use _count if refactoring frontend
                 },
                 rndTasks: {
-                    include: {
-                        assignee: true,
-                    }
-                },
+                    select: { id: true, status: true } // Only fetch minimal data for status check
+                }
             },
             orderBy: {
                 createdAt: 'desc',
@@ -34,18 +30,18 @@ export const projectService = {
         return await prisma.project.findMany({
             where: { customerId },
             include: {
-                customer: true,
-                location: true,
-                products: {
-                    include: {
-                        samples: {
-                            include: {
-                                feedback: true,
-                            }
-                        }
-                    }
+                customer: {
+                    select: { id: true, name: true }
                 },
-                rndTasks: true,
+                location: {
+                    select: { id: true, name: true }
+                },
+                products: {
+                    select: { id: true }
+                },
+                rndTasks: {
+                    select: { id: true, status: true }
+                },
             },
             orderBy: {
                 createdAt: 'desc',

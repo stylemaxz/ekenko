@@ -47,7 +47,7 @@ export async function POST(
 
         const feedback = await sampleService.submitFeedback(id, {
             ...data,
-            feedbackBy: session.id as string,
+            feedbackBy: session.userId as string,
         });
 
         return NextResponse.json(feedback, { status: 201 });

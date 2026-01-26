@@ -1,6 +1,6 @@
 // Common Types for the application
 
-export type Role = 'sales' | 'manager';
+export type Role = 'sales' | 'manager' | 'maintenance' | 'rnd';
 
 export type CustomerStatus = 'lead' | 'active' | 'existing' | 'inactive' | 'closed' | 'terminate';
 

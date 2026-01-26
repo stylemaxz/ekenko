@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -13,8 +13,7 @@ import {
     MessageSquare,
     ChevronDown,
     X,
-    Send,
-    Calendar
+    Send
 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 
@@ -70,7 +69,7 @@ interface Project {
     name: string;
 }
 
-export default function RndTasksPage() {
+function RndTasksContent() {
     const { t } = useLanguage();
     const searchParams = useSearchParams();
     const { showToast } = useToast();
@@ -655,5 +654,13 @@ export default function RndTasksPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function RndTasksPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="text-slate-500">Loading...</div></div>}>
+            <RndTasksContent />
+        </Suspense>
     );
 }

@@ -145,11 +145,11 @@ export const sampleService = {
             // Create the sample
             const sample = await tx.sample.create({
                 data: {
-                    productId: data.productId,
+                    product: { connect: { id: data.productId } },
                     sampleNumber: data.sampleNumber,
                     version: data.version || 1,
                     dueDate: new Date(data.dueDate),
-                    sentBy: data.sentBy,
+                    sender: { connect: { id: data.sentBy } },
                     notes: data.notes,
                     images: data.images || [],
                     status: 'sent',

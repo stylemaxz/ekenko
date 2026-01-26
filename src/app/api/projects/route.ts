@@ -36,7 +36,7 @@ export async function POST(request: Request) {
         const data = await request.json();
         const project = await projectService.createProject({
             ...data,
-            createdBy: session.id as string,
+            createdBy: session.userId as string,
         });
 
         return NextResponse.json(project, { status: 201 });

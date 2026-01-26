@@ -7,24 +7,34 @@ export const rndTaskService = {
         return await prisma.rndTask.findMany({
             include: {
                 project: {
-                    include: {
-                        customer: true,
+                    select: {
+                        id: true,
+                        name: true,
+                        customer: {
+                            select: { name: true }
+                        }
                     }
                 },
                 sample: {
-                    include: {
-                        product: true,
+                    select: {
+                        sampleNumber: true,
+                        notes: true,
+                        product: {
+                            select: { name: true }
+                        },
+                        feedback: {
+                            select: {
+                                customerReaction: true,
+                                comments: true
+                            }
+                        }
                     }
                 },
-                assignee: true,
-                creator: true,
-                comments: {
-                    include: {
-                        author: true,
-                    },
-                    orderBy: {
-                        createdAt: 'desc',
-                    }
+                assignee: {
+                    select: { id: true, name: true }
+                },
+                creator: {
+                    select: { name: true }
                 },
             },
             orderBy: {
@@ -39,24 +49,34 @@ export const rndTaskService = {
             where: { assigneeId },
             include: {
                 project: {
-                    include: {
-                        customer: true,
+                    select: {
+                        id: true,
+                        name: true,
+                        customer: {
+                            select: { name: true }
+                        }
                     }
                 },
                 sample: {
-                    include: {
-                        product: true,
+                    select: {
+                        sampleNumber: true,
+                        notes: true,
+                        product: {
+                            select: { name: true }
+                        },
+                        feedback: {
+                            select: {
+                                customerReaction: true,
+                                comments: true
+                            }
+                        }
                     }
                 },
-                assignee: true,
-                creator: true,
-                comments: {
-                    include: {
-                        author: true,
-                    },
-                    orderBy: {
-                        createdAt: 'desc',
-                    }
+                assignee: {
+                    select: { id: true, name: true }
+                },
+                creator: {
+                    select: { name: true }
                 },
             },
             orderBy: {

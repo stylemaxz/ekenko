@@ -14,6 +14,7 @@ import {
     Filter,
     ChevronDown
 } from 'lucide-react';
+import Combobox from '@/components/ui/Combobox';
 
 interface Project {
     id: string;
@@ -208,18 +209,19 @@ export default function RndProjectsPage() {
 
                 {showFilters && (
                     <div className="mt-4 pt-4 border-t border-slate-200">
-                        <label className="text-sm font-medium text-slate-700 mb-1 block">{t('status')}</label>
-                        <select
+                        <Combobox
+                            label={t('status')}
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="input w-full md:w-48"
-                        >
-                            <option value="all">{t('all')}</option>
-                            <option value="active">{t('project_status_active')}</option>
-                            <option value="on_hold">{t('project_status_on_hold')}</option>
-                            <option value="completed">{t('project_status_completed')}</option>
-                            <option value="cancelled">{t('project_status_cancelled')}</option>
-                        </select>
+                            onChange={setStatusFilter}
+                            options={[
+                                { id: 'all', label: t('all') },
+                                { id: 'active', label: t('project_status_active') },
+                                { id: 'on_hold', label: t('project_status_on_hold') },
+                                { id: 'completed', label: t('project_status_completed') },
+                                { id: 'cancelled', label: t('project_status_cancelled') }
+                            ]}
+                            className="w-full md:w-64"
+                        />
                     </div>
                 )}
             </div>
@@ -243,8 +245,8 @@ export default function RndProjectsPage() {
                             >
                                 <div className="p-4">
                                     <div className="flex items-start justify-between mb-3">
-                                        <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                                            <FolderOpen size={20} className="text-purple-600" />
+                                        <div className="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center">
+                                            <FolderOpen size={20} className="text-pink-600" />
                                         </div>
                                         <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(project.status)}`}>
                                             {t(`project_status_${project.status}` as any)}
@@ -327,20 +329,14 @@ export default function RndProjectsPage() {
                                 />
                             </div>
 
-                            <div>
-                                <label className="text-sm font-medium text-slate-700 mb-1 block">{t('customer')} *</label>
-                                <select
-                                    value={newProject.customerId}
-                                    onChange={(e) => setNewProject({ ...newProject, customerId: e.target.value })}
-                                    className="input w-full"
-                                    required
-                                >
-                                    <option value="">{t('select_customer')}</option>
-                                    {companies.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                            <Combobox
+                                label={t('customer')}
+                                value={newProject.customerId}
+                                onChange={(val) => setNewProject({ ...newProject, customerId: val })}
+                                options={companies.map(c => ({ id: c.id, label: c.name }))}
+                                placeholder={t('select_customer')}
+                                required
+                            />
 
                             <div>
                                 <label className="text-sm font-medium text-slate-700 mb-1 block">{t('description')}</label>

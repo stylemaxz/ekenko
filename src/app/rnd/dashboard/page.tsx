@@ -132,7 +132,7 @@ export default function RndDashboard() {
                             <FolderOpen size={20} className="text-purple-600" />
                         </div>
                         <div>
-                            <div className="text-xs text-slate-500">{t('active_projects')}</div>
+                            <div className="text-xs text-slate-500">{t('active_projects_rnd')}</div>
                             <div className="text-xl font-bold text-slate-900">{activeProjects.length}</div>
                         </div>
                     </div>

@@ -16,9 +16,9 @@ import {
     CheckCircle,
     Clock,
     MessageSquare,
-    Edit2,
     Trash2
 } from 'lucide-react';
+import Combobox from '@/components/ui/Combobox';
 
 interface Sample {
     id: string;
@@ -295,17 +295,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         <p className="text-slate-500">{project.customer.name}</p>
                     </div>
 
-                    <div className="flex gap-2">
-                        <select
+                    <div className="flex gap-2 w-full md:w-auto">
+                        <Combobox
                             value={project.status}
-                            onChange={(e) => handleUpdateProjectStatus(e.target.value)}
-                            className="input"
-                        >
-                            <option value="active">{t('project_status_active')}</option>
-                            <option value="on_hold">{t('project_status_on_hold')}</option>
-                            <option value="completed">{t('project_status_completed')}</option>
-                            <option value="cancelled">{t('project_status_cancelled')}</option>
-                        </select>
+                            onChange={(val) => handleUpdateProjectStatus(val)}
+                            options={[
+                                { id: 'active', label: t('project_status_active') },
+                                { id: 'on_hold', label: t('project_status_on_hold') },
+                                { id: 'completed', label: t('project_status_completed') },
+                                { id: 'cancelled', label: t('project_status_cancelled') }
+                            ]}
+                            className="w-full md:w-48"
+                        />
                     </div>
                 </div>
 
@@ -581,21 +582,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                                 />
                             </div>
 
-                            <div>
-                                <label className="text-sm font-medium text-slate-700 mb-1 block">{t('assign_sales_rep')} *</label>
-                                <select
-                                    value={newSample.assigneeId}
-                                    onChange={(e) => setNewSample({ ...newSample, assigneeId: e.target.value })}
-                                    className="input w-full"
-                                >
-                                    <option value="">{t('select_sales_rep')}</option>
-                                    {employees.map(e => (
-                                        <option key={e.id} value={e.id}>{e.name}</option>
-                                    ))}
-                                </select>
-                                <p className="text-xs text-slate-500 mt-1">{t('sales_rep_will_collect_feedback')}</p>
-                            </div>
-
+                            <Combobox
+                                label={t('assign_sales_rep')}
+                                value={newSample.assigneeId}
+                                onChange={(val) => setNewSample({ ...newSample, assigneeId: val })}
+                                options={employees.map(e => ({ id: e.id, label: e.name }))}
+                                placeholder={t('select_sales_rep')}
+                                required
+                            />
+                            
                             <div>
                                 <label className="text-sm font-medium text-slate-700 mb-1 block">{t('notes')}</label>
                                 <textarea

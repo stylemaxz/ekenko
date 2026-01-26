@@ -38,7 +38,7 @@ export async function POST(
         const sample = await sampleService.createSample({
             ...data,
             productId: id,
-            sentBy: session.id as string,
+            sentBy: session.userId as string,
         });
 
         return NextResponse.json(sample, { status: 201 });

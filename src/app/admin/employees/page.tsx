@@ -399,6 +399,7 @@ export default function EmployeesPage() {
                           <option value="sales">{t('role_sales')}</option>
                           <option value="manager">{t('role_manager')}</option>
                           <option value="maintenance">{t('role_maintenance')}</option>
+                          <option value="rnd">{t('role_rnd')}</option>
                       </select>
                   </div>
               </div>

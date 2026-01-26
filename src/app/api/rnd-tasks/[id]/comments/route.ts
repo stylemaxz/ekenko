@@ -42,13 +42,13 @@ export async function POST(
         }
 
         // Sales can only comment on their own tasks
-        if (session.role === 'sales' && task.assigneeId !== session.id) {
+        if (session.role === 'sales' && task.assigneeId !== session.userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const comment = await rndTaskService.addComment(id, {
             ...data,
-            authorId: session.id as string,
+            authorId: session.userId as string,
         });
 
         return NextResponse.json(comment, { status: 201 });

@@ -56,7 +56,7 @@ export default function CheckInPage() {
   const [notes, setNotes] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [assetImages, setAssetImages] = useState<string[]>([]); // For asset inspection photos
-  const [metOwner, setMetOwner] = useState<boolean>(true); // Default to true
+  const [metOwner, setMetOwner] = useState<boolean>(false); // Default to false
   
   // Camera State
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -604,8 +604,8 @@ export default function CheckInPage() {
               </div>
 
 
-              {/* Asset Inspection Photos (shown only when check_assets is selected) */}
-              {objectives.includes('check_assets') && (
+              {/* Asset Inspection Photos (shown only when check_assets or delivery_asset is selected) */}
+              {(objectives.includes('check_assets') || objectives.includes('delivery_asset')) && (
                   <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                       <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
                           <Camera size={16} className="text-primary" />
@@ -653,24 +653,6 @@ export default function CheckInPage() {
                           <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50 cursor-pointer flex-1 active:bg-red-50 transition-colors">
                               <div className={clsx(
                                   "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
-                                  metOwner ? "border-primary bg-primary" : "border-slate-300 bg-white"
-                              )}>
-                                  {metOwner && <div className="w-2 h-2 rounded-full bg-white"></div>}
-                              </div>
-                              <input 
-                                  type="radio" 
-                                  className="hidden"
-                                  checked={metOwner}
-                                  onChange={() => setMetOwner(true)}
-                              />
-                              <span className="text-sm font-medium text-slate-700">
-                                  {t('yes')}
-                              </span>
-                          </label>
-
-                          <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50 cursor-pointer flex-1 active:bg-red-50 transition-colors">
-                              <div className={clsx(
-                                  "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
                                   !metOwner ? "border-primary bg-primary" : "border-slate-300 bg-white"
                               )}>
                                   {!metOwner && <div className="w-2 h-2 rounded-full bg-white"></div>}
@@ -683,6 +665,24 @@ export default function CheckInPage() {
                               />
                               <span className="text-sm font-medium text-slate-700">
                                   {t('no')}
+                              </span>
+                          </label>
+
+                          <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50 cursor-pointer flex-1 active:bg-red-50 transition-colors">
+                              <div className={clsx(
+                                  "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
+                                  metOwner ? "border-primary bg-primary" : "border-slate-300 bg-white"
+                              )}>
+                                  {metOwner && <div className="w-2 h-2 rounded-full bg-white"></div>}
+                              </div>
+                              <input 
+                                  type="radio" 
+                                  className="hidden"
+                                  checked={metOwner}
+                                  onChange={() => setMetOwner(true)}
+                              />
+                              <span className="text-sm font-medium text-slate-700">
+                                  {t('yes')}
                               </span>
                           </label>
                       </div>

@@ -18,7 +18,9 @@ import {
   X,
   FileText,
   CheckCircle2,
-  Loader2
+  Loader2,
+  LayoutGrid,
+  List
 } from "lucide-react";
 
 import { Company, Location, ContactPerson, Employee } from "@/types";
@@ -75,6 +77,9 @@ export default function AdminCustomersPage() {
   
   // Saving State
   const [isSaving, setIsSaving] = useState(false);
+
+  // View Mode State
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid'); // Default to grid view
 
   const filteredCompanies = companies.filter(company => 
     company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -443,8 +448,8 @@ export default function AdminCustomersPage() {
       )}
 
       {/* Search and Filter */}
-      <div className="card mb-6 p-4">
-          <div className="relative">
+      <div className="card mb-6 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
               <input 
                  type="text" 
@@ -454,10 +459,32 @@ export default function AdminCustomersPage() {
                  onChange={(e) => setSearchQuery(e.target.value)}
               />
           </div>
+          
+          {/* View Toggle */}
+          <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+              <button 
+                  onClick={() => setViewMode('grid')}
+                  className={clsx(
+                      "p-2 rounded-md transition-all",
+                      viewMode === 'grid' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                  )}
+              >
+                  <LayoutGrid size={20} />
+              </button>
+              <button 
+                  onClick={() => setViewMode('table')}
+                  className={clsx(
+                      "p-2 rounded-md transition-all",
+                      viewMode === 'table' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                  )}
+              >
+                  <List size={20} />
+              </button>
+          </div>
       </div>
 
-      {/* Grid of Companies */}
-      {!loading && (
+      {/* Content */}
+      {!loading && viewMode === 'grid' && (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
          {filteredCompanies.map((company) => (
              <div key={company.id} className="card hover:shadow-md transition-shadow group relative">
@@ -569,6 +596,108 @@ export default function AdminCustomersPage() {
              </div>
          ))}
       </div>
+      )}
+
+      {/* Table View */}
+      {!loading && viewMode === 'table' && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Company</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Tax ID</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Grade</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Locations</th>
+                            <th className="px-6 py-4 text-end text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {filteredCompanies.map((company) => (
+                            <tr key={company.id} className="hover:bg-slate-50 transition-colors">
+                                <td className="px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className={clsx(
+                                            "w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm overflow-hidden shrink-0 border border-slate-100",
+                                            !company.logo && (company.status === 'existing' ? "bg-indigo-100 text-indigo-600" : "bg-teal-100 text-teal-600")
+                                        )}>
+                                            {company.logo ? (
+                                                <Image 
+                                                    src={company.logo} 
+                                                    alt={company.name} 
+                                                    width={40} 
+                                                    height={40} 
+                                                    className="w-full h-full object-cover"
+                                                    unoptimized
+                                                />
+                                            ) : (
+                                                company.name.substring(0, 1)
+                                            )}
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-slate-900">{company.name}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-slate-600 font-mono">
+                                    {company.taxId || '-'}
+                                </td>
+                                <td className="px-6 py-4">
+                                    <span className={clsx(
+                                        "text-[10px] px-2 py-1 rounded-full font-bold uppercase",
+                                        company.grade === 'A' ? "bg-green-50 text-green-700 border border-green-200" :
+                                        company.grade === 'B' ? "bg-yellow-50 text-yellow-700 border border-yellow-200" :
+                                        "bg-slate-50 text-slate-600 border border-slate-200"
+                                    )}>
+                                        Grade {company.grade}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                     <span className={clsx(
+                                        "text-[10px] px-2 py-1 rounded-full font-bold uppercase",
+                                        (company.status === 'existing' || company.status === 'active') ? "bg-green-50 text-green-700 border border-green-200" :
+                                        company.status === 'lead' ? "bg-blue-50 text-blue-700 border border-blue-200" :
+                                        "bg-red-50 text-red-700 border border-red-200"
+                                    )}>
+                                        {t(`status_${company.status}` as any)}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="flex items-center gap-1.5 text-slate-600">
+                                        <MapPin size={16} className="text-slate-400" />
+                                        <span className="text-sm font-medium">{company.locations.length}</span>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                    <div className="flex items-center justify-end gap-2">
+                                        <button 
+                                            onClick={() => openEditModal(company)}
+                                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                            title="Edit"
+                                        >
+                                            <Edit size={16} />
+                                        </button>
+                                        <button 
+                                            onClick={() => deleteCompany(company.id)}
+                                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Delete"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                {filteredCompanies.length === 0 && (
+                     <div className="p-8 text-center text-slate-500 text-sm">
+                         No customers found matching "{searchQuery}"
+                     </div>
+                )}
+            </div>
+        </div>
       )}
 
       {/* --- ADD/EDIT MODAL --- */}

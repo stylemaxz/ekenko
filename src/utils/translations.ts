@@ -410,6 +410,15 @@ export const translations = {
         log_created_customer: "Created New Customer: {company}",
         log_status_changed_desc: "Customer Status Changed: {company}",
         head_office: "Head Office",
+
+        // Check-in Modes
+        visit_store: "Visit Store",
+        meeting_checkin: "Meeting",
+        meeting: "Meeting",
+
+        visit_photos: "Visit Photos",
+        notes_label: "Notes",
+        visit_objectives: "Objectives",
     },
     th: {
         // Menu
@@ -827,6 +836,8 @@ export const translations = {
         // Check-in Modes
         visit_store: "เช็คอินหน้าร้าน",
         meeting_checkin: "นัดเจอข้างนอก",
-        meeting: " मीटिंग", // Fallback for meeting label if needed, but context seems th default
+        meeting: "Meeting",
+
+        visit_photos: "รูปถ่ายการเข้าพบ",
     }
 };

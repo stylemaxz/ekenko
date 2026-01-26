@@ -132,8 +132,19 @@ export default function CheckInPage() {
           if (!matchesSearch) return false;
       }
 
-      // If WFH mode OR Meeting mode, ignore distance check. Otherwise, must be within 500m (0.5km)
-      if (!isWorkFromHome && checkInMode !== 'meeting' && item.distance > 0.5) return false;
+      // Logic Refinement:
+      // 1. WFH: Always show all (skip distance check)
+      // 2. Meeting: 
+      //    - If searching: Show all (skip distance check) to allow finding distant customers
+      //    - If NOT searching: Show only nearby (< 500m) to keep list clean
+      // 3. Store: Always enforce 500m limit
+
+      if (isWorkFromHome) return true;
+
+      // Distance Limit Logic
+      const isMeetingModeWithSearch = checkInMode === 'meeting' && searchQuery.trim().length > 0;
+      
+      if (!isMeetingModeWithSearch && item.distance > 0.5) return false;
 
       return true;
   }).sort((a, b) => a.distance - b.distance);
@@ -281,9 +292,23 @@ export default function CheckInPage() {
       return;
     }
 
-    if (images.length === 0) {
-      alert(t('photo_required'));
+    if (!currentUserId) {
+      alert(t('user_not_found'));
       return;
+    }
+
+    // WFH: Notes Required, Photos Optional
+    // Standard: Notes Optional, Photos Required
+    if (isWorkFromHome) {
+        if (!notes.trim()) {
+            alert(language === 'th' ? "กรุณาระบุรายละเอียด (บังคับสำหรับ Work from Home)" : "Please enter notes (Required for WFH)");
+            return;
+        }
+    } else {
+        if (images.length === 0) {
+            alert(t('photo_required'));
+            return;
+        }
     }
 
     setIsSubmitting(true);
@@ -315,15 +340,15 @@ export default function CheckInPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           employeeId: currentUserId,
-          type: 'check_in',
-          description: `เช็คอิน ${selectedLocation.location.name}`,
+          type: isWorkFromHome ? 'record_visit' : 'check_in',
+          description: isWorkFromHome 
+               ? (language === 'th' ? `บันทึกการเข้าพบ: ${selectedLocation.location.name}` : `Recorded Visit: ${selectedLocation.location.name}`)
+               : (language === 'th' ? `เช็คอิน: ${selectedLocation.location.name}` : `Checked in: ${selectedLocation.location.name}`),
           metadata: {
-            visitId: visit.id,
             locationId: selectedLocation.location.id,
             locationName: selectedLocation.location.name,
-            companyName: selectedLocation.company.name,
-            objectives: objectives,
-            metOwner: metOwner
+            gps: userLocation,
+            isWFH: isWorkFromHome
           }
         })
       });
@@ -490,53 +515,64 @@ export default function CheckInPage() {
           </div>
 
           <div className="space-y-6">
-              {/* Image Upload Section */}
-              <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                  <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-                      <Camera size={16} className="text-primary" />
-                      {t('confirmation_images')} <span className="text-red-500">*</span>
-                  </h3>
-                  
-                  <div className="flex gap-3 overflow-x-auto pb-2">
-                       {/* Add Button */}
-                       <button 
-                          onClick={() => handleImageUpload('visit')}
-                          className="w-20 h-20 rounded-lg border-2 border-dashed border-red-200 bg-red-50 flex flex-col items-center justify-center text-primary-hover hover:bg-red-100 shrink-0"
-                       >
-                           <Camera size={24} />
-                           <span className="text-[10px] font-bold mt-1">Add Photo</span>
-                       </button>
+              {/* Image Upload Section - Hide COMPLETELY if WFH */}
+              {!isWorkFromHome && (
+                  <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                      <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                          <Camera size={16} className="text-primary" />
+                          {t('visit_photos')} <span className="text-red-500">*</span>
+                      </h3>
+                      
+                      <div className="flex gap-3 overflow-x-auto pb-2">
+                          {/* Add Button */}
+                          <button 
+                              onClick={() => handleImageUpload('visit')}
+                              className="w-20 h-20 rounded-lg border-2 border-dashed border-red-200 bg-red-50 flex flex-col items-center justify-center text-primary-hover hover:bg-red-100 shrink-0"
+                          >
+                              <Camera size={24} />
+                              <span className="text-[10px] font-bold mt-1">Add Photo</span>
+                          </button>
 
-                       {/* Preview Images */}
-                       {images.map((url, idx) => (
-                           <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden shrink-0 border border-slate-200">
-                               <img src={url} alt="Visit" className="w-full h-full object-cover" />
-                               <button 
-                                  onClick={() => removeImage(idx)}
-                                  className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-0.5"
-                               >
-                                   <X size={12} />
-                               </button>
-                           </div>
-                       ))}
+                          {/* Preview Images */}
+                          {images.map((url, idx) => (
+                              <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden shrink-0 border border-slate-200">
+                                  <img src={url} alt="Visit" className="w-full h-full object-cover" />
+                                  <button 
+                                      onClick={() => removeImage(idx)}
+                                      className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-0.5"
+                                  >
+                                      <X size={12} />
+                                  </button>
+                              </div>
+                          ))}
+                      </div>
+                      
+                      {/* Hidden Camera Input */}
+                      <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          className="hidden"
+                          onChange={handleFileChange}
+                      />
                   </div>
-                  
-                  {/* Hidden Camera Input */}
-                  <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                      onChange={handleFileChange}
-                  />
-              </div>
+              )}
 
               {/* Objectives Section */}
               <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                   <h3 className="text-sm font-bold text-slate-800 mb-3">{t('visit_objectives')}</h3>
                   <div className="space-y-2">
-                      {objectiveList.map(obj => {
+                      {objectiveList
+                        .filter(obj => {
+                            if (isWorkFromHome) {
+                                // If WFH, ONLY allow: Sales, Relationship (Follow Up), Collect Debt
+                                return ['sales', 'relationship', 'collect_debt'].includes(obj);
+                            }
+                            // Default: Show all
+                            return true;
+                        }) 
+                        .map(obj => {
                           // Simplified logic as 'check_assets' is not in VisitObjective type
                           // If 'check_assets' was a required feature, it must be added to type first. 
                           // For now, removing the isDisabled logic related to 'check_assets' to avoid type errors.
@@ -606,54 +642,58 @@ export default function CheckInPage() {
                   </div>
               )}
 
-              {/* Met Owner Section */}
-              <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                  <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-                      {t('met_owner')} 
-                      <span className="text-red-500">*</span>
-                  </h3>
-                  <div className="flex gap-4">
-                      <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50 cursor-pointer flex-1 active:bg-red-50 transition-colors">
-                          <div className={clsx(
-                              "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
-                              metOwner ? "border-primary bg-primary" : "border-slate-300 bg-white"
-                          )}>
-                              {metOwner && <div className="w-2 h-2 rounded-full bg-white"></div>}
-                          </div>
-                          <input 
-                              type="radio" 
-                              className="hidden"
-                              checked={metOwner}
-                              onChange={() => setMetOwner(true)}
-                          />
-                          <span className="text-sm font-medium text-slate-700">
-                              {t('yes')}
-                          </span>
-                      </label>
+              {/* Met Owner Section - Hide if WFH */}
+              {!isWorkFromHome && (
+                  <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                      <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                          {t('met_owner')} 
+                          <span className="text-red-500">*</span>
+                      </h3>
+                      <div className="flex gap-4">
+                          <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50 cursor-pointer flex-1 active:bg-red-50 transition-colors">
+                              <div className={clsx(
+                                  "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
+                                  metOwner ? "border-primary bg-primary" : "border-slate-300 bg-white"
+                              )}>
+                                  {metOwner && <div className="w-2 h-2 rounded-full bg-white"></div>}
+                              </div>
+                              <input 
+                                  type="radio" 
+                                  className="hidden"
+                                  checked={metOwner}
+                                  onChange={() => setMetOwner(true)}
+                              />
+                              <span className="text-sm font-medium text-slate-700">
+                                  {t('yes')}
+                              </span>
+                          </label>
 
-                      <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50 cursor-pointer flex-1 active:bg-red-50 transition-colors">
-                          <div className={clsx(
-                              "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
-                              !metOwner ? "border-primary bg-primary" : "border-slate-300 bg-white"
-                          )}>
-                              {!metOwner && <div className="w-2 h-2 rounded-full bg-white"></div>}
-                          </div>
-                          <input 
-                              type="radio" 
-                              className="hidden"
-                              checked={!metOwner}
-                              onChange={() => setMetOwner(false)}
-                          />
-                          <span className="text-sm font-medium text-slate-700">
-                              {t('no')}
-                          </span>
-                      </label>
+                          <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50 cursor-pointer flex-1 active:bg-red-50 transition-colors">
+                              <div className={clsx(
+                                  "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
+                                  !metOwner ? "border-primary bg-primary" : "border-slate-300 bg-white"
+                              )}>
+                                  {!metOwner && <div className="w-2 h-2 rounded-full bg-white"></div>}
+                              </div>
+                              <input 
+                                  type="radio" 
+                                  className="hidden"
+                                  checked={!metOwner}
+                                  onChange={() => setMetOwner(false)}
+                              />
+                              <span className="text-sm font-medium text-slate-700">
+                                  {t('no')}
+                              </span>
+                          </label>
+                      </div>
                   </div>
-              </div>
+              )}
 
               {/* Notes Section */}
               <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                  <h3 className="text-sm font-bold text-slate-800 mb-2">{t('notes_label')}</h3>
+                  <h3 className="text-sm font-bold text-slate-800 mb-2">
+                      {t('notes_label')} {isWorkFromHome && <span className="text-red-500">*</span>}
+                  </h3>
                   <textarea 
                       className="w-full h-24 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                       placeholder="Enter visit details..."
@@ -666,7 +706,7 @@ export default function CheckInPage() {
               <div className="mt-6 mb-6">
                   <button 
                       onClick={handleSubmit}
-                      disabled={images.length === 0 || isSubmitting}
+                      disabled={(!isWorkFromHome && images.length === 0) || isSubmitting}
                       className="w-full py-3.5 rounded-xl bg-primary text-white font-bold shadow-lg shadow-black/20 disabled:opacity-50 disabled:shadow-none active:scale-[0.98] transition-transform"
                   >
                       {isSubmitting ? t('saving') : t('save')}

@@ -15,7 +15,8 @@ import {
   X,
   Save,
   AlertCircle,
-  Target
+  Target,
+  Trash2
 } from "lucide-react";
 import { Task, TaskStatus, VisitObjectives, VisitObjective, Employee, Company } from "@/types";
 import { clsx } from "clsx";
@@ -184,6 +185,29 @@ export default function TasksPage() {
       ? companies.find(c => c.id === newTask.customerId)?.locations || []
       : [];
 
+  // Delete Task
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    if (!confirmDeleteId) return;
+    
+    try {
+        const res = await fetch(`/api/tasks/${confirmDeleteId}`, {
+            method: 'DELETE'
+        });
+
+        if (res.ok) {
+            setTasks(prev => prev.filter(t => t.id !== confirmDeleteId));
+            showToast(t('delete_success'), 'success');
+            setConfirmDeleteId(null);
+        } else {
+            throw new Error('Failed to delete');
+        }
+    } catch (err) {
+        showToast(t('delete_failed'), 'error');
+    }
+  };
+
   return (
     <div className="p-6">
        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -237,7 +261,16 @@ export default function TasksPage() {
               const location = company?.locations.find(l => l.id === task.locationId);
 
               return (
-                  <div key={task.id} className="card hover:shadow-md transition-shadow flex flex-col md:flex-row gap-4">
+                  <div key={task.id} className="card hover:shadow-md transition-shadow flex flex-col md:flex-row gap-4 relative group">
+                      {/* Delete Button (Visible on Hover or always on mobile) */}
+                      <button 
+                          onClick={() => setConfirmDeleteId(task.id)}
+                          className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors p-1"
+                          title={t('delete')}
+                      >
+                          <Trash2 size={18} />
+                      </button>
+
                       {/* Status Stripe */}
                       <div className={clsx("w-1.5 self-stretch rounded-full", 
                           task.status === 'pending' ? "bg-slate-300" :
@@ -245,7 +278,7 @@ export default function TasksPage() {
                           task.status === 'completed' ? "bg-green-500" : "bg-red-500"
                       )}></div>
                       
-                      <div className="flex-1">
+                      <div className="flex-1 pr-8">
                           <div className="flex items-start justify-between mb-2">
                               <div>
                                   <h3 className="font-bold text-slate-900 text-lg">{task.title}</h3>
@@ -312,6 +345,27 @@ export default function TasksPage() {
               </div>
           )}
       </div>
+
+      {/* Confirmation Modal */}
+      <Modal
+          isOpen={!!confirmDeleteId}
+          onClose={() => setConfirmDeleteId(null)}
+          title={t('confirm_delete')}
+          footer={
+             <>
+                <button onClick={() => setConfirmDeleteId(null)} className="px-5 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-medium hover:bg-slate-50 transition-colors">
+                    {t('cancel')}
+                </button>
+                <button onClick={handleDelete} className="btn bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200">
+                    {t('delete')}
+                </button>
+             </>
+          }
+      >
+          <div className="text-center py-4">
+              <p className="text-slate-600">{t('confirm_delete_task_desc')}</p>
+          </div>
+      </Modal>
 
       {/* --- ADD TASK MODAL --- */}
       <Modal

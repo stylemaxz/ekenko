@@ -215,6 +215,29 @@ export default function SaleLeaveRequestsPage() {
     }
   };
 
+  // Cancel Confirmation
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+  
+  const handleConfirmCancel = async () => {
+    if (!confirmCancelId) return;
+    
+    try {
+        const res = await fetch(`/api/leave-requests/${confirmCancelId}`, {
+            method: 'DELETE'
+        });
+
+        if (res.ok) {
+            showToast(t('cancel_success'), 'success');
+            setLeaveRequests(prev => prev.filter(r => r.id !== confirmCancelId));
+            setConfirmCancelId(null);
+        } else {
+            throw new Error('Failed to cancel');
+        }
+    } catch (err) {
+        showToast(t('cancel_failed'), 'error');
+    }
+  };
+
   return (
     <div className="pb-24 pt-6 px-4 bg-slate-50 min-h-screen">
       {/* Header */}
@@ -301,13 +324,6 @@ export default function SaleLeaveRequestsPage() {
             const days = request.days; 
             
             // Cancellation Rules
-            // 1. Pending: Can cancel anytime
-            // 2. Approved: Can cancel if today is at least 1 day before start date
-            //    start - today >= 2 days (so there is at least 1 full day in between)
-            //    Actually requirement: "if leave is on 3rd, cancel until 1st. 2nd cannot."
-            //    3rd (start) - 1st (today) = 2 days. OK.
-            //    3rd (start) - 2nd (today) = 1 day. NO.
-            
             const isPending = (request.status || '').toLowerCase() === 'pending';
             const isApproved = (request.status || '').toLowerCase() === 'approved';
             
@@ -321,25 +337,6 @@ export default function SaleLeaveRequestsPage() {
             
             // Allow cancel if pending, OR if approved and at least 2 days in advance (e.g. cancel on 1st for 3rd)
             const canCancel = isPending || (isApproved && daysDiff >= 2);
-
-            const handleCancel = async () => {
-                if (!confirm(t('confirm_cancel_leave'))) return;
-                
-                try {
-                    const res = await fetch(`/api/leave-requests/${request.id}`, {
-                        method: 'DELETE'
-                    });
-
-                    if (res.ok) {
-                        showToast(t('cancel_success'), 'success');
-                         setLeaveRequests(prev => prev.filter(r => r.id !== request.id));
-                    } else {
-                        throw new Error('Failed to cancel');
-                    }
-                } catch (err) {
-                    showToast(t('cancel_failed'), 'error');
-                }
-            };
             
             return (
               <div
@@ -415,7 +412,7 @@ export default function SaleLeaveRequestsPage() {
                    
                    {canCancel && (
                        <button 
-                        onClick={handleCancel}
+                        onClick={() => setConfirmCancelId(request.id)}
                         className="text-xs border border-red-200 bg-red-50 text-red-600 px-3 py-1.5 rounded-lg font-medium hover:bg-red-100 transition-colors"
                        >
                            {t('cancel_request')}
@@ -434,6 +431,41 @@ export default function SaleLeaveRequestsPage() {
           </div>
         )}
       </div>
+
+      {/* Confirmation Modal */}
+      <Modal
+        isOpen={!!confirmCancelId}
+        onClose={() => setConfirmCancelId(null)}
+        title={t('cancel_request')}
+        footer={
+           <>
+              <button 
+                onClick={() => setConfirmCancelId(null)}
+                className="px-5 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-medium hover:bg-slate-100 transition-colors"
+              >
+                {t('cancel')}
+              </button>
+              <button 
+                onClick={handleConfirmCancel}
+                className="px-5 py-2.5 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
+              >
+                {t('confirm')}
+              </button>
+           </>
+        }
+      >
+        <div className="py-4 text-center">
+             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                 <XCircle className="text-red-600" size={24} />
+             </div>
+             <p className="text-slate-600 font-medium text-lg">
+                 {t('confirm_cancel_leave')}
+             </p>
+             <p className="text-slate-400 text-sm mt-1">
+                 {t('action_cannot_be_undone')}
+             </p>
+        </div>
+      </Modal>
 
       {/* Request Leave Modal */}
       <Modal

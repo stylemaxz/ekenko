@@ -10,8 +10,11 @@ import {
   BarChart3,
   Edit,
   Trash2,
-  History
+  History,
+  Eye
 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/contexts/ToastContext";
 import { Modal } from "@/components/ui/Modal";
@@ -33,6 +36,7 @@ interface ExtendedAsset extends Asset {
 }
 
 export default function AdminAssetsPage() {
+  const router = useRouter();
   const { t, language } = useLanguage();
   const { showToast } = useToast();
   
@@ -144,8 +148,12 @@ export default function AdminAssetsPage() {
       // Pre-fill selection if asset has location
       if (asset.location?.company?.id) {
           setSelectedCompanyId(asset.location.company.id);
+          setCustomerSearchQuery(asset.location.company.name || "");
+          setLocationSearchQuery(asset.location.name || "");
       } else {
           setSelectedCompanyId("");
+          setCustomerSearchQuery("");
+          setLocationSearchQuery("");
       }
       setIsModalOpen(true);
   };
@@ -271,14 +279,20 @@ export default function AdminAssetsPage() {
                   ) : filteredAssets.length === 0 ? (
                       <tr><td colSpan={5} className="p-8 text-center text-slate-500">{t('no_activities_found')}</td></tr>
                   ) : filteredAssets.map((asset) => (
-                      <tr key={asset.id} className="hover:bg-slate-50 transition-colors">
+                      <tr 
+                        key={asset.id} 
+                        className="hover:bg-slate-50 transition-colors cursor-pointer"
+                        onClick={() => router.push(`/admin/assets/${asset.id}`)}
+                      >
                           <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
                                   <div className="p-2 bg-slate-100 rounded-lg text-slate-500">
                                       <Box size={20} />
                                   </div>
                                   <div>
-                                      <div className="font-bold text-slate-900">{asset.modelName}</div>
+                                      <div className="font-bold text-slate-900 group-hover:text-indigo-600">
+                                          {asset.modelName}
+                                      </div>
                                       <div className="text-xs text-slate-500 font-mono">{asset.serialNumber}</div>
                                   </div>
                               </div>
@@ -307,7 +321,16 @@ export default function AdminAssetsPage() {
                           </td>
                           <td className="px-6 py-4 text-right">
                               <div className="flex justify-end gap-2">
-                                  <button onClick={() => handleEditAsset(asset)} className="p-1.5 hover:bg-slate-100 rounded text-slate-500 hover:text-indigo-600">
+                                  <div className="p-1.5 hover:bg-slate-100 rounded text-slate-500 hover:text-indigo-600">
+                                      <Eye size={16} />
+                                  </div>
+                                  <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditAsset(asset);
+                                    }} 
+                                    className="p-1.5 hover:bg-slate-100 rounded text-slate-500 hover:text-indigo-600"
+                                  >
                                       <Edit size={16} />
                                   </button>
                               </div>

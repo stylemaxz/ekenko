@@ -48,7 +48,7 @@ interface AssetHistory {
 export default function AssetDetailPage() {
     const { id } = useParams();
     const router = useRouter();
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { showToast } = useToast();
     const [asset, setAsset] = useState<AssetHistory | null>(null);
     const [loading, setLoading] = useState(true);
@@ -81,8 +81,16 @@ export default function AssetDetailPage() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-slate-500">Loading asset history...</div>;
-    if (!asset) return <div className="p-8 text-center text-slate-500">Asset not found</div>;
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    };
+
+    if (loading) return <div className="p-8 text-center text-slate-500">{t('loading')}</div>;
+    if (!asset) return <div className="p-8 text-center text-slate-500">{t('no_data')}</div>;
 
     const currentContract = asset.contractItems[0]?.serviceContract;
 
@@ -99,7 +107,7 @@ export default function AssetDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Left Column: Asset Profile */}
                 <div className="space-y-6">
-                    <div className="card overflow-hidden">
+                    <div className="card overflow-hidden bg-white rounded-lg shadow-sm border border-slate-200">
                         <div className="aspect-video bg-slate-100 relative">
                             {asset.image ? (
                                 <Image src={asset.image} alt={asset.modelName} fill className="object-cover" />
@@ -109,7 +117,7 @@ export default function AssetDetailPage() {
                                 </div>
                             )}
                             <div className={`absolute top-4 right-4 px-3 py-1 rounded-full text-sm font-bold ${getStatusColor(asset.status)}`}>
-                                {asset.status}
+                                {t(`status_${asset.status.toLowerCase()}` as any)}
                             </div>
                         </div>
                         <div className="p-6">
@@ -120,30 +128,30 @@ export default function AssetDetailPage() {
                                 <div className="flex items-start gap-3">
                                     <MapPin className="text-slate-400 mt-1" size={18} />
                                     <div>
-                                        <div className="text-sm font-medium text-slate-900">Current Location</div>
+                                        <div className="text-sm font-medium text-slate-900">{t('current_location')}</div>
                                         <div className="text-sm text-slate-500">
                                             {asset.location ? (
                                                 <>
                                                     {asset.location.name}
                                                     <div className="text-xs text-indigo-600">{asset.location.company.name}</div>
                                                 </>
-                                            ) : "Unassigned"}
+                                            ) : t('unassigned')}
                                         </div>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-3">
                                     <FileText className="text-slate-400 mt-1" size={18} />
                                     <div>
-                                        <div className="text-sm font-medium text-slate-900">Contract Status</div>
+                                        <div className="text-sm font-medium text-slate-900">{t('contract_status')}</div>
                                         {currentContract ? (
                                             <div className="text-sm text-green-600 font-medium">
-                                                Active: {currentContract.contractNumber}
+                                                {t('active_contract_label').replace('{number}', currentContract.contractNumber)}
                                                 <div className="text-xs text-slate-500">
-                                                    Ends: {new Date(currentContract.endDate).toLocaleDateString()}
+                                                    {t('ends_on').replace('{date}', formatDate(currentContract.endDate))}
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className="text-sm text-slate-400">No active contract</div>
+                                            <div className="text-sm text-slate-400">{t('no_active_contract')}</div>
                                         )}
                                     </div>
                                 </div>
@@ -154,15 +162,15 @@ export default function AssetDetailPage() {
 
                 {/* Right Column: History Timeline */}
                 <div className="md:col-span-2 space-y-6">
-                    <div className="card p-6">
+                    <div className="card p-6 bg-white rounded-lg shadow-sm border border-slate-200">
                         <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
                             <History className="text-indigo-600" size={24} />
-                            Maintenance History
+                            {t('maintenance_history')}
                         </h2>
 
                         <div className="relative pl-8 border-l-2 border-slate-200 space-y-8">
                             {asset.maintenanceTasks.length === 0 && (
-                                <div className="text-slate-500 italic">No maintenance history found.</div>
+                                <div className="text-slate-500 italic">{t('no_maintenance_history')}</div>
                             )}
                             
                             {asset.maintenanceTasks.map((task) => (
@@ -177,33 +185,36 @@ export default function AssetDetailPage() {
                                                 <h3 className="font-bold text-slate-900">{task.title}</h3>
                                                 <div className="text-xs text-slate-500 flex items-center gap-2 mt-1">
                                                     <Calendar size={12} />
-                                                    {new Date(task.createdAt).toLocaleDateString()}
+                                                    {formatDate(task.createdAt)}
                                                     {task.completedDate && (
                                                         <span className="text-green-600 flex items-center gap-1 ml-2">
                                                             <CheckCircle size={12} />
-                                                            Completed: {new Date(task.completedDate).toLocaleDateString()}
+                                                            {t('status_completed')}: {formatDate(task.completedDate)}
                                                         </span>
                                                     )}
                                                 </div>
                                             </div>
                                             <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase ${
-                                                task.priority === 'urgent' ? 'bg-red-100 text-red-700' : 'bg-slate-200 text-slate-600'
+                                                task.priority === 'urgent' ? 'bg-red-100 text-red-700' : 
+                                                task.priority === 'high' ? 'bg-orange-100 text-orange-700' :
+                                                task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-green-100 text-green-700'
                                             }`}>
-                                                {task.priority}
+                                                {t(`priority_${task.priority.toLowerCase()}` as any)}
                                             </span>
                                         </div>
 
                                         {task.assignedEmployee && (
                                             <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
                                                 <User size={14} />
-                                                Technician: <span className="font-medium">{task.assignedEmployee.name}</span>
+                                                {t('technician')}: <span className="font-medium">{task.assignedEmployee.name}</span>
                                             </div>
                                         )}
 
                                         {task.partsUsage.length > 0 && (
                                             <div className="mt-3 pt-3 border-t border-slate-200">
                                                 <div className="text-xs font-semibold text-slate-500 uppercase mb-2 flex items-center gap-1">
-                                                    <Wrench size={12} /> Parts Replaced
+                                                    <Wrench size={12} /> {t('parts_replaced')}
                                                 </div>
                                                 <div className="flex flex-wrap gap-2">
                                                     {task.partsUsage.map((usage, idx) => (

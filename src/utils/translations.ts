@@ -614,6 +614,17 @@ export const translations = {
 
         visit_photos: "Visit Photos",
 
+        // Asset Detail Page
+        asset_history: "Asset History",
+        current_location: "Current Location",
+        active_contract_label: "Active: {number}",
+        no_active_contract: "No active contract",
+        maintenance_history: "Maintenance History",
+        no_maintenance_history: "No maintenance history found.",
+        technician: "Technician",
+        parts_replaced: "Parts Replaced",
+        ends_on: "Ends: {date}",
+
     },
     th: {
         // Menu
@@ -1228,5 +1239,16 @@ export const translations = {
         visit_photos: "รูปถ่ายการเข้าพบ",
         total_cost: "ราคารวม",
         task_info: "ข้อมูลงาน",
+
+        // Asset Detail Page
+        asset_history: "ประวัติทรัพย์สิน",
+        current_location: "สถานที่ปัจจุบัน",
+        active_contract_label: "สัญญา: {number}",
+        no_active_contract: "ไม่มีสัญญา",
+        maintenance_history: "ประวัติการซ่อมบำรุง",
+        no_maintenance_history: "ไม่พบประวัติการซ่อมบำรุง",
+        technician: "ช่างผู้รับผิดชอบ",
+        parts_replaced: "อะไหล่ที่เปลี่ยน",
+        ends_on: "สิ้นสุด: {date}",
     }
 };

@@ -49,7 +49,11 @@ export async function POST(request: Request) {
         return NextResponse.json({
             success: true,
             user: userWithoutPassword,
-            redirectUrl: user.role === 'manager' ? '/admin/dashboard' : '/sale/dashboard'
+            redirectUrl: user.role === 'manager'
+                ? '/admin/dashboard'
+                : user.role === 'maintenance'
+                    ? '/maintenance/dashboard'
+                    : '/sale/dashboard'
         });
 
     } catch (error: any) {

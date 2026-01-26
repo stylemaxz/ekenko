@@ -37,7 +37,11 @@ export default async function proxy(request: NextRequest) {
     if (pathname === '/login') {
         if (userPayload) {
             // Already logged in? Go to dashboard
-            const targetUrl = userPayload.role === 'manager' ? '/admin/dashboard' : '/sale/dashboard';
+            const targetUrl = userPayload.role === 'manager'
+                ? '/admin/dashboard'
+                : userPayload.role === 'maintenance'
+                    ? '/maintenance/dashboard'
+                    : '/sale/dashboard';
             return NextResponse.redirect(new URL(targetUrl, request.url));
         }
         // Not logged in? Allow access to login page
@@ -55,12 +59,17 @@ export default async function proxy(request: NextRequest) {
 
     // Block Sales from Admin Area
     if (pathname.startsWith('/admin') && userPayload.role !== 'manager') {
-        return NextResponse.redirect(new URL('/sale/dashboard', request.url));
+        const targetUrl = userPayload.role === 'maintenance' ? '/maintenance/dashboard' : '/sale/dashboard';
+        return NextResponse.redirect(new URL(targetUrl, request.url));
     }
 
     // 6. Handle Root Path
     if (pathname === '/') {
-        const targetUrl = userPayload.role === 'manager' ? '/admin/dashboard' : '/sale/dashboard';
+        const targetUrl = userPayload.role === 'manager'
+            ? '/admin/dashboard'
+            : userPayload.role === 'maintenance'
+                ? '/maintenance/dashboard'
+                : '/sale/dashboard';
         return NextResponse.redirect(new URL(targetUrl, request.url));
     }
 

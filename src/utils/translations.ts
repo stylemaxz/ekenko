@@ -43,9 +43,13 @@ export const translations = {
         demo_credentials: "🔑 Demo Credentials:",
         new_customers_title: "New Customers",
         status_updated: "Status updated successfully",
+        save_success: "Saved successfully",
+        save_failed: "Failed to save",
+        load_failed: "Failed to load data",
 
         dashboard: "Dashboard",
         employees: "Employees",
+        assets: "Assets",
         customers: "Customers & Locations",
         reports: "Reports",
         settings: "Settings",
@@ -192,9 +196,64 @@ export const translations = {
         add_new_task: "Add Task",
         create_new_task: "Create Task",
         task_created_success: "Task created successfully",
+
+        // Maintenance System - Roles
+        role_maintenance: "Maintenance",
+        role_sales: "Sales Representative",
+
+        // Maintenance Navigation
+        nav_maintenance_dashboard: "Dashboard",
+        nav_my_tasks: "My Tasks",
+        nav_all_tasks: "All Tasks",
+
+        // Maintenance Task
+        maintenance_task: "Maintenance Task",
+        task_description: "Description",
+        scheduled_date: "Scheduled Date",
+        estimated_hours: "Estimated Hours",
+        actual_hours: "Actual Hours",
+
+        // Priority (urgent extends existing)
+        priority_urgent: "Urgent",
+
+        // Maintenance Status
+        status_assigned: "Assigned",
+        status_cancelled: "Cancelled",
+
+        // Actions
+        start_task: "Start Task",
+        complete_task: "Complete Task",
+        assign_to_me: "Assign to Me",
+
+        // Dashboard Stats
+        my_pending_tasks: "My Pending Tasks",
+        my_active_tasks: "My Active Tasks",
+        completed_today: "Completed Today",
+
+        // Admin Maintenance Management
+        maintenance_management: "Maintenance Management",
+        team_performance: "Team Performance",
+        active_tasks: "Active Tasks",
+        tasks_by_status: "Tasks by Status",
+        tasks_by_priority: "Tasks by Priority",
+        avg_completion_time: "Avg. Completion Time",
+        assigned_technician: "Assigned Technician",
+        reassign_task: "Reassign Task",
+        task_history: "Task History",
+        create_maintenance_task_desc: "Create a new maintenance task for an asset",
+        error_fetching_data: "Error fetching data",
+        fill_required_fields: "Please fill in all required fields",
+        select_asset: "Select Asset",
+        unassigned: "Unassigned",
+        task_description_placeholder: "Enter task description...",
+
+        // Additional missing keys
+        asset: "Asset",
+        hours: "hours",
+
         update_task_status: "Update Status",
         no_tasks_status: "No tasks in this status",
-        task_example_title: "e.g. Monthly Stock Check",
+        task_example_title: "e.g. Regular Service",
         task_details_placeholder: "Enter detailed instructions...",
         target_location_optional: "Target Location (Optional)",
         select_none: "-- None --",
@@ -203,6 +262,17 @@ export const translations = {
         update_task: "Update Task",
         progress_note: "Progress / Note",
         task_execution_details: "Task execution details...",
+        asset_details: "Asset Details",
+        model: "Model",
+        not_scheduled: "Not Scheduled",
+        confirm_start_task: "Are you sure you want to start this task?",
+        confirm_complete_task: "Are you sure you want to complete this task?",
+        start_task_success: "Task started",
+        complete_task_success: "Task completed",
+        technician_notes: "Technician Notes",
+        save_notes: "Save Notes",
+        note_saved_success: "Notes saved successfully",
+        notes_placeholder: "Add progress updates or internal notes here...",
 
         // Activity Logs
         activity_logs_title: "Activity Logs",
@@ -220,7 +290,7 @@ export const translations = {
         uploading_logo: "Uploading logo...",
         logo_upload_success: "Logo uploaded successfully",
         logo_upload_failed: "Failed to upload logo",
-        load_failed: "Failed to load data",
+        // load_failed: "Failed to load data", // Duplicated
         delete_failed: "Failed to delete item",
         update_failed: "Failed to update",
         create_failed: "Failed to create",
@@ -228,6 +298,52 @@ export const translations = {
         error_desc: "An unexpected error occurred. Please try again.",
         try_again: "Try again",
         pagination_showing: "Showing {start}-{end} of {total} items",
+
+        // Assets
+        asset_management_title: "Asset Management",
+        asset_management_subtitle: "Manage your machine inventory and status",
+        add_asset: "Add Asset",
+        search_asset_placeholder: "Search Serial No. or Model...",
+        all_status: "All Status",
+        col_asset_info: "Asset Info",
+        col_condition: "Condition",
+        col_location: "Location",
+        condition: "Condition",
+
+        // Asset Modal
+        edit_asset: "Edit Asset",
+        add_new_asset: "Add New Asset",
+        serial_number: "Serial Number",
+        model_name: "Model Name",
+        purchase_date: "Purchase Date",
+        cost: "Cost",
+        condition_new: "New",
+        condition_used: "Used",
+        condition_refurbished: "Refurbished",
+        condition_broken: "Broken",
+
+        // Asset Status
+        status_available: "Available",
+        status_rented: "Rented",
+        status_maintenance: "Maintenance",
+        status_reserved: "Reserved",
+        status_disposal: "Disposal",
+        status_lost: "Lost",
+        status_spare: "Spare",
+
+        // Asset Search
+        search_customer: "Search customer...",
+        no_assignment: "-- No Assignment --",
+        customer_company: "Customer (Company)",
+        location_branch: "Location (Branch)",
+        search_location: "Search location...",
+        select_branch: "-- Select Branch --",
+
+        // Asset Statistics
+        total_assets: "Total Assets",
+        no_assets_found: "No assets found",
+
+        // Asset Conditions
 
         // Logs
         log_delete_customer: "Deleted Customer",
@@ -283,7 +399,6 @@ export const translations = {
         close: "Close",
         edit_details: "Edit Details",
         confirm: "Confirm",
-        save_success: "Saved Successfully",
         delete_success: "Deleted Successfully",
         fill_required: "Please fill in all required fields",
         company_logo: "Company Logo",
@@ -304,8 +419,8 @@ export const translations = {
         time: "Time",
         employee: "Employee",
         customer: "Customer",
-        status: "Status",
         type: "Objective",
+        status: "Status",
 
         // --- SALE MODULE ---
         nav_dashboard: "Dashboard",
@@ -469,10 +584,14 @@ export const translations = {
 
         demo_credentials: "🔑 ข้อมูลทดสอบ:",
         new_customers_title: "ลูกค้าใหม่",
-        status_updated: "อัปเดตสถานะสำเร็จ",
+        status_updated: "อัปเดตสถานะเรียบร้อยแล้ว",
+        save_success: "บันทึกเรียบร้อยแล้ว",
+        save_failed: "บันทึกไม่สำเร็จ",
+        load_failed: "โหลดข้อมูลไม่สำเร็จ",
 
         dashboard: "แดชบอร์ด",
         employees: "พนักงาน",
+        assets: "ทรัพย์สิน",
         customers: "ลูกค้าและสถานที่",
         reports: "รายงาน",
         settings: "ตั้งค่า",
@@ -570,6 +689,52 @@ export const translations = {
         status_note_placeholder: "ระบุเหตุผล...",
         previous_note: "หมายเหตุก่อนหน้า:",
 
+        // Assets
+        asset_management_title: "จัดการทรัพย์สิน",
+        asset_management_subtitle: "จัดการรายการเครื่องและสถานะ",
+        add_asset: "เพิ่มทรัพย์สิน",
+        search_asset_placeholder: "ค้นหา Serial No. หรือ รุ่น...",
+        all_status: "สถานะทั้งหมด",
+        col_asset_info: "ข้อมูลทรัพย์สิน",
+        col_condition: "สภาพ",
+        col_location: "สถานที่",
+        condition: "สภาพ",
+
+        // Asset Modal
+        edit_asset: "แก้ไขทรัพย์สิน",
+        add_new_asset: "เพิ่มทรัพย์สินใหม่",
+        serial_number: "Serial Number",
+        model_name: "ชื่อรุ่น",
+        purchase_date: "วันที่ซื้อ",
+        cost: "ราคาต้นทุน",
+        condition_new: "ของใหม่",
+        condition_used: "มือสอง",
+        condition_refurbished: "Refurbished",
+        condition_broken: "เสีย",
+
+        // Asset Status
+        status_available: "ว่าง",
+        status_rented: "เช่าอยู่",
+        status_maintenance: "ซ่อมบำรุง",
+        status_reserved: "จองแล้ว",
+        status_disposal: "รอตัดจำหน่าย",
+        status_lost: "สูญหาย",
+        status_spare: "เครื่องสำรอง",
+
+        // Asset Search
+        search_customer: "ค้นหาลูกค้า...",
+        no_assignment: "-- ไม่ระบุ --",
+        customer_company: "ลูกค้า (บริษัท)",
+        location_branch: "สถานที่ (สาขา)",
+        search_location: "ค้นหาสถานที่...",
+        select_branch: "-- เลือกสาขา --",
+
+        // Asset Statistics
+        total_assets: "ทรัพย์สินทั้งหมด",
+        no_assets_found: "ไม่พบทรัพย์สิน",
+
+        // Asset Conditions
+
         // Customer Status
         customer_status: "สถานะลูกค้า",
         status_active_desc: "กำลังติดตาม",
@@ -652,7 +817,14 @@ export const translations = {
         calendar_subtitle: "มุมมองตารางงานและการติดตาม",
         view_month: "เดือน",
         view_week: "สัปดาห์",
-        view_day: "วัน",
+        // Maintenance System
+        create_maintenance_task_desc: "สร้างงานซ่อมบำรุงใหม่สำหรับทรัพย์สิน",
+        error_fetching_data: "เกิดข้อผิดพลาดในการดึงข้อมูล",
+        fill_required_fields: "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน",
+        select_asset: "เลือกทรัพย์สิน",
+        unassigned: "ยังไม่มอบหมาย",
+        task_description_placeholder: "กรอกรายละเอียดงาน...",
+        task_example_title: "เช่น ตรวจเช็คประจำเดือน",
         today: "วันนี้",
         filters: "ตัวกรอง",
         check_ins: "การเข้าเยี่ยม",
@@ -713,9 +885,52 @@ export const translations = {
         add_new_task: "เพิ่มงาน",
         create_new_task: "สร้างงาน",
         task_created_success: "เพิ่มงานสำเร็จ",
+
+        // Maintenance System - Roles
+        role_maintenance: "ช่างซ่อมบำรุง",
+        role_sales: "พนักงานขาย",
+
+        // Maintenance Navigation
+        nav_maintenance_dashboard: "แดชบอร์ด",
+        nav_my_tasks: "งานของฉัน",
+        nav_all_tasks: "งานทั้งหมด",
+
+        // Maintenance Task
+        maintenance_task: "งานซ่อมบำรุง",
+        task_description: "รายละเอียด",
+        scheduled_date: "วันที่กำหนด",
+        estimated_hours: "เวลาโดยประมาณ (ชม.)",
+        actual_hours: "เวลาจริง (ชม.)",
+        priority_urgent: "ด่วนมาก",
+
+        // Maintenance Status
+        status_assigned: "มอบหมายแล้ว",
+        status_cancelled: "ยกเลิก",
+
+        start_task: "เริ่มงาน",
+
+        // Dashboard Stats
+        my_pending_tasks: "งานที่รอดำเนินการ",
+        my_active_tasks: "งานที่กำลังทำ",
+        completed_today: "เสร็จวันนี้",
+        // Admin Maintenance Management
+        maintenance_management: "จัดการซ่อมบำรุง",
+        team_performance: "ประสิทธิภาพทีม",
+        active_tasks: "งานที่ดำเนินการอยู่",
+        tasks_by_status: "งานแยกตามสถานะ",
+        tasks_by_priority: "งานแยกตามความสำคัญ",
+        avg_completion_time: "เวลาเสร็จเฉลี่ย",
+        assigned_technician: "ช่างที่รับผิดชอบ",
+        reassign_task: "มอบหมายใหม่",
+        task_history: "ประวัติงาน",
+
+        // Additional missing keys
+        asset: "ทรัพย์สิน",
+        hours: "ชั่วโมง",
+
         update_task_status: "อัปเดตสถานะ",
         no_tasks_status: "ไม่มีงานในสถานะนี้",
-        task_example_title: "ตัวอย่าง: ตรวจสต็อกประจำเดือน",
+
         task_details_placeholder: "รายละเอียดงาน...",
         target_location_optional: "สถานที่เป้าหมาย (ไม่บังคับ)",
         select_none: "-- ไม่ระบุ --",
@@ -724,6 +939,17 @@ export const translations = {
         update_task: "อัปเดตงาน",
         progress_note: "ความคืบหน้า / หมายเหตุ",
         task_execution_details: "รายละเอียดการทำงาน...",
+        asset_details: "รายละเอียดทรัพย์สิน",
+        model: "รุ่น",
+        not_scheduled: "ยังไม่กำหนด",
+        confirm_start_task: "ยืนยันการเริ่มงาน?",
+        confirm_complete_task: "ยืนยันการจบงาน?",
+        start_task_success: "เริ่มงานสำเร็จ",
+        complete_task_success: "จบงานสำเร็จ",
+        technician_notes: "บันทึกจากช่าง",
+        save_notes: "บันทึกข้อมูล",
+        note_saved_success: "บันทึกหมายเหตุสำเร็จ",
+        notes_placeholder: "ใส่ความคืบหน้าหรือหมายเหตุภายใน...",
 
         // Activity Logs
         activity_logs_title: "บันทึกกิจกรรม",
@@ -741,7 +967,6 @@ export const translations = {
         uploading_logo: "กำลังอัปโหลดโลโก้...",
         logo_upload_success: "อัปโหลดโลโก้สำเร็จ",
         logo_upload_failed: "อัปโหลดโลโก้ไม่สำเร็จ",
-        load_failed: "ไม่สามารถโหลดข้อมูลได้",
         delete_failed: "ลบข้อมูลไม่สำเร็จ",
         update_failed: "อัปเดตไม่สำเร็จ",
         create_failed: "สร้างไม่สำเร็จ",
@@ -804,7 +1029,6 @@ export const translations = {
         close: "ปิด",
         edit_details: "แก้ไขข้อมูล",
         confirm: "ยืนยัน",
-        save_success: "บันทึกสำเร็จ",
         delete_success: "ลบสำเร็จ",
         fill_required: "กรุณากรอกข้อมูลให้ครบถ้วน",
         company_logo: "โลโก้บริษัท",

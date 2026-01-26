@@ -184,7 +184,7 @@ export default function EmployeesPage() {
                 <th className="p-4">{t('username')}</th>
                 <th className="p-4">{t('col_role')}</th>
                 <th className="p-4">{t('col_contact')}</th>
-                <th className="p-4 text-center">{t('portfolio_size')}</th>
+
                 <th className="p-4 text-right">{t('col_actions')}</th>
               </tr>
             </thead>
@@ -224,9 +224,7 @@ export default function EmployeesPage() {
                   <td className="p-4 text-sm text-slate-600 font-mono">
                     {emp.phone}
                   </td>
-                  <td className="p-4 text-center font-medium text-slate-700">
-                    {emp.portfolioSize}
-                  </td>
+
                   <td className="p-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                        <button onClick={() => handleEdit(emp)} className="btn-icon p-2 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
@@ -334,7 +332,7 @@ export default function EmployeesPage() {
 
                    <div className="flex-1 space-y-4">
                         <div>
-                            <label className="label">{t('col_name')}</label>
+                            <label className="label">{t('col_name')} <span className="text-red-500">*</span></label>
                             <input 
                                 className="input w-full" 
                                 value={currentEmployee.name || ''}
@@ -343,7 +341,7 @@ export default function EmployeesPage() {
                             />
                         </div>
                         <div>
-                            <label className="label">{t('email')}</label>
+                            <label className="label">{t('email')} <span className="text-red-500">*</span></label>
                             <input 
                                 className="input w-full" 
                                 value={currentEmployee.email || ''}
@@ -398,22 +396,12 @@ export default function EmployeesPage() {
                           value={currentEmployee.role || 'sales'}
                           onChange={(e) => setCurrentEmployee({...currentEmployee, role: e.target.value as any})}
                       >
-                          <option value="sales">Sales Representative</option>
-                          <option value="manager">Manager</option>
+                          <option value="sales">{t('role_sales')}</option>
+                          <option value="manager">{t('role_manager')}</option>
+                          <option value="maintenance">{t('role_maintenance')}</option>
                       </select>
                   </div>
               </div>
-
-               <div>
-                  <label className="label">{t('portfolio_size')}</label>
-                  <input 
-                      type="number"
-                      className="input w-full" 
-                      value={currentEmployee.portfolioSize || 0}
-                      onChange={(e) => setCurrentEmployee({...currentEmployee, portfolioSize: parseInt(e.target.value) || 0})}
-                  />
-                  <p className="text-xs text-slate-400 mt-1">Number of locations assigned</p>
-               </div>
           </div>
       </Modal>
 

@@ -24,6 +24,8 @@ model Employee {
   leaveRequests       LeaveRequest[]
   tasks               Task[]
   visits              Visit[]
+  reservations        Reservation[]
+  maintenanceTasks    MaintenanceTask[]
 }
 
 model Company {
@@ -37,6 +39,8 @@ model Company {
   updatedAt DateTime      @updatedAt
   locations Location[]
   tasks     Task[]
+  contracts Contract[]
+  reservations Reservation[]
 }
 
 model Location {
@@ -74,6 +78,7 @@ model Location {
   company             Company         @relation(fields: [companyId], references: [id])
   tasks               Task[]
   visits              Visit[]
+  assets              Asset[]
 }
 
 model ContactPerson {
@@ -118,6 +123,7 @@ model Task {
   assignee       Employee     @relation(fields: [assigneeId], references: [id])
   company        Company?     @relation(fields: [customerId], references: [id])
   location       Location?    @relation(fields: [locationId], references: [id])
+  contracts      Contract[]
 }
 
 model LeaveRequest {
@@ -151,6 +157,7 @@ model ActivityLog {
 enum Role {
   sales
   manager
+  maintenance
 }
 
 enum CompanyGrade {
@@ -212,4 +219,171 @@ enum TaskPriority {
   low
   medium
   high
+}
+
+// --- Asset Management Models ---
+
+model Asset {
+  id                String             @id @default(uuid())
+  serialNumber      String             @unique
+  modelName         String
+  status            AssetStatus        @default(AVAILABLE)
+  condition         AssetCondition     @default(NEW)
+  purchaseDate      DateTime?
+  cost              Float?
+  currentLocationId String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  location          Location?          @relation(fields: [currentLocationId], references: [id])
+  contractItems     ContractItem[]
+  transactions      AssetTransaction[]
+  reservations      Reservation[]
+  maintenanceTasks  MaintenanceTask[]
+}
+
+model Contract {
+  id             String           @id @default(uuid())
+  contractNumber String           @unique
+  customerId     String
+  type           ContractType     @default(RENTAL)
+  startDate      DateTime
+  endDate        DateTime?
+  status         ContractStatus   @default(DRAFT)
+  isSigned       Boolean          @default(false)
+  notes          String?
+  taskId         String?          // Link to Task that initiated this contract
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  customer       Company          @relation(fields: [customerId], references: [id])
+  task           Task?            @relation(fields: [taskId], references: [id])
+  items          ContractItem[]
+}
+
+model ContractItem {
+  id         String   @id @default(uuid())
+  contractId String
+  assetId    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  asset      Asset    @relation(fields: [assetId], references: [id])
+
+  @@unique([contractId, assetId])
+}
+
+model AssetTransaction {
+  id             String            @id @default(uuid())
+  assetId        String
+  fromLocationId String?
+  toLocationId   String?
+  action         TransactionAction
+  reason         String?
+  performedBy    String?
+  images         String[]          @default([])
+  performedAt    DateTime          @default(now())
+
+  asset          Asset             @relation(fields: [assetId], references: [id])
+}
+
+model Reservation {
+  id          String   @id @default(uuid())
+  assetId     String
+  customerId  String
+  reservedBy  String   // Employee ID
+  startDate   DateTime
+  endDate     DateTime?
+  status      ReservationStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  asset       Asset    @relation(fields: [assetId], references: [id])
+  customer    Company  @relation(fields: [customerId], references: [id])
+  employee    Employee @relation(fields: [reservedBy], references: [id])
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum AssetStatus {
+  AVAILABLE
+  RENTED
+  MAINTENANCE
+  RESERVED
+  DISPOSAL
+  LOST
+  SPARE
+}
+
+enum AssetCondition {
+  NEW
+  USED
+  REFURBISHED
+  BROKEN
+}
+
+enum ContractType {
+  RENTAL
+  LOAN
+  TRIAL
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  TERMINATED
+  VOID
+  CLOSED
+}
+
+enum TransactionAction {
+  DELIVERY
+  RETURN
+  TRANSFER
+  MAINTENANCE_IN
+  MAINTENANCE_OUT
+  ADJUSTMENT
+}
+
+model MaintenanceTask {
+  id              String              @id @default(uuid())
+  assetId         String
+  title           String
+  description     String
+  priority        MaintenancePriority
+  status          MaintenanceStatus
+  assignedTo      String?
+  scheduledDate   DateTime?
+  completedDate   DateTime?
+  estimatedHours  Float?
+  actualHours     Float?
+  images          String[]            @default([])
+  notes           String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  
+  asset           Asset               @relation(fields: [assetId], references: [id])
+  assignedEmployee Employee?          @relation(fields: [assignedTo], references: [id])
+}
+
+enum MaintenancePriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum MaintenanceStatus {
+  pending
+  assigned
+  in_progress
+  completed
+  cancelled
 }

@@ -3,14 +3,22 @@ import { NextResponse } from 'next/server';
 import { getAllEmployees, createEmployee } from '@/services/employeeService';
 import { getSession } from '@/lib/auth';
 
-export async function GET() {
+import { Role } from '@prisma/client';
+
+export async function GET(request: Request) {
     try {
         const session = await getSession();
         if (!session) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const employees = await getAllEmployees();
+        const { searchParams } = new URL(request.url);
+        const role = searchParams.get('role');
+
+        // enhanced-security validation for role
+        const isValidRole = role && Object.values(Role).includes(role as Role);
+
+        const employees = await getAllEmployees(isValidRole ? (role as Role) : undefined);
         return NextResponse.json(employees);
     } catch (error) {
         console.error('Error fetching employees:', error);

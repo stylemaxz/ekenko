@@ -15,7 +15,9 @@ import {
   Briefcase,
   FileText,
   FileCheck,
-  Activity
+  Activity,
+  Box,
+  Wrench
 } from "lucide-react";
 import clsx from "clsx";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -51,6 +53,8 @@ export default function AdminSidebar() {
     { href: "/admin/dashboard", label: t('dashboard'), icon: LayoutDashboard },
     { href: "/admin/calendar", label: t('calendar_title'), icon: Calendar },
     { href: "/admin/employees", label: t('employees'), icon: Users },
+    { label: t('assets'), href: '/admin/assets', icon: Box },
+    { label: t('maintenance_management'), href: '/admin/maintenance', icon: Wrench },
     { label: t('customers'), href: '/admin/customers', icon: Building2 },
     { label: t('tasks'), href: '/admin/tasks', icon: Briefcase },
     { label: t('leave_management'), href: '/admin/leave', icon: FileCheck },

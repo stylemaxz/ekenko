@@ -225,6 +225,35 @@ async function main() {
         } catch (e) { console.warn(`Skipping log ${log.id} due to constraint error.`); }
     }
 
+    // 8. Seed Assets
+    console.log('📦 Seeding assets...');
+    await prisma.assetTransaction.deleteMany();
+    await prisma.contractItem.deleteMany();
+    await prisma.contract.deleteMany();
+    await prisma.asset.deleteMany();
+
+    const assets = [
+        { serialNumber: 'SN-COL-001', model: 'Cooler Grade A', status: 'AVAILABLE', condition: 'NEW', cost: 15000 },
+        { serialNumber: 'SN-COL-002', model: 'Cooler Grade B', status: 'RENTED', condition: 'USED', cost: 12000 },
+        { serialNumber: 'SN-FRZ-001', model: 'Freezer Big', status: 'MAINTENANCE', condition: 'BROKEN', cost: 25000 },
+        { serialNumber: 'SN-FRZ-002', model: 'Freezer Small', status: 'AVAILABLE', condition: 'NEW', cost: 18000 },
+        { serialNumber: 'SN-DSP-001', model: 'Display Rack', status: 'RENTED', condition: 'USED', cost: 5000 },
+        { serialNumber: 'SN-DSP-002', model: 'Display Rack', status: 'LOST', condition: 'USED', cost: 5000 },
+    ];
+
+    for (const a of assets) {
+        await prisma.asset.create({
+            data: {
+                serialNumber: a.serialNumber,
+                modelName: a.model,
+                status: a.status as any,
+                condition: a.condition as any,
+                cost: a.cost,
+                purchaseDate: new Date('2025-01-01'),
+            }
+        });
+    }
+
     console.log('✅ Seeding completed successfully!');
 }
 

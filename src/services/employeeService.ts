@@ -1,9 +1,12 @@
 
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
+import { Role } from '@prisma/client';
 
-export async function getAllEmployees() {
+export async function getAllEmployees(role?: Role) {
+    const where = role ? { role } : {};
     const employees = await prisma.employee.findMany({
+        where,
         orderBy: { createdAt: 'desc' },
     });
 
@@ -55,7 +58,7 @@ export async function createEmployee(data: {
     name: string;
     email: string;
     phone: string;
-    role: 'sales' | 'manager';
+    role: Role;
     username: string;
     password: string;
     avatar?: string;
@@ -80,7 +83,7 @@ export async function updateEmployee(id: string, data: {
     name?: string;
     email?: string;
     phone?: string;
-    role?: 'sales' | 'manager';
+    role?: Role;
     username?: string;
     password?: string;
     avatar?: string;

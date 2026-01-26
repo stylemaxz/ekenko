@@ -7,9 +7,12 @@ import { useToast } from "@/contexts/ToastContext";
 import { 
     ArrowLeft, Calendar, Clock, MapPin, 
     Box, AlertTriangle, CheckCircle, 
-    User, FileText, Play, CheckSquare, Loader2 
+    User, FileText, Play, CheckSquare, Loader2,
+    Wrench, Trash2, Plus
 } from "lucide-react";
 import Image from "next/image";
+import PartSelectorModal from "@/components/maintenance/PartSelectorModal";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 interface MaintenanceTask {
     id: string;
@@ -35,6 +38,17 @@ interface MaintenanceTask {
     actualHours?: number;
     notes?: string;
     createdAt: string;
+    partsUsage: {
+        id: string;
+        quantity: number;
+        priceAtTime: number;
+        part: {
+            name: string;
+            partNumber: string;
+            imageUrl?: string;
+        };
+    }[];
+    totalCost: number;
 }
 
 export default function MaintenanceTaskDetailPage() {
@@ -48,6 +62,22 @@ export default function MaintenanceTaskDetailPage() {
     const [actionLoading, setActionLoading] = useState(false);
     const [notes, setNotes] = useState("");
     const [savingNotes, setSavingNotes] = useState(false);
+    const [isPartModalOpen, setIsPartModalOpen] = useState(false);
+    
+    // Confirmation State
+    const [confirmConfig, setConfirmConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        action: () => Promise<void>;
+        variant?: 'danger' | 'primary' | 'success';
+    }>({
+        isOpen: false,
+        title: "",
+        message: "",
+        action: async () => {},
+        variant: 'primary'
+    });
 
     useEffect(() => {
         if (id) {
@@ -70,32 +100,38 @@ export default function MaintenanceTaskDetailPage() {
         }
     };
 
-    const handleStatusChange = async (action: 'start' | 'complete') => {
-        if (!confirm(t(`confirm_${action}_task` as any) || `Are you sure you want to ${action} this task?`)) return;
+    const handleStatusChange = (action: 'start' | 'complete') => {
+        setConfirmConfig({
+            isOpen: true,
+            title: action === 'start' ? t('start_task') : t('complete_task'),
+            message: t(`confirm_${action}_task` as any) || `Are you sure you want to ${action} this task?`,
+            variant: action === 'complete' ? 'success' : 'primary',
+            action: async () => {
+                setActionLoading(true);
+                try {
+                    const endpoint = action === 'start' ? 'start' : 'complete';
+                    const res = await fetch(`/api/maintenance-tasks/${id}/${endpoint}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(action === 'complete' ? { 
+                            actualHours: task?.estimatedHours || 1,
+                            notes: "Completed via web"
+                        } : {}) 
+                    });
 
-        setActionLoading(true);
-        try {
-            const endpoint = action === 'start' ? 'start' : 'complete';
-            const res = await fetch(`/api/maintenance-tasks/${id}/${endpoint}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                // For complete, we might need body (actual hours, notes), currently simple
-                body: JSON.stringify(action === 'complete' ? { 
-                    actualHours: task?.estimatedHours || 1, // Defaulting if not provided
-                    notes: "Completed via web"
-                } : {}) 
-            });
+                    if (!res.ok) throw new Error('Action failed');
 
-            if (!res.ok) throw new Error('Action failed');
-
-            showToast(t(`${action}_task_success` as any) || 'Task updated successfully', 'success');
-            fetchTaskDetails();
-        } catch (error) {
-            console.error(error);
-            showToast('Failed to update task', 'error');
-        } finally {
-            setActionLoading(false);
-        }
+                    showToast(t(`${action}_task_success` as any) || 'Task updated successfully', 'success');
+                    fetchTaskDetails();
+                } catch (error) {
+                    console.error(error);
+                    showToast('Failed to update task', 'error');
+                } finally {
+                    setActionLoading(false);
+                    setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                }
+            }
+        });
     };
 
     const handleSaveNotes = async () => {
@@ -116,6 +152,53 @@ export default function MaintenanceTaskDetailPage() {
         } finally {
             setSavingNotes(false);
         }
+    };
+
+    const handleAddPart = async (part: any, quantity: number) => {
+        try {
+            const res = await fetch(`/api/maintenance-tasks/${id}/parts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ partId: part.id, quantity })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to add part');
+            }
+
+            fetchTaskDetails();
+            showToast('Part added successfully', 'success');
+        } catch (error: any) {
+            console.error(error);
+            showToast(error.message, 'error');
+        }
+    };
+
+    const handleRemovePart = (usageId: string) => {
+        setConfirmConfig({
+            isOpen: true,
+            title: t('delete'), // Or generic "Remove Part"
+            message: t('confirm_delete' as any) || 'Are you sure?',
+            variant: 'danger',
+            action: async () => {
+                try {
+                    const res = await fetch(`/api/maintenance-tasks/${id}/parts?usageId=${usageId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (!res.ok) throw new Error('Failed to remove part');
+
+                    fetchTaskDetails();
+                    showToast('Part removed successfully', 'success');
+                } catch (error) {
+                    console.error(error);
+                    showToast('Failed to remove part', 'error');
+                } finally {
+                    setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                }
+            }
+        });
     };
 
     const getPriorityColor = (priority: string) => {
@@ -211,7 +294,7 @@ export default function MaintenanceTaskDetailPage() {
                             <button 
                                 onClick={() => handleStatusChange('complete')}
                                 disabled={actionLoading}
-                                className="btn btn-success bg-green-600 hover:bg-green-700 text-white"
+                                className="btn btn-success bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow-md"
                             >
                                 {actionLoading ? <Loader2 className="animate-spin" size={18} /> : <CheckSquare size={18} />}
                                 {t('complete_task')}
@@ -227,7 +310,7 @@ export default function MaintenanceTaskDetailPage() {
                     {/* Description */}
                     <div className="card p-6">
                         <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                            <FileText size={20} className="text-indigo-600" />
+                            <FileText size={20} className="text-red-600" />
                             {t('task_description')}
                         </h2>
                         <div className="prose prose-slate max-w-none text-slate-600 whitespace-pre-line">
@@ -239,13 +322,13 @@ export default function MaintenanceTaskDetailPage() {
                     <div className="card p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                                <FileText size={20} className="text-indigo-600" />
+                                <FileText size={20} className="text-red-600" />
                                 {t('technician_notes')}
                             </h2>
                             <button
                                 onClick={handleSaveNotes}
                                 disabled={savingNotes}
-                                className="btn btn-sm btn-outline text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                                className="btn btn-sm btn-outline text-red-600 border-red-200 hover:bg-red-50"
                             >
                                 {savingNotes ? <Loader2 className="animate-spin" size={14} /> : null}
                                 {t('save_notes')}
@@ -257,6 +340,95 @@ export default function MaintenanceTaskDetailPage() {
                             className="input w-full min-h-[120px] p-4 bg-slate-50 border-slate-200 focus:bg-white resize-y"
                             placeholder={t('notes_placeholder')}
                         />
+                    </div>
+
+                    {/* Parts Used Section */}
+                    <div className="card p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                <Wrench size={20} className="text-red-600" />
+                                {t('parts_used')}
+                            </h2>
+                            <button
+                                onClick={() => setIsPartModalOpen(true)}
+                                disabled={task.status === 'completed' || task.status === 'cancelled'}
+                                className="btn btn-sm btn-primary"
+                            >
+                                <Plus size={16} />
+                                {t('add_parts_btn')}
+                            </button>
+                        </div>
+
+                        {task.partsUsage && task.partsUsage.length > 0 ? (
+                            <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                                <table className="table w-full">
+                                    <thead className="bg-slate-50">
+                                        <tr>
+                                            <th>{t('part_name')}</th>
+                                            <th className="text-center">{t('quantity')}</th>
+                                            <th className="text-right">{t('price_per_unit')}</th>
+                                            <th className="text-right">{t('total')}</th>
+                                            <th className="w-10"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {task.partsUsage.map((usage) => (
+                                            <tr key={usage.id}>
+                                                <td>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded bg-slate-100 flex-shrink-0 relative overflow-hidden">
+                                                            {usage.part.imageUrl ? (
+                                                                <Image 
+                                                                    src={usage.part.imageUrl} 
+                                                                    alt={usage.part.name}
+                                                                    fill
+                                                                    className="object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div className="flex items-center justify-center h-full text-slate-300">
+                                                                    <Box size={16} />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-medium text-slate-900">{usage.part.name}</div>
+                                                            <div className="text-xs text-slate-500 font-mono">{usage.part.partNumber}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="text-center font-medium">{usage.quantity}</td>
+                                                <td className="text-right text-slate-500">฿{usage.priceAtTime.toLocaleString()}</td>
+                                                <td className="text-right font-bold text-slate-900">
+                                                    ฿{(usage.quantity * usage.priceAtTime).toLocaleString()}
+                                                </td>
+                                                <td>
+                                                    {task.status !== 'completed' && task.status !== 'cancelled' && (
+                                                        <button 
+                                                            onClick={() => handleRemovePart(usage.id)}
+                                                            className="btn btn-ghost btn-sm text-red-500 hover:bg-red-50"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        <tr className="bg-slate-50 font-bold border-t-2 border-slate-200">
+                                            <td colSpan={3} className="text-right text-slate-900">{t('total_parts_cost')}</td>
+                                            <td className="text-right text-red-700 text-lg">
+                                                ฿{task.totalCost?.toLocaleString() || "0"}
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="text-center py-8 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                                <Box size={32} className="mx-auto text-slate-300 mb-2" />
+                                <p className="text-slate-500">{t('no_parts_used')}</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -294,7 +466,7 @@ export default function MaintenanceTaskDetailPage() {
                                  <div>
                                      <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">{t('location')}</div>
                                      <div className="flex items-start gap-2 text-slate-700">
-                                         <MapPin size={16} className="mt-0.5 text-indigo-500" />
+                                         <MapPin size={16} className="mt-0.5 text-red-500" />
                                          {task.asset.location?.name || t('unassigned')}
                                      </div>
                                  </div>
@@ -313,7 +485,7 @@ export default function MaintenanceTaskDetailPage() {
                          <div className="p-4">
                              {task.assignedEmployee ? (
                                  <div className="flex items-center gap-3">
-                                     <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
+                                     <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold">
                                          {task.assignedEmployee.name.charAt(0)}
                                      </div>
                                      <div>
@@ -330,6 +502,22 @@ export default function MaintenanceTaskDetailPage() {
                     </div>
                 </div>
             </div>
+
+            <PartSelectorModal 
+                isOpen={isPartModalOpen}
+                onClose={() => setIsPartModalOpen(false)}
+                onSelect={handleAddPart}
+            />
+
+            <ConfirmModal 
+                isOpen={confirmConfig.isOpen}
+                onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={confirmConfig.action}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                variant={confirmConfig.variant}
+                isLoading={actionLoading} 
+            />
         </div>
     );
 }

@@ -27,6 +27,11 @@ export async function GET(
                         email: true,
                         phone: true,
                     }
+                },
+                partsUsage: {
+                    include: {
+                        part: true
+                    }
                 }
             }
         });

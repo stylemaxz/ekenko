@@ -39,7 +39,7 @@ model Company {
   updatedAt DateTime      @updatedAt
   locations Location[]
   tasks     Task[]
-  contracts Contract[]
+  serviceContracts ServiceContract[]
   reservations Reservation[]
 }
 
@@ -123,7 +123,6 @@ model Task {
   assignee       Employee     @relation(fields: [assigneeId], references: [id])
   company        Company?     @relation(fields: [customerId], references: [id])
   location       Location?    @relation(fields: [locationId], references: [id])
-  contracts      Contract[]
 }
 
 model LeaveRequest {
@@ -242,7 +241,8 @@ model Asset {
   maintenanceTasks  MaintenanceTask[]
 }
 
-model Contract {
+
+model ServiceContract {
   id             String           @id @default(uuid())
   contractNumber String           @unique
   customerId     String
@@ -252,26 +252,26 @@ model Contract {
   status         ContractStatus   @default(DRAFT)
   isSigned       Boolean          @default(false)
   notes          String?
-  taskId         String?          // Link to Task that initiated this contract
+  price          Float            @default(0.0)
+  documentUrl    String?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
   customer       Company          @relation(fields: [customerId], references: [id])
-  task           Task?            @relation(fields: [taskId], references: [id])
   items          ContractItem[]
 }
 
 model ContractItem {
-  id         String   @id @default(uuid())
-  contractId String
-  assetId    String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id                String          @id @default(uuid())
+  serviceContractId String
+  assetId           String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
-  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  asset      Asset    @relation(fields: [assetId], references: [id])
+  serviceContract   ServiceContract @relation(fields: [serviceContractId], references: [id], onDelete: Cascade)
+  asset             Asset           @relation(fields: [assetId], references: [id])
 
-  @@unique([contractId, assetId])
+  @@unique([serviceContractId, assetId])
 }
 
 model AssetTransaction {
@@ -352,6 +352,7 @@ enum TransactionAction {
   ADJUSTMENT
 }
 
+
 model MaintenanceTask {
   id              String              @id @default(uuid())
   assetId         String
@@ -366,11 +367,13 @@ model MaintenanceTask {
   actualHours     Float?
   images          String[]            @default([])
   notes           String?
+  totalCost       Float               @default(0.0)
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
   
   asset           Asset               @relation(fields: [assetId], references: [id])
   assignedEmployee Employee?          @relation(fields: [assignedTo], references: [id])
+  partsUsage      TaskPartUsage[]
 }
 
 enum MaintenancePriority {
@@ -386,4 +389,30 @@ enum MaintenanceStatus {
   in_progress
   completed
   cancelled
+}
+
+model SparePart {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  partNumber  String   @unique
+  imageUrl    String?
+  stock       Int      @default(0)
+  minStock    Int      @default(5)
+  price       Float    @default(0.0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  usage       TaskPartUsage[]
+}
+
+model TaskPartUsage {
+  id          String   @id @default(uuid())
+  taskId      String
+  partId      String
+  quantity    Int      @default(1)
+  priceAtTime Float
+  createdAt   DateTime @default(now())
+
+  task        MaintenanceTask @relation(fields: [taskId], references: [id])
+  part        SparePart       @relation(fields: [partId], references: [id])
 }

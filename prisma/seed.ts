@@ -229,7 +229,7 @@ async function main() {
     console.log('📦 Seeding assets...');
     await prisma.assetTransaction.deleteMany();
     await prisma.contractItem.deleteMany();
-    await prisma.contract.deleteMany();
+    await prisma.serviceContract.deleteMany();
     await prisma.asset.deleteMany();
 
     const assets = [

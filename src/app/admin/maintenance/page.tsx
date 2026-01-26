@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Wrench, ClipboardList, CheckCircle, AlertCircle, Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { CreateMaintenanceTaskModal } from '@/components/admin/CreateMaintenanceTaskModal';
 
 export default function AdminMaintenancePage() {
     const { t } = useLanguage();
+    const router = useRouter();
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [employees, setEmployees] = useState([]);
@@ -72,7 +74,7 @@ export default function AdminMaintenancePage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 <div className="card p-6">
                     <div className="flex items-center gap-3">
-                        <Wrench className="text-indigo-600" size={24} />
+                        <Wrench className="text-red-600" size={24} />
                         <div>
                             <div className="text-sm text-slate-500">{t('active_tasks')}</div>
                             <div className="text-2xl font-bold">{tasks.length}</div>
@@ -154,7 +156,11 @@ export default function AdminMaintenancePage() {
                         </thead>
                         <tbody className="divide-y divide-slate-200">
                             {tasks.map((task: any) => (
-                                <tr key={task.id} className="hover:bg-slate-50">
+                                <tr 
+                                    key={task.id} 
+                                    className="hover:bg-slate-50 cursor-pointer"
+                                    onClick={() => router.push(`/admin/maintenance/tasks/${task.id}`)}
+                                >
                                     <td className="px-6 py-4 text-sm">
                                         {task.asset?.serialNumber}
                                         <div className="text-xs text-slate-500">{task.asset?.modelName}</div>

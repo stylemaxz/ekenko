@@ -673,20 +673,6 @@ export default function AdminCustomersPage() {
                              </select>
                          </div>
                      </div>
-                     <div>
-                         <label className="label">{t('status')}</label>
-                         <select 
-                            value={editingCompany.status}
-                            onChange={(e) => updateField('status', e.target.value)}
-                            className="input w-full"
-                         >
-                             <option value="lead">{t('status_lead')}</option>
-                             <option value="active">{t('status_active')}</option>
-                             <option value="closed">{t('status_closed')}</option>
-                             <option value="inactive">{t('status_inactive')}</option>
-                             <option value="terminate">{t('status_terminate')}</option>
-                         </select>
-                     </div>
                  </div>
 
                  {/* Section 2: Branches */}

@@ -623,13 +623,15 @@ export default function SaleCustomersPage() {
                                        >
                                             <Navigation size={14} />
                                        </a>
-                                       <button
-                                           onClick={() => handleEditInfo(company, loc)}
-                                           className="w-8 h-8 flex items-center justify-center text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 rounded-full transition-colors"
-                                           title="Edit Info"
-                                       >
-                                           <Pencil size={14} />
-                                       </button>
+                                       {currentUser && (loc.createdBy === currentUser.id || loc.assignedEmployeeIds?.includes(currentUser.id)) && (
+                                           <button
+                                               onClick={() => handleEditInfo(company, loc)}
+                                               className="w-8 h-8 flex items-center justify-center text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 rounded-full transition-colors"
+                                               title="Edit Info"
+                                           >
+                                               <Pencil size={14} />
+                                           </button>
+                                       )}
                                        <button
                                            onClick={() => handleEditStatus(company, loc)}
                                            className={clsx(

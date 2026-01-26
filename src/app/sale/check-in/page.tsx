@@ -38,6 +38,7 @@ export default function CheckInPage() {
   const [selectedLocation, setSelectedLocation] = useState<{ company: Company, location: Location } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isWorkFromHome, setIsWorkFromHome] = useState(false);
+  const [checkInMode, setCheckInMode] = useState<'store' | 'meeting'>('store');
   
   // Load WFH setting from localStorage
   useEffect(() => {
@@ -131,8 +132,8 @@ export default function CheckInPage() {
           if (!matchesSearch) return false;
       }
 
-      // If WFH mode, ignore distance check. Otherwise, must be within 500m (0.5km)
-      if (!isWorkFromHome && item.distance > 0.5) return false;
+      // If WFH mode OR Meeting mode, ignore distance check. Otherwise, must be within 500m (0.5km)
+      if (!isWorkFromHome && checkInMode !== 'meeting' && item.distance > 0.5) return false;
 
       return true;
   }).sort((a, b) => a.distance - b.distance);
@@ -388,6 +389,34 @@ export default function CheckInPage() {
                   </div>
               )}
 
+              {/* Check-in Mode Toggle */}
+              <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex gap-2 mb-4">
+                  <button
+                      onClick={() => setCheckInMode('store')}
+                      className={clsx(
+                          "flex-1 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2",
+                          checkInMode === 'store' 
+                              ? "bg-primary text-white shadow-md" 
+                              : "text-slate-500 hover:bg-slate-50"
+                      )}
+                  >
+                      <MapPin size={16} />
+                      {t('visit_store')}
+                  </button>
+                  <button
+                      onClick={() => setCheckInMode('meeting')}
+                      className={clsx(
+                          "flex-1 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2",
+                          checkInMode === 'meeting' 
+                              ? "bg-purple-600 text-white shadow-md" 
+                              : "text-slate-500 hover:bg-slate-50"
+                  )}
+                  >
+                      <Briefcase size={16} />
+                      {t('meeting_checkin')}
+                  </button>
+              </div>
+
               {/* Search */}
               <div className="relative mb-4">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
@@ -425,7 +454,10 @@ export default function CheckInPage() {
                                   <p className="text-sm text-slate-600 font-medium truncate">{item.company.name}</p>
                                   <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
                                      <Navigation size={10} />
-                                     {(item.distance * 1000).toFixed(0)}m away
+                                     {language === 'th' 
+                                        ? `ห่าง ${item.distance < 1 ? (item.distance * 1000).toFixed(0) + " ม." : item.distance.toFixed(1) + " กม."}`
+                                        : `${item.distance < 1 ? (item.distance * 1000).toFixed(0) + "m" : item.distance.toFixed(1) + "km"} away`
+                                     }
                                   </p>
                               </div>
                           </button>

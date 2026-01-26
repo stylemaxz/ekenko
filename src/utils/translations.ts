@@ -823,5 +823,10 @@ export const translations = {
         log_added_branch: "เพิ่มสาขาใหม่: {company} ({branch})",
         log_created_customer: "สร้างลูกค้าใหม่: {company}",
         log_status_changed_desc: "เปลี่ยนสถานะลูกค้า: {company}",
+
+        // Check-in Modes
+        visit_store: "เช็คอินหน้าร้าน",
+        meeting_checkin: "นัดเจอข้างนอก",
+        meeting: " मीटिंग", // Fallback for meeting label if needed, but context seems th default
     }
 };

@@ -236,6 +236,25 @@ export default function SaleLeaveRequestsPage() {
 
       {/* Leave Balance Cards */}
       <div className="grid grid-cols-3 gap-3 mb-6">
+        {/* Personal Leave Card */}
+        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 mb-1">
+            {t('personal_leave')}
+          </div>
+          <div className="text-3xl font-bold text-purple-600 mb-1">
+            {remainingPersonal}
+          </div>
+          <div className="text-xs text-slate-400 mb-2">
+            {usedPersonal}/{leaveQuotas.personal} {t('days_used')}
+          </div>
+          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div 
+              className={`h-full ${getProgressColor(usedPersonal, leaveQuotas.personal)} transition-all`}
+              style={{ width: `${Math.min((usedPersonal / leaveQuotas.personal) * 100, 100)}%` }}
+            />
+          </div>
+        </div>
+
         {/* Vacation Card */}
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
           <div className="text-xs font-medium text-slate-500 mb-1">
@@ -270,25 +289,6 @@ export default function SaleLeaveRequestsPage() {
             <div 
               className={`h-full ${getProgressColor(usedSick, leaveQuotas.sick)} transition-all`}
               style={{ width: `${Math.min((usedSick / leaveQuotas.sick) * 100, 100)}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Personal Leave Card */}
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-          <div className="text-xs font-medium text-slate-500 mb-1">
-            {t('personal_leave')}
-          </div>
-          <div className="text-3xl font-bold text-purple-600 mb-1">
-            {remainingPersonal}
-          </div>
-          <div className="text-xs text-slate-400 mb-2">
-            {usedPersonal}/{leaveQuotas.personal} {t('days_used')}
-          </div>
-          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div 
-              className={`h-full ${getProgressColor(usedPersonal, leaveQuotas.personal)} transition-all`}
-              style={{ width: `${Math.min((usedPersonal / leaveQuotas.personal) * 100, 100)}%` }}
             />
           </div>
         </div>

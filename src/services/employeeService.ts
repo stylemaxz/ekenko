@@ -7,10 +7,36 @@ export async function getAllEmployees() {
         orderBy: { createdAt: 'desc' },
     });
 
-    // Remove passwords from response
+    // Fetch all active/existing locations to calculate portfolio size dynamically
+    const activeLocations = await prisma.location.findMany({
+        where: {
+            status: {
+                in: ['existing', 'active']
+            }
+        },
+        select: {
+            assignedEmployeeIds: true
+        }
+    });
+
+    // Create a map of employee ID -> count
+    const portfolioCounts: Record<string, number> = {};
+
+    activeLocations.forEach(loc => {
+        if (loc.assignedEmployeeIds && Array.isArray(loc.assignedEmployeeIds)) {
+            loc.assignedEmployeeIds.forEach(id => {
+                portfolioCounts[id] = (portfolioCounts[id] || 0) + 1;
+            });
+        }
+    });
+
+    // Remove passwords and attach calculated portfolio size
     return employees.map(emp => {
         const { password, ...rest } = emp;
-        return rest;
+        return {
+            ...rest,
+            portfolioSize: portfolioCounts[emp.id] || 0
+        };
     });
 }
 

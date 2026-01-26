@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { MapPin, Camera, X, Check, Search, Navigation, SwitchCamera, Briefcase, Plus } from "lucide-react";
 import { Company, Location, VisitObjective, VisitObjectives } from "@/types";
 import { clsx } from "clsx";
+import { SampleFeedbackPrompt } from "@/components/sale/SampleFeedbackPrompt";
+import { SampleFeedbackForm } from "@/components/sale/SampleFeedbackForm";
 
 export default function CheckInPage() {
   const { t, language } = useLanguage();
@@ -67,6 +69,12 @@ export default function CheckInPage() {
   // Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+
+  // Sample Feedback State
+  const [pendingSamples, setPendingSamples] = useState<any[]>([]);
+  const [selectedSampleForFeedback, setSelectedSampleForFeedback] = useState<any>(null);
+  const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(true);
+  const [lastVisitId, setLastVisitId] = useState<string | null>(null);
 
   // --- Helpers ---
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -151,9 +159,21 @@ export default function CheckInPage() {
 
   const closestLocationName = nearbyLocations.length > 0 ? nearbyLocations[0].location.name : "Unknown / No Store Nearby";
 
-  const handleLocationSelect = (item: { company: Company, location: Location }) => {
+  const handleLocationSelect = async (item: { company: Company, location: Location }) => {
       setSelectedLocation(item);
       setStep(2);
+      setShowFeedbackPrompt(true);
+
+      // Fetch pending samples for this customer
+      try {
+          const res = await fetch(`/api/samples/pending-feedback?customerId=${item.company.id}`);
+          if (res.ok) {
+              const samples = await res.json();
+              setPendingSamples(samples);
+          }
+      } catch (error) {
+          console.error('Error fetching pending samples:', error);
+      }
   };
   
   const toggleObjective = (obj: VisitObjective) => {
@@ -333,6 +353,7 @@ export default function CheckInPage() {
       }
 
       const visit = await visitResponse.json();
+      setLastVisitId(visit.id);
 
       // 2. Create Activity Log
       const activityResponse = await fetch('/api/activity-logs', {
@@ -513,6 +534,15 @@ export default function CheckInPage() {
                   <p className="text-xs text-slate-500">{selectedLocation?.company.name}</p>
               </div>
           </div>
+
+          {/* Sample Feedback Prompt */}
+          {showFeedbackPrompt && pendingSamples.length > 0 && (
+              <SampleFeedbackPrompt
+                  samples={pendingSamples}
+                  onCollectFeedback={(sample) => setSelectedSampleForFeedback(sample)}
+                  onSkip={() => setShowFeedbackPrompt(false)}
+              />
+          )}
 
           <div className="space-y-6">
               {/* Image Upload Section - Hide COMPLETELY if WFH */}
@@ -713,6 +743,20 @@ export default function CheckInPage() {
                   </button>
               </div>
           </div>
+
+          {/* Sample Feedback Modal */}
+          {selectedSampleForFeedback && (
+              <SampleFeedbackForm
+                  sample={selectedSampleForFeedback}
+                  visitId={lastVisitId || undefined}
+                  onClose={() => setSelectedSampleForFeedback(null)}
+                  onSuccess={() => {
+                      setSelectedSampleForFeedback(null);
+                      // Remove the sample from pending list
+                      setPendingSamples(pendingSamples.filter(s => s.id !== selectedSampleForFeedback.id));
+                  }}
+              />
+          )}
 
           {/* Camera Modal */}
           {isCameraOpen && (

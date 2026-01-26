@@ -3,12 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { 
-  Users, 
-  MapPin, 
-  BarChart, 
-  Settings, 
-  LogOut, 
+import {
+  Users,
+  MapPin,
+  BarChart,
+  Settings,
+  LogOut,
   LayoutDashboard,
   Calendar,
   Building2,
@@ -18,7 +18,9 @@ import {
   Activity,
   Box,
   Wrench,
-  Package
+  Package,
+  FolderOpen,
+  FlaskConical
 } from "lucide-react";
 import clsx from "clsx";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -57,6 +59,8 @@ export default function AdminSidebar() {
     { label: t('assets'), href: '/admin/assets', icon: Box },
     { label: t('maintenance_management'), href: '/admin/maintenance', icon: Wrench },
     { label: t('spare_parts_management'), href: '/admin/spare-parts', icon: Package },
+    { label: t('projects'), href: '/admin/projects', icon: FolderOpen },
+    { label: t('rnd_tasks'), href: '/admin/rnd-tasks', icon: FlaskConical },
     { label: t('customers'), href: '/admin/customers', icon: Building2 },
     { label: t('tasks'), href: '/admin/tasks', icon: Briefcase },
     { label: t('leave_management'), href: '/admin/leave', icon: FileCheck },

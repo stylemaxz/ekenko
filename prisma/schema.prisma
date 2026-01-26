@@ -26,6 +26,12 @@ model Employee {
   visits              Visit[]
   reservations        Reservation[]
   maintenanceTasks    MaintenanceTask[]
+  // R&D relations
+  samplesSent         Sample[]       @relation("SampleSender")
+  feedbacksCollected  SampleFeedback[] @relation("FeedbackCollector")
+  rndTasksAssigned    RndTask[]      @relation("RndTaskAssignee")
+  rndTasksCreated     RndTask[]      @relation("RndTaskCreator")
+  taskComments        TaskComment[]  @relation("CommentAuthor")
 }
 
 model Company {
@@ -41,6 +47,7 @@ model Company {
   tasks     Task[]
   serviceContracts ServiceContract[]
   reservations Reservation[]
+  projects  Project[]
 }
 
 model Location {
@@ -79,6 +86,7 @@ model Location {
   tasks               Task[]
   visits              Visit[]
   assets              Asset[]
+  projects            Project[]
 }
 
 model ContactPerson {
@@ -92,18 +100,19 @@ model ContactPerson {
 }
 
 model Visit {
-  id           String    @id @default(uuid())
-  employeeId   String
-  locationId   String
-  checkInTime  DateTime
-  checkOutTime DateTime?
-  objectives   String[]
-  notes        String?
-  images       String[]
-  metOwner     Boolean   @default(false)
-  createdAt    DateTime  @default(now())
-  employee     Employee  @relation(fields: [employeeId], references: [id])
-  location     Location  @relation(fields: [locationId], references: [id])
+  id              String           @id @default(uuid())
+  employeeId      String
+  locationId      String
+  checkInTime     DateTime
+  checkOutTime    DateTime?
+  objectives      String[]
+  notes           String?
+  images          String[]
+  metOwner        Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  employee        Employee         @relation(fields: [employeeId], references: [id])
+  location        Location         @relation(fields: [locationId], references: [id])
+  sampleFeedbacks SampleFeedback[]
 }
 
 model Task {
@@ -157,6 +166,7 @@ enum Role {
   sales
   manager
   maintenance
+  rnd
 }
 
 enum CompanyGrade {
@@ -415,4 +425,153 @@ model TaskPartUsage {
 
   task        MaintenanceTask @relation(fields: [taskId], references: [id])
   part        SparePart       @relation(fields: [partId], references: [id])
+}
+
+// --- R&D Project Management Models ---
+
+model Project {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  customerId  String
+  status      ProjectStatus @default(active)
+  startDate   DateTime      @default(now())
+  targetDate  DateTime?
+  createdBy   String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  customer    Company       @relation(fields: [customerId], references: [id])
+  products    Product[]
+  rndTasks    RndTask[]
+  locationId  String?
+  location    Location?     @relation(fields: [locationId], references: [id])
+}
+
+model Product {
+  id             String        @id @default(uuid())
+  projectId      String
+  name           String
+  formula        String?
+  specifications String?
+  status         ProductStatus @default(development)
+  version        Int           @default(1)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  project        Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  samples        Sample[]
+}
+
+model Sample {
+  id           String          @id @default(uuid())
+  productId    String
+  sampleNumber String
+  version      Int             @default(1)
+  sentDate     DateTime        @default(now())
+  dueDate      DateTime
+  sentBy       String
+  status       SampleStatus    @default(sent)
+  notes        String?
+  images       String[]        @default([])
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  product      Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sender       Employee        @relation("SampleSender", fields: [sentBy], references: [id])
+  feedback     SampleFeedback?
+  followUpTask RndTask?        @relation("SampleFollowUp")
+}
+
+model SampleFeedback {
+  id               String            @id @default(uuid())
+  sampleId         String            @unique
+  feedbackBy       String
+  visitId          String?
+  rating           Int?
+  customerReaction CustomerReaction?
+  comments         String?
+  images           String[]          @default([])
+  collectedAt      DateTime          @default(now())
+
+  sample           Sample            @relation(fields: [sampleId], references: [id], onDelete: Cascade)
+  collector        Employee          @relation("FeedbackCollector", fields: [feedbackBy], references: [id])
+  visit            Visit?            @relation(fields: [visitId], references: [id])
+}
+
+model RndTask {
+  id             String       @id @default(uuid())
+  projectId      String
+  sampleId       String?      @unique
+  title          String
+  description    String?
+  taskType       RndTaskType
+  assigneeId     String
+  createdBy      String
+  dueDate        DateTime
+  priority       TaskPriority @default(medium)
+  status         TaskStatus   @default(pending)
+  completionNote String?
+  images         String[]     @default([])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  project        Project      @relation(fields: [projectId], references: [id])
+  sample         Sample?      @relation("SampleFollowUp", fields: [sampleId], references: [id])
+  assignee       Employee     @relation("RndTaskAssignee", fields: [assigneeId], references: [id])
+  creator        Employee     @relation("RndTaskCreator", fields: [createdBy], references: [id])
+  comments       TaskComment[]
+}
+
+model TaskComment {
+  id        String   @id @default(uuid())
+  rndTaskId String
+  authorId  String
+  content   String
+  images    String[] @default([])
+  createdAt DateTime @default(now())
+
+  rndTask   RndTask  @relation(fields: [rndTaskId], references: [id], onDelete: Cascade)
+  author    Employee @relation("CommentAuthor", fields: [authorId], references: [id])
+}
+
+enum ProjectStatus {
+  active
+  on_hold
+  completed
+  cancelled
+}
+
+enum ProductStatus {
+  development
+  sampling
+  approved
+  production
+  discontinued
+}
+
+enum SampleStatus {
+  sent
+  pending_feedback
+  feedback_received
+  revision_needed
+  approved
+  rejected
+}
+
+enum CustomerReaction {
+  very_positive
+  positive
+  neutral
+  negative
+  very_negative
+}
+
+enum RndTaskType {
+  sample_followup
+  development
+  revision
+  testing
+  documentation
+  general
 }

@@ -46,14 +46,25 @@ export async function POST(request: Request) {
 
         // 5. Return success and user info (excluding password)
         const { password: _, ...userWithoutPassword } = user;
+
+        // Determine redirect URL based on role
+        let redirectUrl = '/sale/dashboard';
+        switch (user.role) {
+            case 'manager':
+                redirectUrl = '/admin/dashboard';
+                break;
+            case 'maintenance':
+                redirectUrl = '/maintenance/dashboard';
+                break;
+            case 'rnd':
+                redirectUrl = '/rnd/dashboard';
+                break;
+        }
+
         return NextResponse.json({
             success: true,
             user: userWithoutPassword,
-            redirectUrl: user.role === 'manager'
-                ? '/admin/dashboard'
-                : user.role === 'maintenance'
-                    ? '/maintenance/dashboard'
-                    : '/sale/dashboard'
+            redirectUrl
         });
 
     } catch (error: any) {

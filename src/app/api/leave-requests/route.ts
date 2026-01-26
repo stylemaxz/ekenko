@@ -45,7 +45,7 @@ export async function POST(request: Request) {
             vacation: 'ลาพักร้อน',
             other: 'ลาอื่นๆ'
         };
-        const typeLabel = leaveTypeTH[data.type] || data.type;
+        const typeLabel = data.isPaid === false ? 'ลาโดยไม่รับเงินเดือน' : (leaveTypeTH[data.type] || data.type);
 
         await activityLogService.createActivityLog({
             employeeId: session.userId,

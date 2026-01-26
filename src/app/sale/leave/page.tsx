@@ -308,10 +308,10 @@ export default function SaleLeaveRequestsPage() {
             //    3rd (start) - 1st (today) = 2 days. OK.
             //    3rd (start) - 2nd (today) = 1 day. NO.
             
-            const isPending = request.status === 'pending';
-            const isApproved = request.status === 'approved';
+            const isPending = (request.status || '').toLowerCase() === 'pending';
+            const isApproved = (request.status || '').toLowerCase() === 'approved';
             
-            // We use start of day for comparison to avoid time issues
+            // Normalize dates to start of day for accurate comparison
             const startDate = new Date(request.startDate);
             startDate.setHours(0,0,0,0);
             const today = new Date();
@@ -319,6 +319,7 @@ export default function SaleLeaveRequestsPage() {
             
             const daysDiff = differenceInDays(startDate, today);
             
+            // Allow cancel if pending, OR if approved and at least 2 days in advance (e.g. cancel on 1st for 3rd)
             const canCancel = isPending || (isApproved && daysDiff >= 2);
 
             const handleCancel = async () => {
@@ -461,13 +462,21 @@ export default function SaleLeaveRequestsPage() {
             <label className="label">{t('leave_type')} <span className="text-red-500">*</span></label>
             <select
               className="input w-full"
-              value={newRequest.leaveType}
-              onChange={(e) => setNewRequest({ ...newRequest, leaveType: e.target.value as LeaveType })}
+              value={!newRequest.isPaid ? 'unpaid' : newRequest.leaveType}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === 'unpaid') {
+                    setNewRequest({ ...newRequest, leaveType: 'other', isPaid: false });
+                } else {
+                    setNewRequest({ ...newRequest, leaveType: val as LeaveType, isPaid: true });
+                }
+              }}
             >
               <option value="sick">{t('leave_sick')}</option>
               <option value="personal">{t('leave_personal')}</option>
               <option value="vacation">{t('leave_vacation')}</option>
               <option value="other">{t('leave_other')}</option>
+              <option value="unpaid">{t('leave_unpaid')}</option>
             </select>
           </div>
 
@@ -575,22 +584,7 @@ export default function SaleLeaveRequestsPage() {
             />
           </div>
 
-          {/* Unpaid Leave Checkbox */}
-          <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
-            <input
-              type="checkbox"
-              id="unpaid-leave"
-              checked={!newRequest.isPaid}
-              onChange={(e) => setNewRequest({ 
-                ...newRequest, 
-                isPaid: !e.target.checked 
-              })}
-              className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
-            />
-            <label htmlFor="unpaid-leave" className="text-sm font-medium text-slate-700 cursor-pointer">
-              {t('unpaid_leave_label')}
-            </label>
-          </div>
+
         </div>
       </Modal>
     </div>

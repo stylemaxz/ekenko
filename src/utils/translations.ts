@@ -343,6 +343,7 @@ export const translations = {
         leave_personal: "Personal Leave",
         leave_vacation: "Vacation Leave",
         leave_other: "Other Leave",
+        leave_unpaid: "Unpaid Leave",
         start_date: "Start Date",
         end_date: "End Date",
         reason: "Reason",
@@ -421,8 +422,6 @@ export const translations = {
         meeting: "Meeting",
 
         visit_photos: "Visit Photos",
-        notes_label: "Notes",
-        visit_objectives: "Objectives",
         actions: "Actions",
     },
     th: {
@@ -515,6 +514,7 @@ export const translations = {
         leave_personal: "ลากิจ",
         leave_vacation: "ลาพักร้อน",
         leave_other: "อื่นๆ",
+        leave_unpaid: "ลาโดยไม่รับเงินเดือน",
         start_date: "วันที่เริ่มต้น",
         end_date: "วันที่สิ้นสุด",
         reason: "เหตุผล",
@@ -530,10 +530,7 @@ export const translations = {
         leave_status_rejected: "ไม่อนุมัติ",
         my_leave_requests: "การลาของฉัน",
         requests_count: "รายการ",
-        confirm_cancel_leave: "คุณแน่ใจหรือไม่ที่จะยกเลิกคำขอลานี้?",
-        cancel_success: "ยกเลิกคำขอลาสำเร็จ",
-        cancel_failed: "ไม่สามารถยกเลิกคำขอลาได้",
-        cancel_request: "ยกเลิกคำขอ",
+
         vacation_leave: "พักร้อน",
         sick_leave: "ลาป่วย",
         personal_leave: "ลากิจ",

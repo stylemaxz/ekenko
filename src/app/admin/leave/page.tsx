@@ -360,7 +360,7 @@ export default function AdminLeaveManagementPage() {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="text-sm text-slate-600 truncate max-w-[150px]" title={request.reason}>
+                                        <div className="text-sm text-slate-600 truncate max-w-[150px]" title={request.reason || undefined}>
                                             {request.reason}
                                         </div>
                                         {request.reviewNote && (

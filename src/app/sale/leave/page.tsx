@@ -298,7 +298,47 @@ export default function SaleLeaveRequestsPage() {
       <div className="space-y-3">
         {myRequests.length > 0 ? (
           myRequests.map((request) => {
-            const days = request.days; // Use stored days directly
+            const days = request.days; 
+            
+            // Cancellation Rules
+            // 1. Pending: Can cancel anytime
+            // 2. Approved: Can cancel if today is at least 1 day before start date
+            //    start - today >= 2 days (so there is at least 1 full day in between)
+            //    Actually requirement: "if leave is on 3rd, cancel until 1st. 2nd cannot."
+            //    3rd (start) - 1st (today) = 2 days. OK.
+            //    3rd (start) - 2nd (today) = 1 day. NO.
+            
+            const isPending = request.status === 'pending';
+            const isApproved = request.status === 'approved';
+            
+            // We use start of day for comparison to avoid time issues
+            const startDate = new Date(request.startDate);
+            startDate.setHours(0,0,0,0);
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            
+            const daysDiff = differenceInDays(startDate, today);
+            
+            const canCancel = isPending || (isApproved && daysDiff >= 2);
+
+            const handleCancel = async () => {
+                if (!confirm(t('confirm_cancel_leave'))) return;
+                
+                try {
+                    const res = await fetch(`/api/leave-requests/${request.id}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (res.ok) {
+                        showToast(t('cancel_success'), 'success');
+                         setLeaveRequests(prev => prev.filter(r => r.id !== request.id));
+                    } else {
+                        throw new Error('Failed to cancel');
+                    }
+                } catch (err) {
+                    showToast(t('cancel_failed'), 'error');
+                }
+            };
             
             return (
               <div
@@ -338,7 +378,9 @@ export default function SaleLeaveRequestsPage() {
                   <div className="flex items-center gap-2 text-slate-600">
                     <CalendarIcon size={14} className="text-slate-400" />
                     <span>
-                      {format(new Date(request.startDate), "d MMM", { locale })} - {format(new Date(request.endDate), "d MMM yyyy", { locale })}
+                      {format(new Date(request.startDate), "d MMM", { locale })}
+                      {request.startDate !== request.endDate && ` - ${format(new Date(request.endDate), "d MMM yyyy", { locale })}`}
+                      {request.startDate === request.endDate && format(new Date(request.startDate), " yyyy", { locale })}
                     </span>
                   </div>
                   <div className="text-primary font-bold">
@@ -364,9 +406,20 @@ export default function SaleLeaveRequestsPage() {
                   </div>
                 )}
 
-                {/* Created At */}
-                <div className="mt-3 pt-3 border-t border-slate-50 text-xs text-slate-400">
-                  {t('requested_on')}: {format(new Date(request.createdAt), "d MMM yyyy HH:mm", { locale })}
+                {/* Created At & Actions */}
+                <div className="mt-3 pt-3 border-t border-slate-50 flex justify-between items-center">
+                   <div className="text-xs text-slate-400">
+                     {t('requested_on')}: {format(new Date(request.createdAt), "d MMM yyyy HH:mm", { locale })}
+                   </div>
+                   
+                   {canCancel && (
+                       <button 
+                        onClick={handleCancel}
+                        className="text-xs border border-red-200 bg-red-50 text-red-600 px-3 py-1.5 rounded-lg font-medium hover:bg-red-100 transition-colors"
+                       >
+                           {t('cancel_request')}
+                       </button>
+                   )}
                 </div>
               </div>
             );
@@ -480,42 +533,32 @@ export default function SaleLeaveRequestsPage() {
              </div>
           )}
 
-          {/* Date Range */}
-          
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="label">{t('start_date')} <span className="text-red-500">*</span></label>
-              <input
-                type="date"
-                className="input w-full"
-                value={newRequest.startDate}
-                onChange={(e) => {
-                    const updates: any = { startDate: e.target.value };
-                    // If half day, sync end date
-                    if (newRequest.isHalfDay) updates.endDate = e.target.value;
-                    setNewRequest({ ...newRequest, ...updates });
-                }}
-              />
-            </div>
-            {!newRequest.isHalfDay && (
-                <div>
-                <label className="label">{t('end_date')} <span className="text-red-500">*</span></label>
+          {/* Date Selection */}
+          <div className="space-y-3">
+             <div>
+                <label className="label">{t('date')} <span className="text-red-500">*</span></label>
                 <input
                     type="date"
                     className="input w-full"
-                    value={newRequest.endDate}
-                    min={newRequest.startDate}
-                    onChange={(e) => setNewRequest({ ...newRequest, endDate: e.target.value })}
+                    value={newRequest.startDate}
+                    onChange={(e) => {
+                        // For single day request, start = end
+                        setNewRequest({ 
+                            ...newRequest, 
+                            startDate: e.target.value,
+                            endDate: e.target.value // Force single day
+                        });
+                    }}
                 />
-                </div>
-            )}
+             </div>
+             {/* End Date hidden/removed as per requirement for single day selection */}
           </div>
 
-          {/* Days Count */}
-          {newRequest.startDate && newRequest.endDate && (
+          {/* Days Count (Simplified) */}
+          {newRequest.startDate && (
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-center">
               <div className="text-2xl font-bold text-primary">
-                {calculateDays(newRequest.startDate, newRequest.endDate)}
+                {newRequest.isHalfDay ? 0.5 : 1}
               </div>
               <div className="text-sm text-primary/80">{t('days')}</div>
             </div>

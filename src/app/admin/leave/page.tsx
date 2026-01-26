@@ -199,110 +199,217 @@ export default function AdminLeaveManagementPage() {
         ))}
       </div>
 
-      {/* Leave Requests List */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {filteredRequests.map((request) => {
-          const employee = employees.find(e => e.id === request.employeeId);
-          const days = request.days; 
-          
-          return (
-            <div
-              key={request.id}
-              className="card"
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-start gap-3 flex-1">
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold shrink-0">
-                    {employee?.name.substring(0, 1) || 'U'}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-slate-900">{employee?.name}</h3>
-                      <span className={clsx(
-                        "text-xs px-2 py-0.5 rounded-full border font-bold uppercase",
-                        getStatusColor(request.status)
-                      )}>
-                        {t(`leave_status_${request.status}` as any)}
-                      </span>
-                      {request.isPaid === false && (
-                        <span className="text-xs px-2 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-200 font-bold uppercase">
-                          {t('unpaid')}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm text-indigo-600 font-medium">
-                      {t(`leave_${request.type}` as any)}
-                    </div>
-                  </div>
-                  <div className="shrink-0">
-                    {getStatusIcon(request.status)}
-                  </div>
-                </div>
-              </div>
-
-              {/* Dates */}
-              <div className="flex items-center justify-between mb-3 p-3 bg-slate-50 rounded-lg">
-                <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <CalendarIcon size={14} className="text-slate-400" />
-                  <span>
-                    {format(new Date(request.startDate), "d MMM", { locale })} - {format(new Date(request.endDate), "d MMM yyyy", { locale })}
-                  </span>
-                </div>
-                <div className="text-indigo-600 font-bold text-sm">
-                  {days} {t('days')}
-                </div>
-              </div>
-
-              {/* Reason */}
-              <div className="mb-3">
-                <div className="text-xs text-slate-500 font-medium mb-1">{t('reason')}:</div>
-                <div className="text-sm text-slate-700">{request.reason}</div>
-              </div>
-
-              {/* Review Note (if exists) */}
-              {request.reviewNote && (
-                <div className={clsx(
-                  "mb-3 p-3 rounded-lg border text-sm",
-                  request.status === 'approved' ? "bg-green-50 border-green-100" : "bg-red-50 border-red-100"
-                )}>
-                  <div className="font-bold text-slate-700 mb-1">{t('review_note')}:</div>
-                  <div className={request.status === 'approved' ? "text-green-700" : "text-red-700"}>
-                    {request.reviewNote}
-                  </div>
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                <button
-                  onClick={() => handleViewDetails(request)}
-                  className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+      {statusFilter === 'pending' ? (
+        // CARD VIEW (For Pending Actions)
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {filteredRequests.map((request) => {
+            const employee = employees.find(e => e.id === request.employeeId);
+            const days = request.days; 
+            
+            return (
+                <div
+                key={request.id}
+                className="card"
                 >
-                  {t('view_details')}
-                </button>
-                
-                {request.status === 'pending' && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleReject(request)}
-                      className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
-                    >
-                      {t('reject')}
-                    </button>
-                    <button
-                      onClick={() => handleApprove(request)}
-                      className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
-                    >
-                      {t('approve')}
-                    </button>
-                  </div>
+                {/* Header */}
+                <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start gap-3 flex-1">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold shrink-0">
+                        {employee?.name.substring(0, 1) || 'U'}
+                    </div>
+                    <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-bold text-slate-900">{employee?.name}</h3>
+                        <span className={clsx(
+                            "text-xs px-2 py-0.5 rounded-full border font-bold uppercase",
+                            getStatusColor(request.status)
+                        )}>
+                            {t(`leave_status_${request.status}` as any)}
+                        </span>
+                        {request.isPaid === false && (
+                            <span className="text-xs px-2 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-200 font-bold uppercase">
+                            {t('unpaid')}
+                            </span>
+                        )}
+                        </div>
+                        <div className="text-sm text-indigo-600 font-medium">
+                        {t(`leave_${request.type}` as any)}
+                        </div>
+                    </div>
+                    <div className="shrink-0">
+                        {getStatusIcon(request.status)}
+                    </div>
+                    </div>
+                </div>
+
+                {/* Dates */}
+                <div className="flex items-center justify-between mb-3 p-3 bg-slate-50 rounded-lg">
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <CalendarIcon size={14} className="text-slate-400" />
+                    <span>
+                        {format(new Date(request.startDate), "d MMM", { locale })} - {format(new Date(request.endDate), "d MMM yyyy", { locale })}
+                    </span>
+                    </div>
+                    <div className="text-indigo-600 font-bold text-sm">
+                    {days} {t('days')}
+                    </div>
+                </div>
+
+                {/* Reason */}
+                <div className="mb-3">
+                    <div className="text-xs text-slate-500 font-medium mb-1">{t('reason')}:</div>
+                    <div className="text-sm text-slate-700">{request.reason}</div>
+                </div>
+
+                {/* Review Note (if exists) */}
+                {request.reviewNote && (
+                    <div className={clsx(
+                    "mb-3 p-3 rounded-lg border text-sm",
+                    request.status === 'approved' ? "bg-green-50 border-green-100" : "bg-red-50 border-red-100"
+                    )}>
+                    <div className="font-bold text-slate-700 mb-1">{t('review_note')}:</div>
+                    <div className={request.status === 'approved' ? "text-green-700" : "text-red-700"}>
+                        {request.reviewNote}
+                    </div>
+                    </div>
                 )}
-              </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                    <button
+                        onClick={() => handleViewDetails(request)}
+                        className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                    >
+                    {t('view_details')}
+                    </button>
+                    
+                    {request.status === 'pending' && (
+                    <div className="flex gap-2">
+                        <button
+                        onClick={() => handleReject(request)}
+                        className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+                        >
+                        {t('reject')}
+                        </button>
+                        <button
+                        onClick={() => handleApprove(request)}
+                        className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
+                        >
+                        {t('approve')}
+                        </button>
+                    </div>
+                    )}
+                </div>
+                </div>
+            );
+            })}
+        </div>
+      ) : (
+        // TABLE VIEW (For Approved, Rejected, All)
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="overflow-x-auto">
+                <table className="w-full">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('employee')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('leave_type')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('date')}</th>
+                            <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('status')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('reason')}</th>
+                            <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('actions' as any)}</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {filteredRequests.map((request) => {
+                             const employee = employees.find(e => e.id === request.employeeId);
+                             return (
+                                <tr key={request.id} className="hover:bg-slate-50 transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs uppercase">
+                                                {employee?.name.substring(0, 1) || 'U'}
+                                            </div>
+                                            <div className="font-medium text-slate-900">{employee?.name}</div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm font-medium text-indigo-600">
+                                            {t(`leave_${request.type}` as any)}
+                                        </div>
+                                        {request.isPaid === false && (
+                                            <span className="text-[10px] px-1.5 py-0.5 rounded border bg-red-50 text-red-600 border-red-100 font-bold uppercase">
+                                                {t('unpaid')}
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm text-slate-900">
+                                            {format(new Date(request.startDate), "d MMM", { locale })} - {format(new Date(request.endDate), "d MMM yyyy", { locale })}
+                                        </div>
+                                        <div className="text-xs text-slate-500">
+                                            {request.days} {t('days')}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                                         <span className={clsx(
+                                            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase",
+                                            getStatusColor(request.status)
+                                        )}>
+                                            {getStatusIcon(request.status)}
+                                            {t(`leave_status_${request.status}` as any)}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-sm text-slate-600 truncate max-w-[150px]" title={request.reason}>
+                                            {request.reason}
+                                        </div>
+                                        {request.reviewNote && (
+                                            <div className="text-xs text-slate-400 mt-1 truncate max-w-[150px]" title={request.reviewNote || ''}>
+                                                <span className="font-semibold">Note:</span> {request.reviewNote}
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                                        {(() => {
+                                            const isApproved = request.status === 'approved';
+                                            // Check end date for "past" logic. If end date < today, it is strict past.
+                                            // Or if start date < today? "เลยวันไปแล้ว" -> "Day passed".
+                                            // Usually means if the leave date has passed, you can't cancel/reject it. 
+                                            // Let's use end date < yesterday (fully passed) or start date < today?
+                                            // Requirement: "ถ้าอนุมัติไปแล้ว และเลยวันไปแล้ว จะไม่สามารถแก้ไขได้"
+                                            // If leave is Today (30th), can I edit? Maybe yes.
+                                            // If leave was Yesterday (29th), No.
+                                            // So endDate < today (set to 00:00:00).
+                                            
+                                            const endDate = new Date(request.endDate);
+                                            endDate.setHours(0,0,0,0);
+                                            const today = new Date();
+                                            today.setHours(0,0,0,0);
+                                            
+                                            const isPast = endDate < today;
+                                            const isDisabled = isApproved && isPast;
+
+                                            if (isDisabled) return null; // Or show disabled button? "ไม่เห็นปุ่ม actions ด้านหลัง" -> Return null.
+
+                                            return (
+                                                <button 
+                                                    onClick={() => handleViewDetails(request)}
+                                                    className="text-slate-400 hover:text-indigo-600 transition-colors"
+                                                >
+                                                    <span className="sr-only">{t('view_details')}</span>
+                                                    <MessageSquare size={18} />
+                                                </button>
+                                            );
+                                        })()}
+                                    </td>
+                                </tr>
+                             );
+                        })}
+                    </tbody>
+                </table>
             </div>
-          );
-        })}
-      </div>
+        </div>
+      )}
 
       {filteredRequests.length === 0 && (
         <div className="text-center py-16 bg-white rounded-xl border border-dashed border-slate-200">

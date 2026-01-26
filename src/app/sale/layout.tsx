@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Home, Users, UserPlus, User, Menu, X, Calendar, ClipboardList } from 'lucide-react';
 import clsx from 'clsx';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function SalesLayout({
   children,
@@ -15,6 +16,7 @@ export default function SalesLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { t, language } = useLanguage();
+  const { showToast } = useToast();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const navItems = [
@@ -30,6 +32,60 @@ export default function SalesLayout({
     router.push(path);
     setIsSidebarOpen(false);
   };
+
+  // Check for rejected leave requests on mount
+  useEffect(() => {
+    const checkRejectedLeaves = async () => {
+      try {
+        // 1. Get Current User
+        const authRes = await fetch('/api/auth/me');
+        if (!authRes.ok) return;
+        const user = await authRes.json();
+
+        if (user && user.id) {
+          // 2. Get My Leave Requests
+          const leaveRes = await fetch(`/api/leave-requests?employeeId=${user.id}`);
+          if (!leaveRes.ok) return;
+          const leaves = await leaveRes.json();
+
+          // 3. Filter Rejected & Unseen
+          const rejectedLeaves = leaves.filter((l: any) => l.status === 'rejected');
+          
+          rejectedLeaves.forEach((leave: any) => {
+             const key = `seen_rejected_leave_${leave.id}`;
+             const isSeen = localStorage.getItem(key);
+
+             if (!isSeen) {
+                // 4. Show Notification
+                // Determine thai label for leave type if possible, or use english
+                // We can't easily access the same map from API here without duplicating consts
+                // Just use generic message or mapped if simple.
+                
+                const typeMap: Record<string, string> = {
+                    sick: 'ลาป่วย',
+                    personal: 'ลากิจ',
+                    vacation: 'ลาพักร้อน',
+                    other: 'ลาอื่นๆ'
+                };
+                const typeLabel = typeMap[leave.type] || leave.type;
+                const dates = leave.days === 1 
+                    ? `วันที่ ${new Date(leave.startDate).toLocaleDateString('th-TH')}`
+                    : `วันที่ ${new Date(leave.startDate).toLocaleDateString('th-TH')} - ${new Date(leave.endDate).toLocaleDateString('th-TH')}`;
+
+                showToast(`คำขอ ${typeLabel} (${dates}) ไม่ได้รับการอนุมัติ`, 'error');
+                
+                // 5. Mark as seen
+                localStorage.setItem(key, 'true');
+             }
+          });
+        }
+      } catch (error) {
+        console.error('Error checking leave status:', error);
+      }
+    };
+
+    checkRejectedLeaves();
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50">
